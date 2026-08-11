@@ -1,0 +1,49 @@
+# ============================================================
+# generate.yaml — code-generate-template 日常配置模板
+# 用法: ./gen.sh <本文件路径>
+# 全功能示例（逻辑删除 / 枚举 / 类型转换 / 内部表 / 示例代码）见 generate-example.yaml。
+# ============================================================
+
+# ---------------- 项目命名（全部必填，无默认值） ----------------
+
+# 项目前缀（驼峰，用于启动类名），如 AiProd -> AiProdApplication
+projectPrefix: AiPlatform
+
+# 工具类/异常/常量前缀（驼峰），如 AiProdInvoker/AiProdException/AiProdTemplate
+toolPrefix: AiPlatform
+
+# Maven groupId
+groupId: com.jakt
+
+# artifactId/包名后缀（小写字母/数字，Java 包名不允许连字符）
+projectArtifactPrefix: aiplatform
+
+# ---------------- 数据库（配置了 tables 或 generateExample: true 时必填） ----------------
+jdbc:
+  url: jdbc:mysql://localhost:3306/aiplatform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+  username: root
+  password: "123456"
+
+# 生成输出根目录（项目骨架 init 与表级 CRUD 的落点）
+outputDir: /Users/jakt/IdeaProjects/AiPlatform
+
+# ---------------- 示例代码（可选，默认不开启） ----------------
+# true 时后台创建 example 表并生成完整示例模块（枚举 / json / 逻辑删除演示）
+generateExample: false
+
+# ---------------- 全局逻辑删除（可选，默认不开启） ----------------
+# enable: true 时 column_name / normal_value / delete_value 三项必填（前置校验）；
+# 表级 tables[].logicDelete 可覆盖全局。
+# globalLogicDelete:
+#   enable: true
+#   column_name: del_flag
+#   normal_value: 0
+#   delete_value: 1
+
+# ---------------- 业务表（可选，不配置则只初始化骨架） ----------------
+# 日常使用每张表只需三个必填项，例如：
+#   - db_table_name: sys_dept
+#     model_name: Dept
+#     model_comment: 部门
+# 其余配置项（force_create / generateController / logicDelete / columns）见 generate-example.yaml。
+tables: []
