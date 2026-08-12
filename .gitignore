@@ -1,0 +1,10 @@
+# IDE
+.idea/
+*.iml
+
+# Maven 构建产物
+target/
+
+# 运行日志
+logs/
+*.log

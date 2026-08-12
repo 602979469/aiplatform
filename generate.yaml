@@ -1,0 +1,164 @@
+# ============================================================
+# generate.yaml — aiplatform 项目生成配置（适配 RuoYi 表结构）
+# 用法: ./gen.sh ./generate.yaml
+# 前置: 本地 MySQL 的 aiplatform 库已部署 RuoYi 全部 32 张表
+#       （21 张业务表已按生成器约束适配：单列主键 + create_time/update_time）
+# 说明: model_name 对齐 RuoYi 领域模型（SysUser/SysRole/...），方便后续移植业务代码；
+#       列级 columns 强制类型与 RuoYi 领域模型字段类型保持一致（见各表注释）。
+# ============================================================
+
+# ---------------- 项目命名（全部必填，无默认值） ----------------
+projectPrefix: AiPlatform
+toolPrefix: AiPlatform
+groupId: com.jakt
+projectArtifactPrefix: aiplatform
+
+# ---------------- 数据库（aiplatform 库，已部署 RuoYi 表） ----------------
+jdbc:
+  url: jdbc:mysql://localhost:3306/aiplatform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+  username: root
+  password: "123456"
+
+# 生成输出根目录（项目骨架 init 与表级 CRUD 的落点 = aiplatform 工程）
+outputDir: /Users/jakt/IdeaProjects/aiplatform
+
+# ---------------- 全局逻辑删除（默认不开启） ----------------
+# RuoYi 的 del_flag 语义为 '0' 存在 / '2' 删除（char 列），
+# 仅 sys_user / sys_role / sys_dept 三张表有该列，采用表级配置（见下），全局保持关闭。
+globalLogicDelete:
+  enable: false
+  column_name: del_flag
+  normal_value: "0"
+  delete_value: "2"
+
+# ---------------- 业务表（21 张，QRTZ_* 11 张为 Quartz 框架表不生成） ----------------
+tables:
+  # ============ 系统管理 ============
+  - db_table_name: sys_user
+    model_name: SysUser
+    model_comment: 用户
+    # RuoYi 逻辑删除: del_flag char(1) '0' 存在 / '2' 删除
+    logicDelete:
+      enable: true
+      column_name: del_flag
+      normal_value: "0"
+      delete_value: "2"
+
+  - db_table_name: sys_dept
+    model_name: SysDept
+    model_comment: 部门
+    logicDelete:
+      enable: true
+      column_name: del_flag
+      normal_value: "0"
+      delete_value: "2"
+
+  - db_table_name: sys_role
+    model_name: SysRole
+    model_comment: 角色
+    logicDelete:
+      enable: true
+      column_name: del_flag
+      normal_value: "0"
+      delete_value: "2"
+    columns:
+      # RuoYi SysRole.roleSort 为 String（页面排序输入框语义），int 列强制转 String
+      role_sort:
+        type: String
+
+  - db_table_name: sys_menu
+    model_name: SysMenu
+    model_comment: 菜单
+    columns:
+      # RuoYi SysMenu.orderNum 为 String，int 列强制转 String
+      order_num:
+        type: String
+
+  - db_table_name: sys_post
+    model_name: SysPost
+    model_comment: 岗位
+    columns:
+      # RuoYi SysPost.postSort 为 String，int 列强制转 String
+      post_sort:
+        type: String
+
+  # 关联表: RuoYi 无独立 Controller（由用户/角色模块编排），只生成 12 个数据/业务层文件
+  - db_table_name: sys_user_role
+    model_name: SysUserRole
+    model_comment: 用户角色关联
+    generateController: false
+  - db_table_name: sys_role_menu
+    model_name: SysRoleMenu
+    model_comment: 角色菜单关联
+    generateController: false
+  - db_table_name: sys_role_dept
+    model_name: SysRoleDept
+    model_comment: 角色部门关联
+    generateController: false
+  - db_table_name: sys_user_post
+    model_name: SysUserPost
+    model_comment: 用户岗位关联
+    generateController: false
+
+  # ============ 字典与参数 ============
+  - db_table_name: sys_dict_type
+    model_name: SysDictType
+    model_comment: 字典类型
+
+  - db_table_name: sys_dict_data
+    model_name: SysDictData
+    model_comment: 字典数据
+    columns:
+      # RuoYi SysDictData.dictSort 为 Long，int 列强制转 Long
+      dict_sort:
+        type: Long
+
+  - db_table_name: sys_config
+    model_name: SysConfig
+    model_comment: 参数配置
+
+  # ============ 通知公告 ============
+  - db_table_name: sys_notice
+    model_name: SysNotice
+    model_comment: 通知公告
+
+  - db_table_name: sys_notice_read
+    model_name: SysNoticeRead
+    model_comment: 公告已读记录
+    columns:
+      # RuoYi SysNoticeRead.noticeId 为 Long，int 列强制转 Long
+      notice_id:
+        type: Long
+
+  # ============ 定时任务 ============
+  - db_table_name: sys_job
+    model_name: SysJob
+    model_comment: 定时任务
+  - db_table_name: sys_job_log
+    model_name: SysJobLog
+    model_comment: 定时任务日志
+
+  # ============ 日志与监控 ============
+  - db_table_name: sys_oper_log
+    model_name: SysOperLog
+    model_comment: 操作日志
+  - db_table_name: sys_logininfor
+    model_name: SysLogininfor
+    model_comment: 登录日志
+  - db_table_name: sys_user_online
+    model_name: SysUserOnline
+    model_comment: 在线用户
+    columns:
+      # RuoYi SysUserOnline.expireTime 为 Long，int 列强制转 Long
+      expire_time:
+        type: Long
+
+  # ============ 代码生成 ============
+  # RuoYi 自带 GenController 由 code-generate-template 取代，如不需要这两张表的接口，
+  # 可给它们加 generateController: false 只保留数据/业务层
+  - db_table_name: gen_table
+    model_name: GenTable
+    model_comment: 代码生成
+  - db_table_name: gen_table_column
+    model_name: GenTableColumn
+    model_comment: 代码生成字段
