@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.SysRoleMenuMapper">
+
+    <sql id="selectColumns">
+        id, role_id, menu_id, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="roleId != null">
+                AND role_id = #{roleId}
+            </if>
+            <if test="menuId != null">
+                AND menu_id = #{menuId}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.SysRoleMenuDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_role_menu
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.SysRoleMenuDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_role_menu
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.SysRoleMenuDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_role_menu
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_role_menu
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysRoleMenuDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_role_menu (role_id, menu_id)
+        VALUES (#{roleId}, #{menuId})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysRoleMenuDO">
+        UPDATE sys_role_menu
+        SET role_id = #{roleId},
+            menu_id = #{menuId}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysRoleMenuDO">
+        <if test="roleId != null or menuId != null">
+            UPDATE sys_role_menu
+        <set>
+            <if test="roleId != null">
+                role_id = #{roleId},
+            </if>
+            <if test="menuId != null">
+                menu_id = #{menuId},
+            </if>
+        </set>
+            WHERE id = #{id}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM sys_role_menu WHERE id = #{id}
+    </delete>
+</mapper>

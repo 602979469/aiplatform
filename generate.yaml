@@ -211,8 +211,8 @@ tables:
           className: IsDefaultEnum
           codeType: String
           values:
-            - { code: "Y", name: YES, desc: 是 }
-            - { code: "N", name: NO, desc: 否 }
+            - { code: "Y", name: "YES", desc: 是 }
+            - { code: "N", name: "NO", desc: 否 }
       # 字典数据状态: 0 正常 / 1 停用
       status:
         type: enum
@@ -234,8 +234,8 @@ tables:
           className: ConfigTypeEnum
           codeType: String
           values:
-            - { code: "Y", name: YES, desc: 是 }
-            - { code: "N", name: NO, desc: 否 }
+            - { code: "Y", name: "YES", desc: 是 }
+            - { code: "N", name: "NO", desc: 否 }
 
   # ============ 通知公告 ============
   - db_table_name: sys_notice

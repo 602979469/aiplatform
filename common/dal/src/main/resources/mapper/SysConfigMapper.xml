@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.SysConfigMapper">
+
+    <sql id="selectColumns">
+        config_id, config_name, config_key, config_value, config_type, remark, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="configId != null">
+                AND config_id = #{configId}
+            </if>
+            <if test="configName != null and configName != ''">
+                AND config_name = #{configName}
+            </if>
+            <if test="configKey != null and configKey != ''">
+                AND config_key = #{configKey}
+            </if>
+            <if test="configValue != null and configValue != ''">
+                AND config_value = #{configValue}
+            </if>
+            <if test="configType != null and configType != ''">
+                AND config_type = #{configType}
+            </if>
+            <if test="remark != null and remark != ''">
+                AND remark = #{remark}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.SysConfigDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_config
+        WHERE config_id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.SysConfigDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_config
+        <include refid="queryConditions"/>
+        ORDER BY config_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.SysConfigDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_config
+        <include refid="queryConditions"/>
+        ORDER BY config_id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_config
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysConfigDO"
+            useGeneratedKeys="true" keyProperty="configId">
+        INSERT INTO sys_config (config_name, config_key, config_value, config_type, remark)
+        VALUES (#{configName}, #{configKey}, #{configValue}, #{configType}, #{remark})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysConfigDO">
+        UPDATE sys_config
+        SET config_name = #{configName},
+            config_key = #{configKey},
+            config_value = #{configValue},
+            config_type = #{configType},
+            remark = #{remark}
+        WHERE config_id = #{configId}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysConfigDO">
+        <if test="configName != null or configKey != null or configValue != null or configType != null or remark != null">
+            UPDATE sys_config
+        <set>
+            <if test="configName != null">
+                config_name = #{configName},
+            </if>
+            <if test="configKey != null">
+                config_key = #{configKey},
+            </if>
+            <if test="configValue != null">
+                config_value = #{configValue},
+            </if>
+            <if test="configType != null">
+                config_type = #{configType},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+        </set>
+            WHERE config_id = #{configId}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM sys_config WHERE config_id = #{id}
+    </delete>
+</mapper>

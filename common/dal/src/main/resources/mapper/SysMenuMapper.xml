@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.SysMenuMapper">
+
+    <sql id="selectColumns">
+        menu_id, menu_name, parent_id, order_num, url, target, menu_type, visible, is_refresh, perms, icon, remark, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="menuId != null">
+                AND menu_id = #{menuId}
+            </if>
+            <if test="menuName != null and menuName != ''">
+                AND menu_name = #{menuName}
+            </if>
+            <if test="parentId != null">
+                AND parent_id = #{parentId}
+            </if>
+            <if test="orderNum != null">
+                AND order_num = #{orderNum}
+            </if>
+            <if test="url != null and url != ''">
+                AND url = #{url}
+            </if>
+            <if test="target != null and target != ''">
+                AND target = #{target}
+            </if>
+            <if test="menuType != null and menuType != ''">
+                AND menu_type = #{menuType}
+            </if>
+            <if test="visible != null and visible != ''">
+                AND visible = #{visible}
+            </if>
+            <if test="isRefresh != null and isRefresh != ''">
+                AND is_refresh = #{isRefresh}
+            </if>
+            <if test="perms != null and perms != ''">
+                AND perms = #{perms}
+            </if>
+            <if test="icon != null and icon != ''">
+                AND icon = #{icon}
+            </if>
+            <if test="remark != null and remark != ''">
+                AND remark = #{remark}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.SysMenuDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_menu
+        WHERE menu_id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.SysMenuDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_menu
+        <include refid="queryConditions"/>
+        ORDER BY menu_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.SysMenuDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_menu
+        <include refid="queryConditions"/>
+        ORDER BY menu_id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_menu
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysMenuDO"
+            useGeneratedKeys="true" keyProperty="menuId">
+        INSERT INTO sys_menu (menu_name, parent_id, order_num, url, target, menu_type, visible, is_refresh, perms, icon, remark)
+        VALUES (#{menuName}, #{parentId}, #{orderNum}, #{url}, #{target}, #{menuType}, #{visible}, #{isRefresh}, #{perms}, #{icon}, #{remark})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysMenuDO">
+        UPDATE sys_menu
+        SET menu_name = #{menuName},
+            parent_id = #{parentId},
+            order_num = #{orderNum},
+            url = #{url},
+            target = #{target},
+            menu_type = #{menuType},
+            visible = #{visible},
+            is_refresh = #{isRefresh},
+            perms = #{perms},
+            icon = #{icon},
+            remark = #{remark}
+        WHERE menu_id = #{menuId}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysMenuDO">
+        <if test="menuName != null or parentId != null or orderNum != null or url != null or target != null or menuType != null or visible != null or isRefresh != null or perms != null or icon != null or remark != null">
+            UPDATE sys_menu
+        <set>
+            <if test="menuName != null">
+                menu_name = #{menuName},
+            </if>
+            <if test="parentId != null">
+                parent_id = #{parentId},
+            </if>
+            <if test="orderNum != null">
+                order_num = #{orderNum},
+            </if>
+            <if test="url != null">
+                url = #{url},
+            </if>
+            <if test="target != null">
+                target = #{target},
+            </if>
+            <if test="menuType != null">
+                menu_type = #{menuType},
+            </if>
+            <if test="visible != null">
+                visible = #{visible},
+            </if>
+            <if test="isRefresh != null">
+                is_refresh = #{isRefresh},
+            </if>
+            <if test="perms != null">
+                perms = #{perms},
+            </if>
+            <if test="icon != null">
+                icon = #{icon},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+        </set>
+            WHERE menu_id = #{menuId}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM sys_menu WHERE menu_id = #{id}
+    </delete>
+</mapper>

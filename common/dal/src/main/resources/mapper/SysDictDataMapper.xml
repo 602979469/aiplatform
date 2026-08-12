@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.SysDictDataMapper">
+
+    <sql id="selectColumns">
+        dict_code, dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, remark, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="dictCode != null">
+                AND dict_code = #{dictCode}
+            </if>
+            <if test="dictSort != null">
+                AND dict_sort = #{dictSort}
+            </if>
+            <if test="dictLabel != null and dictLabel != ''">
+                AND dict_label = #{dictLabel}
+            </if>
+            <if test="dictValue != null and dictValue != ''">
+                AND dict_value = #{dictValue}
+            </if>
+            <if test="dictType != null and dictType != ''">
+                AND dict_type = #{dictType}
+            </if>
+            <if test="cssClass != null and cssClass != ''">
+                AND css_class = #{cssClass}
+            </if>
+            <if test="listClass != null and listClass != ''">
+                AND list_class = #{listClass}
+            </if>
+            <if test="isDefault != null and isDefault != ''">
+                AND is_default = #{isDefault}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="remark != null and remark != ''">
+                AND remark = #{remark}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDictDataDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_dict_data
+        WHERE dict_code = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDictDataDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_dict_data
+        <include refid="queryConditions"/>
+        ORDER BY dict_code DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDictDataDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_dict_data
+        <include refid="queryConditions"/>
+        ORDER BY dict_code DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_dict_data
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDictDataDO"
+            useGeneratedKeys="true" keyProperty="dictCode">
+        INSERT INTO sys_dict_data (dict_sort, dict_label, dict_value, dict_type, css_class, list_class, is_default, status, remark)
+        VALUES (#{dictSort}, #{dictLabel}, #{dictValue}, #{dictType}, #{cssClass}, #{listClass}, #{isDefault}, #{status}, #{remark})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDictDataDO">
+        UPDATE sys_dict_data
+        SET dict_sort = #{dictSort},
+            dict_label = #{dictLabel},
+            dict_value = #{dictValue},
+            dict_type = #{dictType},
+            css_class = #{cssClass},
+            list_class = #{listClass},
+            is_default = #{isDefault},
+            status = #{status},
+            remark = #{remark}
+        WHERE dict_code = #{dictCode}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDictDataDO">
+        <if test="dictSort != null or dictLabel != null or dictValue != null or dictType != null or cssClass != null or listClass != null or isDefault != null or status != null or remark != null">
+            UPDATE sys_dict_data
+        <set>
+            <if test="dictSort != null">
+                dict_sort = #{dictSort},
+            </if>
+            <if test="dictLabel != null">
+                dict_label = #{dictLabel},
+            </if>
+            <if test="dictValue != null">
+                dict_value = #{dictValue},
+            </if>
+            <if test="dictType != null">
+                dict_type = #{dictType},
+            </if>
+            <if test="cssClass != null">
+                css_class = #{cssClass},
+            </if>
+            <if test="listClass != null">
+                list_class = #{listClass},
+            </if>
+            <if test="isDefault != null">
+                is_default = #{isDefault},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+        </set>
+            WHERE dict_code = #{dictCode}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM sys_dict_data WHERE dict_code = #{id}
+    </delete>
+</mapper>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.SysUserRoleMapper">
+
+    <sql id="selectColumns">
+        id, user_id, role_id, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="roleId != null">
+                AND role_id = #{roleId}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.SysUserRoleDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_user_role
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.SysUserRoleDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_user_role
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.SysUserRoleDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_user_role
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_user_role
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysUserRoleDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user_role (user_id, role_id)
+        VALUES (#{userId}, #{roleId})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysUserRoleDO">
+        UPDATE sys_user_role
+        SET user_id = #{userId},
+            role_id = #{roleId}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysUserRoleDO">
+        <if test="userId != null or roleId != null">
+            UPDATE sys_user_role
+        <set>
+            <if test="userId != null">
+                user_id = #{userId},
+            </if>
+            <if test="roleId != null">
+                role_id = #{roleId},
+            </if>
+        </set>
+            WHERE id = #{id}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM sys_user_role WHERE id = #{id}
+    </delete>
+</mapper>

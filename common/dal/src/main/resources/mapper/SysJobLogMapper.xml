@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.SysJobLogMapper">
+
+    <sql id="selectColumns">
+        job_log_id, job_name, job_group, invoke_target, job_message, status, exception_info, start_time, end_time, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="jobLogId != null">
+                AND job_log_id = #{jobLogId}
+            </if>
+            <if test="jobName != null and jobName != ''">
+                AND job_name = #{jobName}
+            </if>
+            <if test="jobGroup != null and jobGroup != ''">
+                AND job_group = #{jobGroup}
+            </if>
+            <if test="invokeTarget != null and invokeTarget != ''">
+                AND invoke_target = #{invokeTarget}
+            </if>
+            <if test="jobMessage != null and jobMessage != ''">
+                AND job_message = #{jobMessage}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="exceptionInfo != null and exceptionInfo != ''">
+                AND exception_info = #{exceptionInfo}
+            </if>
+            <if test="startTime != null">
+                AND start_time = #{startTime}
+            </if>
+            <if test="endTime != null">
+                AND end_time = #{endTime}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.SysJobLogDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_job_log
+        WHERE job_log_id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.SysJobLogDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_job_log
+        <include refid="queryConditions"/>
+        ORDER BY job_log_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.SysJobLogDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_job_log
+        <include refid="queryConditions"/>
+        ORDER BY job_log_id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_job_log
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysJobLogDO"
+            useGeneratedKeys="true" keyProperty="jobLogId">
+        INSERT INTO sys_job_log (job_name, job_group, invoke_target, job_message, status, exception_info, start_time, end_time)
+        VALUES (#{jobName}, #{jobGroup}, #{invokeTarget}, #{jobMessage}, #{status}, #{exceptionInfo}, #{startTime}, #{endTime})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysJobLogDO">
+        UPDATE sys_job_log
+        SET job_name = #{jobName},
+            job_group = #{jobGroup},
+            invoke_target = #{invokeTarget},
+            job_message = #{jobMessage},
+            status = #{status},
+            exception_info = #{exceptionInfo},
+            start_time = #{startTime},
+            end_time = #{endTime}
+        WHERE job_log_id = #{jobLogId}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysJobLogDO">
+        <if test="jobName != null or jobGroup != null or invokeTarget != null or jobMessage != null or status != null or exceptionInfo != null or startTime != null or endTime != null">
+            UPDATE sys_job_log
+        <set>
+            <if test="jobName != null">
+                job_name = #{jobName},
+            </if>
+            <if test="jobGroup != null">
+                job_group = #{jobGroup},
+            </if>
+            <if test="invokeTarget != null">
+                invoke_target = #{invokeTarget},
+            </if>
+            <if test="jobMessage != null">
+                job_message = #{jobMessage},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="exceptionInfo != null">
+                exception_info = #{exceptionInfo},
+            </if>
+            <if test="startTime != null">
+                start_time = #{startTime},
+            </if>
+            <if test="endTime != null">
+                end_time = #{endTime},
+            </if>
+        </set>
+            WHERE job_log_id = #{jobLogId}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM sys_job_log WHERE job_log_id = #{id}
+    </delete>
+</mapper>

@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.SysDictTypeMapper">
+
+    <sql id="selectColumns">
+        dict_id, dict_name, dict_type, status, remark, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="dictId != null">
+                AND dict_id = #{dictId}
+            </if>
+            <if test="dictName != null and dictName != ''">
+                AND dict_name = #{dictName}
+            </if>
+            <if test="dictType != null and dictType != ''">
+                AND dict_type = #{dictType}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="remark != null and remark != ''">
+                AND remark = #{remark}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDictTypeDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_dict_type
+        WHERE dict_id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDictTypeDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_dict_type
+        <include refid="queryConditions"/>
+        ORDER BY dict_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDictTypeDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_dict_type
+        <include refid="queryConditions"/>
+        ORDER BY dict_id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_dict_type
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDictTypeDO"
+            useGeneratedKeys="true" keyProperty="dictId">
+        INSERT INTO sys_dict_type (dict_name, dict_type, status, remark)
+        VALUES (#{dictName}, #{dictType}, #{status}, #{remark})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDictTypeDO">
+        UPDATE sys_dict_type
+        SET dict_name = #{dictName},
+            dict_type = #{dictType},
+            status = #{status},
+            remark = #{remark}
+        WHERE dict_id = #{dictId}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDictTypeDO">
+        <if test="dictName != null or dictType != null or status != null or remark != null">
+            UPDATE sys_dict_type
+        <set>
+            <if test="dictName != null">
+                dict_name = #{dictName},
+            </if>
+            <if test="dictType != null">
+                dict_type = #{dictType},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+        </set>
+            WHERE dict_id = #{dictId}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM sys_dict_type WHERE dict_id = #{id}
+    </delete>
+</mapper>

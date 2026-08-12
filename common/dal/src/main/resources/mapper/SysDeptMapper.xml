@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.SysDeptMapper">
+
+    <sql id="selectColumns">
+        dept_id, parent_id, ancestors, dept_name, order_num, leader, phone, email, status, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="deptId != null">
+                AND dept_id = #{deptId}
+            </if>
+            <if test="parentId != null">
+                AND parent_id = #{parentId}
+            </if>
+            <if test="ancestors != null and ancestors != ''">
+                AND ancestors = #{ancestors}
+            </if>
+            <if test="deptName != null and deptName != ''">
+                AND dept_name = #{deptName}
+            </if>
+            <if test="orderNum != null">
+                AND order_num = #{orderNum}
+            </if>
+            <if test="leader != null and leader != ''">
+                AND leader = #{leader}
+            </if>
+            <if test="phone != null and phone != ''">
+                AND phone = #{phone}
+            </if>
+            <if test="email != null and email != ''">
+                AND email = #{email}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            AND del_flag = '0'
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_dept
+        WHERE dept_id = #{id}
+        AND del_flag = '0'
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_dept
+        <include refid="queryConditions"/>
+        ORDER BY dept_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_dept
+        <include refid="queryConditions"/>
+        ORDER BY dept_id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_dept
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO"
+            useGeneratedKeys="true" keyProperty="deptId">
+        INSERT INTO sys_dept (parent_id, ancestors, dept_name, order_num, leader, phone, email, status)
+        VALUES (#{parentId}, #{ancestors}, #{deptName}, #{orderNum}, #{leader}, #{phone}, #{email}, #{status})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO">
+        UPDATE sys_dept
+        SET parent_id = #{parentId},
+            ancestors = #{ancestors},
+            dept_name = #{deptName},
+            order_num = #{orderNum},
+            leader = #{leader},
+            phone = #{phone},
+            email = #{email},
+            status = #{status}
+        WHERE dept_id = #{deptId}
+        AND del_flag = '0'
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO">
+        <if test="parentId != null or ancestors != null or deptName != null or orderNum != null or leader != null or phone != null or email != null or status != null">
+            UPDATE sys_dept
+        <set>
+            <if test="parentId != null">
+                parent_id = #{parentId},
+            </if>
+            <if test="ancestors != null">
+                ancestors = #{ancestors},
+            </if>
+            <if test="deptName != null">
+                dept_name = #{deptName},
+            </if>
+            <if test="orderNum != null">
+                order_num = #{orderNum},
+            </if>
+            <if test="leader != null">
+                leader = #{leader},
+            </if>
+            <if test="phone != null">
+                phone = #{phone},
+            </if>
+            <if test="email != null">
+                email = #{email},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+        </set>
+            WHERE dept_id = #{deptId}
+            AND del_flag = '0'
+        </if>
+    </update>
+
+    <update id="deleteById" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO">
+        UPDATE sys_dept
+        SET del_flag = '2'
+        WHERE dept_id = #{id} AND del_flag = '0'
+    </update>
+</mapper>

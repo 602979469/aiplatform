@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.SysNoticeReadMapper">
+
+    <sql id="selectColumns">
+        read_id, notice_id, user_id, read_time, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="readId != null">
+                AND read_id = #{readId}
+            </if>
+            <if test="noticeId != null">
+                AND notice_id = #{noticeId}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="readTime != null">
+                AND read_time = #{readTime}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.SysNoticeReadDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_notice_read
+        WHERE read_id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.SysNoticeReadDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_notice_read
+        <include refid="queryConditions"/>
+        ORDER BY read_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.SysNoticeReadDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_notice_read
+        <include refid="queryConditions"/>
+        ORDER BY read_id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM sys_notice_read
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysNoticeReadDO"
+            useGeneratedKeys="true" keyProperty="readId">
+        INSERT INTO sys_notice_read (notice_id, user_id, read_time)
+        VALUES (#{noticeId}, #{userId}, #{readTime})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysNoticeReadDO">
+        UPDATE sys_notice_read
+        SET notice_id = #{noticeId},
+            user_id = #{userId},
+            read_time = #{readTime}
+        WHERE read_id = #{readId}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysNoticeReadDO">
+        <if test="noticeId != null or userId != null or readTime != null">
+            UPDATE sys_notice_read
+        <set>
+            <if test="noticeId != null">
+                notice_id = #{noticeId},
+            </if>
+            <if test="userId != null">
+                user_id = #{userId},
+            </if>
+            <if test="readTime != null">
+                read_time = #{readTime},
+            </if>
+        </set>
+            WHERE read_id = #{readId}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM sys_notice_read WHERE read_id = #{id}
+    </delete>
+</mapper>
