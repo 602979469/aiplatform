@@ -3,8 +3,11 @@
 # 用法: ./gen.sh ./generate.yaml
 # 前置: 本地 MySQL 的 aiplatform 库已部署 RuoYi 全部 32 张表
 #       （21 张业务表已按生成器约束适配：单列主键 + create_time/update_time）
-# 说明: model_name 对齐 RuoYi 领域模型（SysUser/SysRole/...），方便后续移植业务代码；
-#       列级 columns 强制类型与 RuoYi 领域模型字段类型保持一致（见各表注释）。
+# 说明:
+#   - model_name 对齐 RuoYi 领域模型（SysUser/SysRole/...），方便后续移植业务代码；
+#   - 枚举列走 type: enum（对照 RuoYi common/enums 取值，Model/DTO 用枚举，DO 保持原始类型）；
+#   - RuoYi 21 张业务表无 json 类型列，jsonArray/jsonObject 配置不适用；
+#   - 逻辑删除: sys_user / sys_role / sys_dept 的 del_flag（'0' 存在 / '2' 删除）。
 # ============================================================
 
 # ---------------- 项目命名（全部必填，无默认值） ----------------
@@ -37,12 +40,41 @@ tables:
   - db_table_name: sys_user
     model_name: SysUser
     model_comment: 用户
-    # RuoYi 逻辑删除: del_flag char(1) '0' 存在 / '2' 删除
     logicDelete:
       enable: true
       column_name: del_flag
       normal_value: "0"
       delete_value: "2"
+    columns:
+      # 用户类型: 00 系统用户 / 01 注册用户（RuoYi UserConstants）
+      user_type:
+        type: enum
+        enum:
+          className: UserTypeEnum
+          codeType: String
+          values:
+            - { code: "00", name: SYSTEM_USER, desc: 系统用户 }
+            - { code: "01", name: REGISTER_USER, desc: 注册用户 }
+      # 性别: 0 男 / 1 女 / 2 未知
+      sex:
+        type: enum
+        enum:
+          className: SexEnum
+          codeType: String
+          values:
+            - { code: "0", name: MALE, desc: 男 }
+            - { code: "1", name: FEMALE, desc: 女 }
+            - { code: "2", name: UNKNOWN, desc: 未知 }
+      # 账号状态（对齐 RuoYi UserStatus: OK/DISABLE/DELETED）
+      status:
+        type: enum
+        enum:
+          className: UserStatusEnum
+          codeType: String
+          values:
+            - { code: "0", name: OK, desc: 正常 }
+            - { code: "1", name: DISABLE, desc: 停用 }
+            - { code: "2", name: DELETED, desc: 删除 }
 
   - db_table_name: sys_dept
     model_name: SysDept
@@ -52,6 +84,16 @@ tables:
       column_name: del_flag
       normal_value: "0"
       delete_value: "2"
+    columns:
+      # 部门状态: 0 正常 / 1 停用
+      status:
+        type: enum
+        enum:
+          className: DeptStatusEnum
+          codeType: String
+          values:
+            - { code: "0", name: NORMAL, desc: 正常 }
+            - { code: "1", name: DISABLED, desc: 停用 }
 
   - db_table_name: sys_role
     model_name: SysRole
@@ -65,6 +107,26 @@ tables:
       # RuoYi SysRole.roleSort 为 String（页面排序输入框语义），int 列强制转 String
       role_sort:
         type: String
+      # 角色状态: 0 正常 / 1 停用
+      status:
+        type: enum
+        enum:
+          className: RoleStatusEnum
+          codeType: String
+          values:
+            - { code: "0", name: NORMAL, desc: 正常 }
+            - { code: "1", name: DISABLED, desc: 停用 }
+      # 数据范围（对齐 RuoYi Constants.Dept）
+      data_scope:
+        type: enum
+        enum:
+          className: DataScopeEnum
+          codeType: String
+          values:
+            - { code: "1", name: ALL, desc: 全部数据权限 }
+            - { code: "2", name: CUSTOM, desc: 自定数据权限 }
+            - { code: "3", name: DEPT, desc: 本部门数据权限 }
+            - { code: "4", name: DEPT_AND_CHILD, desc: 本部门及以下数据权限 }
 
   - db_table_name: sys_menu
     model_name: SysMenu
@@ -73,6 +135,17 @@ tables:
       # RuoYi SysMenu.orderNum 为 String，int 列强制转 String
       order_num:
         type: String
+      # 菜单类型（M目录 C菜单 F按钮）保持 String：列默认值为空串，生成器枚举 code 不允许空值，
+      # 若配枚举，空串数据会抛 30004；后续如需枚举可先修表默认值再配置
+      # 菜单状态: 0 显示 / 1 隐藏
+      visible:
+        type: enum
+        enum:
+          className: VisibleEnum
+          codeType: String
+          values:
+            - { code: "0", name: SHOW, desc: 显示 }
+            - { code: "1", name: HIDE, desc: 隐藏 }
 
   - db_table_name: sys_post
     model_name: SysPost
@@ -81,6 +154,15 @@ tables:
       # RuoYi SysPost.postSort 为 String，int 列强制转 String
       post_sort:
         type: String
+      # 岗位状态: 0 正常 / 1 停用
+      status:
+        type: enum
+        enum:
+          className: PostStatusEnum
+          codeType: String
+          values:
+            - { code: "0", name: NORMAL, desc: 正常 }
+            - { code: "1", name: DISABLED, desc: 停用 }
 
   # 关联表: RuoYi 无独立 Controller（由用户/角色模块编排），只生成 12 个数据/业务层文件
   - db_table_name: sys_user_role
@@ -104,6 +186,16 @@ tables:
   - db_table_name: sys_dict_type
     model_name: SysDictType
     model_comment: 字典类型
+    columns:
+      # 字典类型状态: 0 正常 / 1 停用
+      status:
+        type: enum
+        enum:
+          className: DictTypeStatusEnum
+          codeType: String
+          values:
+            - { code: "0", name: NORMAL, desc: 正常 }
+            - { code: "1", name: DISABLED, desc: 停用 }
 
   - db_table_name: sys_dict_data
     model_name: SysDictData
@@ -112,15 +204,62 @@ tables:
       # RuoYi SysDictData.dictSort 为 Long，int 列强制转 Long
       dict_sort:
         type: Long
+      # 是否默认: Y 是 / N 否
+      is_default:
+        type: enum
+        enum:
+          className: IsDefaultEnum
+          codeType: String
+          values:
+            - { code: "Y", name: YES, desc: 是 }
+            - { code: "N", name: NO, desc: 否 }
+      # 字典数据状态: 0 正常 / 1 停用
+      status:
+        type: enum
+        enum:
+          className: DictDataStatusEnum
+          codeType: String
+          values:
+            - { code: "0", name: NORMAL, desc: 正常 }
+            - { code: "1", name: DISABLED, desc: 停用 }
 
   - db_table_name: sys_config
     model_name: SysConfig
     model_comment: 参数配置
+    columns:
+      # 系统内置: Y 是 / N 否
+      config_type:
+        type: enum
+        enum:
+          className: ConfigTypeEnum
+          codeType: String
+          values:
+            - { code: "Y", name: YES, desc: 是 }
+            - { code: "N", name: NO, desc: 否 }
 
   # ============ 通知公告 ============
   - db_table_name: sys_notice
     model_name: SysNotice
     model_comment: 通知公告
+    columns:
+      # 公告类型: 1 通知 / 2 公告
+      notice_type:
+        type: enum
+        enum:
+          className: NoticeTypeEnum
+          codeType: String
+          values:
+            - { code: "1", name: NOTICE, desc: 通知 }
+            - { code: "2", name: ANNOUNCEMENT, desc: 公告 }
+      # 公告状态: 0 正常 / 1 关闭
+      status:
+        type: enum
+        enum:
+          className: NoticeStatusEnum
+          codeType: String
+          values:
+            - { code: "0", name: NORMAL, desc: 正常 }
+            - { code: "1", name: CLOSED, desc: 关闭 }
 
   - db_table_name: sys_notice_read
     model_name: SysNoticeRead
@@ -134,17 +273,106 @@ tables:
   - db_table_name: sys_job
     model_name: SysJob
     model_comment: 定时任务
+    columns:
+      # 任务状态: 0 正常 / 1 暂停
+      status:
+        type: enum
+        enum:
+          className: JobStatusEnum
+          codeType: String
+          values:
+            - { code: "0", name: NORMAL, desc: 正常 }
+            - { code: "1", name: PAUSED, desc: 暂停 }
+      # 是否并发执行: 0 允许 / 1 禁止
+      concurrent:
+        type: enum
+        enum:
+          className: ConcurrentEnum
+          codeType: String
+          values:
+            - { code: "0", name: ALLOW, desc: 允许 }
+            - { code: "1", name: FORBID, desc: 禁止 }
+      # 计划执行错误策略: 1 立即执行 / 2 执行一次 / 3 放弃执行
+      misfire_policy:
+        type: enum
+        enum:
+          className: MisfirePolicyEnum
+          codeType: String
+          values:
+            - { code: "1", name: EXECUTE_IMMEDIATELY, desc: 立即执行 }
+            - { code: "2", name: EXECUTE_ONCE, desc: 执行一次 }
+            - { code: "3", name: GIVE_UP, desc: 放弃执行 }
+
   - db_table_name: sys_job_log
     model_name: SysJobLog
     model_comment: 定时任务日志
+    columns:
+      # 执行状态: 0 正常 / 1 失败
+      status:
+        type: enum
+        enum:
+          className: JobLogStatusEnum
+          codeType: String
+          values:
+            - { code: "0", name: SUCCESS, desc: 正常 }
+            - { code: "1", name: FAIL, desc: 失败 }
 
   # ============ 日志与监控 ============
   - db_table_name: sys_oper_log
     model_name: SysOperLog
     model_comment: 操作日志
+    columns:
+      # 业务类型（对齐 RuoYi BusinessType 枚举序数 0-9）
+      business_type:
+        type: enum
+        enum:
+          className: BusinessTypeEnum
+          codeType: Integer
+          values:
+            - { code: 0, name: OTHER, desc: 其它 }
+            - { code: 1, name: INSERT, desc: 新增 }
+            - { code: 2, name: UPDATE, desc: 修改 }
+            - { code: 3, name: DELETE, desc: 删除 }
+            - { code: 4, name: GRANT, desc: 授权 }
+            - { code: 5, name: EXPORT, desc: 导出 }
+            - { code: 6, name: IMPORT, desc: 导入 }
+            - { code: 7, name: FORCE, desc: 强退 }
+            - { code: 8, name: GENCODE, desc: 生成代码 }
+            - { code: 9, name: CLEAN, desc: 清空 }
+      # 操作类别（对齐 RuoYi OperatorType）
+      operator_type:
+        type: enum
+        enum:
+          className: OperatorTypeEnum
+          codeType: Integer
+          values:
+            - { code: 0, name: OTHER, desc: 其它 }
+            - { code: 1, name: MANAGE, desc: 后台用户 }
+            - { code: 2, name: MOBILE, desc: 手机端用户 }
+      # 操作状态（对齐 RuoYi BusinessStatus）
+      status:
+        type: enum
+        enum:
+          className: BusinessStatusEnum
+          codeType: Integer
+          values:
+            - { code: 0, name: SUCCESS, desc: 成功 }
+            - { code: 1, name: FAIL, desc: 失败 }
+
   - db_table_name: sys_logininfor
     model_name: SysLogininfor
     model_comment: 登录日志
+    columns:
+      # 登录状态: 0 成功 / 1 失败
+      status:
+        type: enum
+        enum:
+          className: LoginStatusEnum
+          codeType: String
+          values:
+            - { code: "0", name: SUCCESS, desc: 成功 }
+            - { code: "1", name: FAIL, desc: 失败 }
+
   - db_table_name: sys_user_online
     model_name: SysUserOnline
     model_comment: 在线用户
@@ -152,6 +380,7 @@ tables:
       # RuoYi SysUserOnline.expireTime 为 Long，int 列强制转 Long
       expire_time:
         type: Long
+      # 在线状态（on_line/off_line）保持 String：列默认值为空串，原因同 sys_menu.menu_type
 
   # ============ 代码生成 ============
   # RuoYi 自带 GenController 由 code-generate-template 取代，如不需要这两张表的接口，
@@ -159,6 +388,27 @@ tables:
   - db_table_name: gen_table
     model_name: GenTable
     model_comment: 代码生成
+    columns:
+      # 使用模板（对齐 RuoYi GenConstants: crud/tree/sub）
+      tpl_category:
+        type: enum
+        enum:
+          className: GenTplCategoryEnum
+          codeType: String
+          values:
+            - { code: crud, name: CRUD, desc: 单表操作 }
+            - { code: tree, name: TREE, desc: 树表操作 }
+            - { code: sub, name: SUB, desc: 主子表操作 }
+      # 生成代码方式: 0 zip 压缩包 / 1 自定义路径
+      gen_type:
+        type: enum
+        enum:
+          className: GenTypeEnum
+          codeType: String
+          values:
+            - { code: "0", name: ZIP, desc: zip压缩包 }
+            - { code: "1", name: CUSTOM_PATH, desc: 自定义路径 }
+
   - db_table_name: gen_table_column
     model_name: GenTableColumn
     model_comment: 代码生成字段
