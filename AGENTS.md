@@ -34,7 +34,7 @@ aiplatform-bootstrap → web → biz-service-impl → core-service → core-repo
                               common-util / common-integration（基础共享；common-util 依赖 core-model）
 ```
 
-- `core-model`：领域模型、查询参数、AiPlatformException/ErrorCodeEnum、Result/PageResult、BizTemplate。仅依赖 slf4j（lombok 由根 pom 统一提供）。
+- `core-model`：领域模型、查询参数、AiPlatformException/ErrorCodeEnum、Result/PageResult、AiPlatformTransactionTemplate。允许引入基础外部库（如 hutool-all，用于模板/异常解析），禁止 Spring/MyBatis 依赖（lombok 由根 pom 统一提供）。
 - `common-integration`：外部服务集成（预留）。
 - `common-dal`：MyBatis Mapper（interface + XML）、DO。
 - `common-util`：工具（TraceIdUtil、RestTemplateConfig、AiPlatformInvoker、AiPlatformParamValidator、AiPlatformLoggerUtil、线程池配置与调用工具）。
@@ -51,7 +51,7 @@ aiplatform-bootstrap → web → biz-service-impl → core-service → core-repo
 1. 所有接口返回 web 层 `AiPlatformResult<T>`（web.result 定义，ok/fail 工厂组装）；Controller 统一走 `AiPlatformTemplate.execute` + Callback（无返回值场景用 `executeWithoutResult` + `CallbackWithoutResult`），禁止返回裸对象。
 2. 业务异常一律抛 `AiPlatformException(ErrorCodeEnum.XXX)`（core-model 定义），禁止字符串错误码；条件校验统一用 `AiPlatformInvoker`（throwErrWhenNull/throwErrWhenBlank/throwErrWhenEmpty/throwErrWhenTrue 等），禁止手写 `if (xx) { throw ... }`。
 3. 判空/判 blank 统一用 Hutool（`StrUtil`/`CollUtil`/`ArrayUtil`/`ObjectUtil`），禁止手写 null/empty 判断。
-4. 事务：禁止 `@Transactional` 注解。当前阶段项目不使用 TransactionTemplate（已移除），单表操作直接调 Mapper；后续出现跨表复杂用例时再引入事务工具。
+4. 事务：禁止 `@Transactional` 注解。跨表/多写事务用例统一通过 `AiPlatformTransactionTemplate`（core-model.template 定义，事务执行器由 common-dal 装配）执行；单表操作直接调 Mapper。
 5. 参数校验：DTO 注解 + `XxxParamChecker`（web/checker，内部调 `AiPlatformParamValidator`），在 Controller 的 beforeService 中调用；业务规则在 `core-service` 编码校验后抛 `AiPlatformException`。
 6. 日志：统一通过 `${toolPrefix}LoggerUtil` 打日志（按 `LogFileEnum` 分文件），禁止业务代码直接使用 `LoggerFactory`；禁止手写 try-catch 打日志；traceId 自动写入 MDC。
 7. 命名：`XxxController`（web/controller）、`XxxManager`（biz.service 接口）/ `XxxManagerImpl`（biz.service.impl）、`XxxService`（core.service 接口）/ `XxxServiceImpl`（core.service.impl）、`XxxRepository`、`XxxMapper`、`XxxDO`（common-dal）、`Xxx` Model（core-model）、`XxxRequest`（web/param）、`XxxResponse`（web/result）、`XxxParamChecker`（web/checker）、仓储层 `XxxConvertor`（core/repository/convertor）。
@@ -59,7 +59,7 @@ aiplatform-bootstrap → web → biz-service-impl → core-service → core-repo
 9. 方法注释：有接口的接口加注释；实现类（implements 接口）方法不注释；不实现接口的类（Controller/Assembler/Manager/ParamChecker 等）方法统一加标准 javadoc。
 10. 测试：本项目不生成单元测试；后期测试集中到独立测试模块，走真实测试数据库一路打到 Mapper。
 11. 敏感字段：生成器输出与表结构全字段对齐（含 password 等）。敏感字段的响应剔除、查询暴露与日志脱敏属于业务二开职责，禁止打印密码、token 等敏感信息（见禁止模式）。
-12. 分页参数 `pageNum`/`pageSize` 的 `@Min`/`@Max` 是通用约定，不属于字段级特殊校验；`BizTemplate` 为工具类模板、当前未接线，业务入口统一走 `${toolPrefix}Template`，禁止模仿调用 BizTemplate。
+12. 分页参数 `pageNum`/`pageSize` 的 `@Min`/`@Max` 是通用约定，不属于字段级特殊校验；业务入口统一走 `${toolPrefix}Template`（web 层 `AiPlatformTemplate`），事务用例统一走 `${toolPrefix}TransactionTemplate`（core-model.template）。
 
 ## 新增一个业务模块（以 Order 为例）
 

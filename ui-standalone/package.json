@@ -1,0 +1,24 @@
+{
+  "name": "aiplatform-ui-standalone",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI 对话 / 镜像加速器独立页面（无登录与菜单，直连 aiplatform 后端）",
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build"
+  },
+  "dependencies": {
+    "axios": "0.30.3",
+    "element-ui": "2.15.14",
+    "vue": "2.6.12",
+    "vue-router": "3.4.9",
+    "vuex": "3.6.0"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "4.4.6",
+    "@vue/cli-service": "4.4.6",
+    "sass": "1.32.13",
+    "sass-loader": "10.1.1",
+    "vue-template-compiler": "2.6.12"
+  }
+}

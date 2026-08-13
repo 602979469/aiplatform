@@ -5,6 +5,7 @@ import com.jakt.aiplatform.common.util.tools.AiPlatformParamValidator;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.core.model.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.exception.AiPlatformException;
+import com.jakt.aiplatform.core.model.exception.AiPlatformExceptionResolver;
 import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
 import jakarta.validation.ValidationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -67,8 +68,16 @@ public final class AiPlatformTemplate {
                             caller, e.getMessage());
                     result = AiPlatformResult.fail(ErrorCodeEnum.PARAM_INVALID, "数据不合法：必填字段缺失或违反数据约束");
                 } catch (Exception e) {
-                    AiPlatformLoggerUtil.error(LogFileEnum.COMMON_ERROR, "执行" + caller + "业务逻辑时抛出异常", e);
-                    result = AiPlatformResult.fail(ErrorCodeEnum.SYSTEM_ERROR);
+                    // 尝试解析：外部集成异常（ErrorCodeCarrier）可映射为业务错误码
+                    AiPlatformException resolved = AiPlatformExceptionResolver.resolve(e);
+                    if (resolved != null) {
+                        AiPlatformLoggerUtil.warn(LogFileEnum.BIZ_SERVICE, "业务异常 接口信息={} errorCode={} message={}",
+                                caller, resolved.getErrorCode().getCode(), resolved.getMessage());
+                        result = AiPlatformResult.fail(resolved.getErrorCode(), resolved.getMessage());
+                    } else {
+                        AiPlatformLoggerUtil.error(LogFileEnum.COMMON_ERROR, "执行" + caller + "业务逻辑时抛出异常", e);
+                        result = AiPlatformResult.fail(ErrorCodeEnum.SYSTEM_ERROR);
+                    }
                 }
             }
         } finally {

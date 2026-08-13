@@ -49,6 +49,11 @@ public final class AiPlatformLoggerUtil {
         logger(logFile).error(message);
     }
 
+    /** 记录带占位符的 error 日志。 */
+    public static void error(LogFileEnum logFile, String format, Object... args) {
+        logger(logFile).error(format, args);
+    }
+
     private static Logger logger(LogFileEnum logFile) {
         return LOGGER_CACHE.computeIfAbsent(logFile, file -> LoggerFactory.getLogger(file.getFileName()));
     }

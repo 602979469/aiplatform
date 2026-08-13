@@ -4,3 +4,13 @@ out/
 *.iml
 .DS_Store
 logs/
+
+# 个人音频资源（非项目代码）
+music/
+
+# 运行时上传目录
+upload/
+
+# 独立前端：依赖软链与构建产物（源码需要提交）
+ui-standalone/node_modules
+ui-standalone/dist/
