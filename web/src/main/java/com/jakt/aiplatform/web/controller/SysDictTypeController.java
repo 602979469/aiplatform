@@ -57,8 +57,8 @@ public class SysDictTypeController {
 
             @Override
             public SysDictTypeResponse execute(SysDictTypeCreateRequest param) {
-                SysDictType sysDictType = sysDictTypeManager.createSysDictType(SysDictTypeAssembler.toModel(param));
-                return SysDictTypeAssembler.toResponse(sysDictType);
+                // TODO 接入 SysDictTypeManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysDictTypeController {
 
             @Override
             public SysDictTypeResponse execute(Long param) {
-                SysDictType sysDictType = sysDictTypeManager.getSysDictType(param);
-                AiPlatformInvoker.throwErrWhenNull(sysDictType, ErrorCodeEnum.RESOURCE_NOT_FOUND, "字典类型不存在");
-                return SysDictTypeAssembler.toResponse(sysDictType);
+                // TODO 接入 SysDictTypeManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysDictTypeController {
 
             @Override
             public PageResult<SysDictTypeResponse> execute(SysDictTypeQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysDictTypeQueryRequest());
-                PageResult<SysDictType> page = sysDictTypeManager.pageSysDictTypes(SysDictTypeAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysDictTypeAssembler::toResponse).toList());
+                // TODO 接入 SysDictTypeManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysDictTypeController {
 
             @Override
             public void execute(SysDictTypeUpdateRequest param) {
-                sysDictTypeManager.updateSysDictType(SysDictTypeAssembler.toModel(param, id));
+                // TODO 接入 SysDictTypeManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysDictTypeController {
 
             @Override
             public void execute(Long id) {
-                sysDictTypeManager.deleteSysDictType(id);
+                // TODO 接入 SysDictTypeManager（RuoYi 移植过渡）
             }
         });
     }

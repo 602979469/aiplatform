@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysJobLogQueryParam extends PageParam {
+public class SysJobLogQueryParam extends PageQueryParam {
 
     /** 主键。 */
     private Long jobLogId;

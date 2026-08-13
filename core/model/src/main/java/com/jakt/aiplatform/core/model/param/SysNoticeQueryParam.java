@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysNoticeQueryParam extends PageParam {
+public class SysNoticeQueryParam extends PageQueryParam {
 
     /** 主键。 */
     private Long noticeId;

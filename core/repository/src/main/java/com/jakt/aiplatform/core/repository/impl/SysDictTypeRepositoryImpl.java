@@ -3,20 +3,21 @@ package com.jakt.aiplatform.core.repository.impl;
 import com.jakt.aiplatform.common.dal.dataobject.SysDictTypeDO;
 import com.jakt.aiplatform.common.dal.mapper.SysDictTypeMapper;
 import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.util.tools.ListUtil;
 import com.jakt.aiplatform.core.model.domain.SysDictType;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.SysDictTypeQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
 import com.jakt.aiplatform.core.repository.SysDictTypeRepository;
 import com.jakt.aiplatform.core.repository.convertor.SysDictTypeConvertor;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.convert.Convert;
+import cn.hutool.core.util.ObjectUtil;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 /**
- * 字典类型仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 字典类型仓储实现（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 @Repository
 public class SysDictTypeRepositoryImpl implements SysDictTypeRepository {
@@ -28,50 +29,71 @@ public class SysDictTypeRepositoryImpl implements SysDictTypeRepository {
         this.sysDictTypeMapper = sysDictTypeMapper;
     }
 
-    @Override
-    public SysDictType findById(Long id) {
-        return SysDictTypeConvertor.toModel(sysDictTypeMapper.selectById(id));
+    private SysDictType findOne(SysDictTypeDO sysDictTypeDO) {
+        SysDictTypeQueryParam query = SysDictTypeConvertor.toQueryParam(sysDictTypeDO);
+        List<SysDictTypeDO> list = sysDictTypeMapper.selectList(query);
+        if (CollUtil.isEmpty(list)) {
+            return null;
+        }
+        AiPlatformInvoker.throwErrWhenTrue(list.size() > 1, ErrorCodeEnum.RESULT_NOT_UNIQUE, "查询结果不唯一");
+        return SysDictTypeConvertor.toModel(list.get(0));
     }
 
     @Override
-    public List<SysDictType> findList(SysDictTypeQueryParam query) {
-        return sysDictTypeMapper.selectList(query).stream().map(SysDictTypeConvertor::toModel).toList();
+    public List<SysDictType> selectDictTypeList(SysDictType dictType) {
+        List<SysDictTypeDO> list = sysDictTypeMapper.selectList(SysDictTypeConvertor.toQueryParam(dictType));
+        return ListUtil.convert(list, SysDictTypeConvertor::toModel);
     }
 
     @Override
-    public PageResult<SysDictType> findPage(SysDictTypeQueryParam query) {
-        List<SysDictTypeDO> doList = sysDictTypeMapper.selectPage(query);
-        long total = sysDictTypeMapper.countByQuery(query);
-        List<SysDictType> list = doList.stream().map(SysDictTypeConvertor::toModel).toList();
-        return new PageResult<>(total, query.getPageNum(), query.getPageSize(), list);
+    public List<SysDictType> selectDictTypeAll() {
+        List<SysDictTypeDO> list = sysDictTypeMapper.selectList(new SysDictTypeQueryParam());
+        return ListUtil.convert(list, SysDictTypeConvertor::toModel);
     }
 
     @Override
-    public SysDictType insert(SysDictType sysDictType) {
-        SysDictTypeDO sysDictTypeDO = SysDictTypeConvertor.toDO(sysDictType);
-        sysDictTypeMapper.insert(sysDictTypeDO);
-        return SysDictTypeConvertor.toModel(sysDictTypeDO);
+    public SysDictType selectDictTypeById(Long dictId) {
+        return SysDictTypeConvertor.toModel(sysDictTypeMapper.selectById(dictId));
     }
 
     @Override
-    public void update(SysDictType sysDictType) {
-        SysDictTypeDO sysDictTypeDO = SysDictTypeConvertor.toDO(sysDictType);
-        int affected = sysDictTypeMapper.update(sysDictTypeDO);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysDictTypeRepository.update dictId={} 影响行数={}", sysDictType.getDictId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public SysDictType selectDictTypeByType(String dictType) {
+        SysDictTypeDO condition = new SysDictTypeDO();
+        condition.setDictType(dictType);
+        return findOne(condition);
     }
 
     @Override
-    public void updateByCondition(SysDictType sysDictType) {
-        int affected = sysDictTypeMapper.updateByCondition(SysDictTypeConvertor.toDO(sysDictType));
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysDictTypeRepository.updateByCondition dictId={} 影响行数={}", sysDictType.getDictId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public boolean checkDictTypeUnique(SysDictType dictType) {
+        SysDictTypeQueryParam query = new SysDictTypeQueryParam();
+        query.setDictType(dictType.getDictType());
+        List<SysDictTypeDO> list = sysDictTypeMapper.selectList(query);
+        if (CollUtil.isEmpty(list)) {
+            return true;
+        }
+        if (list.size() > 1) {
+            return false;
+        }
+        return ObjectUtil.equal(list.get(0).getDictId(), dictType.getDictId());
     }
 
     @Override
-    public void deleteById(Long id) {
-        int affected = sysDictTypeMapper.deleteById(id);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysDictTypeRepository.deleteById id={} 影响行数={}", id, affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.DELETE_FAILED, "删除失败：记录不存在或已被删除");
+    public int deleteDictTypeById(Long dictId) {
+        return sysDictTypeMapper.deleteById(dictId);
+    }
+
+    @Override
+    public int deleteDictTypeByIds(String ids) {
+        return sysDictTypeMapper.deleteByIds(Convert.toLongArray(ids));
+    }
+
+    @Override
+    public int updateDictType(SysDictType dictType) {
+        return sysDictTypeMapper.update(SysDictTypeConvertor.toDO(dictType));
+    }
+
+    @Override
+    public int insertDictType(SysDictType dictType) {
+        return sysDictTypeMapper.insert(SysDictTypeConvertor.toDO(dictType));
     }
 }

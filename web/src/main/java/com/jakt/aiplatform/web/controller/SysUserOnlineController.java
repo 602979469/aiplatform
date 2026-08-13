@@ -57,8 +57,8 @@ public class SysUserOnlineController {
 
             @Override
             public SysUserOnlineResponse execute(SysUserOnlineCreateRequest param) {
-                SysUserOnline sysUserOnline = sysUserOnlineManager.createSysUserOnline(SysUserOnlineAssembler.toModel(param));
-                return SysUserOnlineAssembler.toResponse(sysUserOnline);
+                // TODO 接入 SysUserOnlineManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysUserOnlineController {
 
             @Override
             public SysUserOnlineResponse execute(String param) {
-                SysUserOnline sysUserOnline = sysUserOnlineManager.getSysUserOnline(param);
-                AiPlatformInvoker.throwErrWhenNull(sysUserOnline, ErrorCodeEnum.RESOURCE_NOT_FOUND, "在线用户不存在");
-                return SysUserOnlineAssembler.toResponse(sysUserOnline);
+                // TODO 接入 SysUserOnlineManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysUserOnlineController {
 
             @Override
             public PageResult<SysUserOnlineResponse> execute(SysUserOnlineQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysUserOnlineQueryRequest());
-                PageResult<SysUserOnline> page = sysUserOnlineManager.pageSysUserOnlines(SysUserOnlineAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysUserOnlineAssembler::toResponse).toList());
+                // TODO 接入 SysUserOnlineManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysUserOnlineController {
 
             @Override
             public void execute(SysUserOnlineUpdateRequest param) {
-                sysUserOnlineManager.updateSysUserOnline(SysUserOnlineAssembler.toModel(param, id));
+                // TODO 接入 SysUserOnlineManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysUserOnlineController {
 
             @Override
             public void execute(String id) {
-                sysUserOnlineManager.deleteSysUserOnline(id);
+                // TODO 接入 SysUserOnlineManager（RuoYi 移植过渡）
             }
         });
     }

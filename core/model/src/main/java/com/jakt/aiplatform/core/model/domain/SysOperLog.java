@@ -1,27 +1,27 @@
 package com.jakt.aiplatform.core.model.domain;
 
 import java.time.LocalDateTime;
-import com.jakt.aiplatform.core.model.enums.BusinessTypeEnum;
-import com.jakt.aiplatform.core.model.enums.OperatorTypeEnum;
-import com.jakt.aiplatform.core.model.enums.BusinessStatusEnum;
-
+import com.jakt.aiplatform.core.model.enums.BusinessStatus;
+import com.jakt.aiplatform.core.model.enums.BusinessType;
+import com.jakt.aiplatform.core.model.enums.OperatorType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 操作日志领域模型。
+ * 操作日志领域模型（RuoYi 结构：继承 BaseEntity）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysOperLog extends BaseModel {
-    /** 主键。 */
+public class SysOperLog extends BaseEntity {
+
+    /** 日志主键。 */
     private Long operId;
 
     /** 模块标题。 */
     private String title;
 
-    /** 业务类型（0其它 1新增 2修改 3删除）。 */
-    private BusinessTypeEnum businessType;
+    /** 业务类型（0其它 1新增 2修改 3删除...）。 */
+    private BusinessType businessType;
 
     /** 方法名称。 */
     private String method;
@@ -30,7 +30,7 @@ public class SysOperLog extends BaseModel {
     private String requestMethod;
 
     /** 操作类别（0其它 1后台用户 2手机端用户）。 */
-    private OperatorTypeEnum operatorType;
+    private OperatorType operatorType;
 
     /** 操作人员。 */
     private String operName;
@@ -54,7 +54,7 @@ public class SysOperLog extends BaseModel {
     private String jsonResult;
 
     /** 操作状态（0正常 1异常）。 */
-    private BusinessStatusEnum status;
+    private BusinessStatus status;
 
     /** 错误消息。 */
     private String errorMsg;
@@ -64,5 +64,4 @@ public class SysOperLog extends BaseModel {
 
     /** 消耗时间。 */
     private Long costTime;
-
 }

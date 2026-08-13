@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysUserOnlineQueryParam extends PageParam {
+public class SysUserOnlineQueryParam extends PageQueryParam {
 
     /** 主键。 */
     private String sessionId;

@@ -103,8 +103,8 @@
 
     <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.GenTableDO"
             useGeneratedKeys="true" keyProperty="tableId">
-        INSERT INTO gen_table (table_name, table_comment, sub_table_name, sub_table_fk_name, class_name, tpl_category, package_name, module_name, business_name, function_name, function_author, form_col_num, gen_type, gen_path, options, remark)
-        VALUES (#{tableName}, #{tableComment}, #{subTableName}, #{subTableFkName}, #{className}, #{tplCategory}, #{packageName}, #{moduleName}, #{businessName}, #{functionName}, #{functionAuthor}, #{formColNum}, #{genType}, #{genPath}, #{options}, #{remark})
+        INSERT INTO gen_table (table_name, table_comment, sub_table_name, sub_table_fk_name, class_name, tpl_category, package_name, module_name, business_name, function_name, function_author, form_col_num, gen_type, gen_path, options, remark, create_by, update_by)
+        VALUES (#{tableName}, #{tableComment}, #{subTableName}, #{subTableFkName}, #{className}, #{tplCategory}, #{packageName}, #{moduleName}, #{businessName}, #{functionName}, #{functionAuthor}, #{formColNum}, #{genType}, #{genPath}, #{options}, #{remark}, #{createBy}, #{updateBy})
     </insert>
 
     <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.GenTableDO">
@@ -180,6 +180,9 @@
             <if test="remark != null">
                 remark = #{remark},
             </if>
+            <if test="updateBy != null">
+                update_by = #{updateBy},
+            </if>
         </set>
             WHERE table_id = #{tableId}
         </if>
@@ -188,4 +191,69 @@
     <delete id="deleteById">
         DELETE FROM gen_table WHERE table_id = #{id}
     </delete>
+
+    <select id="selectGenTableList" resultType="com.jakt.aiplatform.common.dal.dataobject.GenTableDO">
+        SELECT <include refid="selectColumns"/>
+        FROM gen_table
+        <where>
+            <if test="tableName != null and tableName != ''">
+                AND lower(table_name) LIKE lower(concat('%', #{tableName}, '%'))
+            </if>
+            <if test="tableComment != null and tableComment != ''">
+                AND lower(table_comment) LIKE lower(concat('%', #{tableComment}, '%'))
+            </if>
+        </where>
+        ORDER BY table_id DESC
+    </select>
+
+    <select id="selectDbTableList" resultType="com.jakt.aiplatform.common.dal.dataobject.GenTableDO">
+        SELECT table_name, table_comment, create_time, update_time
+        FROM information_schema.tables
+        WHERE table_schema = (SELECT database())
+          AND table_name NOT LIKE 'qrtz\_%'
+          AND table_name NOT LIKE 'gen\_%'
+          AND table_name NOT IN (SELECT table_name FROM gen_table)
+        <if test="tableName != null and tableName != ''">
+            AND lower(table_name) LIKE lower(concat('%', #{tableName}, '%'))
+        </if>
+        <if test="tableComment != null and tableComment != ''">
+            AND lower(table_comment) LIKE lower(concat('%', #{tableComment}, '%'))
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectDbTableListByNames" resultType="com.jakt.aiplatform.common.dal.dataobject.GenTableDO">
+        SELECT table_name, table_comment, create_time, update_time
+        FROM information_schema.tables
+        WHERE table_schema = (SELECT database())
+          AND table_name NOT LIKE 'qrtz\_%'
+          AND table_name NOT LIKE 'gen\_%'
+          AND table_name IN
+        <foreach collection="array" item="name" open="(" separator="," close=")">
+            #{name}
+        </foreach>
+    </select>
+
+    <select id="selectGenTableAll" resultType="com.jakt.aiplatform.common.dal.dataobject.GenTableDO">
+        SELECT <include refid="selectColumns"/>
+        FROM gen_table
+        ORDER BY table_id DESC
+    </select>
+
+    <select id="selectGenTableByName" resultType="com.jakt.aiplatform.common.dal.dataobject.GenTableDO">
+        SELECT <include refid="selectColumns"/>
+        FROM gen_table
+        WHERE table_name = #{tableName}
+    </select>
+
+    <delete id="deleteGenTableByIds">
+        DELETE FROM gen_table WHERE table_id IN
+        <foreach collection="array" item="tableId" open="(" separator="," close=")">
+            #{tableId}
+        </foreach>
+    </delete>
+
+    <update id="createTable">
+        ${sql}
+    </update>
 </mapper>

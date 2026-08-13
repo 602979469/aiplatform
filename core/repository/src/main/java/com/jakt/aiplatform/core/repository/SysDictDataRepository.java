@@ -1,67 +1,92 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.SysDictData;
-import com.jakt.aiplatform.core.model.param.SysDictDataQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 
 import java.util.List;
 
 /**
- * 字典数据仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 字典数据仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface SysDictDataRepository {
 
     /**
-     * 按主键查询。
+     * 查询字典数据列表。
      *
-     * @param id 主键
-     * @return 字典数据领域模型
-     */
-    SysDictData findById(Long id);
-
-    /**
-     * 分页查询。
-     *
-     * @param query 查询参数
-     * @return 分页结果
-     */
-    PageResult<SysDictData> findPage(SysDictDataQueryParam query);
-
-    /**
-     * 列表查询。
-     *
-     * @param query 查询参数
+     * @param dictData 查询条件
      * @return 字典数据列表
      */
-    List<SysDictData> findList(SysDictDataQueryParam query);
+    List<SysDictData> selectDictDataList(SysDictData dictData);
 
     /**
-     * 新增。
+     * 按字典类型查询字典数据列表。
      *
-     * @param sysDictData 字典数据
-     * @return 新增后的字典数据（主键已回填）
+     * @param dictType 字典类型
+     * @return 字典数据列表
      */
-    SysDictData insert(SysDictData sysDictData);
+    List<SysDictData> selectDictDataByType(String dictType);
 
     /**
-     * 更新。
+     * 按字典类型 + 键值查询字典标签。
      *
-     * @param sysDictData 字典数据
+     * @param dictData 字典数据（dictType/dictValue）
+     * @return 字典标签
      */
-    void update(SysDictData sysDictData);
+    String selectDictLabel(SysDictData dictData);
 
     /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
+     * 按主键查询字典数据。
      *
-     * @param sysDictData 字典数据（至少含主键）
+     * @param dictCode 字典编码
+     * @return 字典数据领域模型
      */
-    void updateByCondition(SysDictData sysDictData);
+    SysDictData selectDictDataById(Long dictCode);
+
+    /**
+     * 按字典类型统计数量。
+     *
+     * @param dictData 字典数据（dictType）
+     * @return 数量
+     */
+    int countDictDataByType(SysDictData dictData);
 
     /**
      * 按主键删除。
      *
-     * @param id 主键
+     * @param dictCode 字典编码
+     * @return 影响行数
      */
-    void deleteById(Long id);
+    int deleteDictDataById(Long dictCode);
+
+    /**
+     * 按 ID 集合批量删除。
+     *
+     * @param ids 字典编码集合（逗号分隔）
+     * @return 影响行数
+     */
+    int deleteDictDataByIds(String ids);
+
+    /**
+     * 全量更新。
+     *
+     * @param dictData 字典数据
+     * @return 影响行数
+     */
+    int updateDictData(SysDictData dictData);
+
+    /**
+     * 按字典类型批量修改字典类型。
+     *
+     * @param oldDictType 原字典类型
+     * @param newDictType 新字典类型
+     * @return 影响行数
+     */
+    int updateDictDataType(String oldDictType, String newDictType);
+
+    /**
+     * 新增。
+     *
+     * @param dictData 字典数据
+     * @return 影响行数
+     */
+    int insertDictData(SysDictData dictData);
 }

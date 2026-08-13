@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysLogininforQueryParam extends PageParam {
+public class SysLogininforQueryParam extends PageQueryParam {
 
     /** 主键。 */
     private Long infoId;

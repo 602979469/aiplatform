@@ -57,8 +57,8 @@ public class GenTableColumnController {
 
             @Override
             public GenTableColumnResponse execute(GenTableColumnCreateRequest param) {
-                GenTableColumn genTableColumn = genTableColumnManager.createGenTableColumn(GenTableColumnAssembler.toModel(param));
-                return GenTableColumnAssembler.toResponse(genTableColumn);
+                // TODO 接入 GenTableColumnManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class GenTableColumnController {
 
             @Override
             public GenTableColumnResponse execute(Long param) {
-                GenTableColumn genTableColumn = genTableColumnManager.getGenTableColumn(param);
-                AiPlatformInvoker.throwErrWhenNull(genTableColumn, ErrorCodeEnum.RESOURCE_NOT_FOUND, "代码生成字段不存在");
-                return GenTableColumnAssembler.toResponse(genTableColumn);
+                // TODO 接入 GenTableColumnManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class GenTableColumnController {
 
             @Override
             public PageResult<GenTableColumnResponse> execute(GenTableColumnQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new GenTableColumnQueryRequest());
-                PageResult<GenTableColumn> page = genTableColumnManager.pageGenTableColumns(GenTableColumnAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(GenTableColumnAssembler::toResponse).toList());
+                // TODO 接入 GenTableColumnManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class GenTableColumnController {
 
             @Override
             public void execute(GenTableColumnUpdateRequest param) {
-                genTableColumnManager.updateGenTableColumn(GenTableColumnAssembler.toModel(param, id));
+                // TODO 接入 GenTableColumnManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class GenTableColumnController {
 
             @Override
             public void execute(Long id) {
-                genTableColumnManager.deleteGenTableColumn(id);
+                // TODO 接入 GenTableColumnManager（RuoYi 移植过渡）
             }
         });
     }

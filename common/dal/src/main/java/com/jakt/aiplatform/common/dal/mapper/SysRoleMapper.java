@@ -13,6 +13,14 @@ import java.util.List;
 public interface SysRoleMapper {
 
     /**
+     * 按用户ID查询角色列表（join sys_user_role）。
+     *
+     * @param userId 用户ID
+     * @return 角色数据对象列表
+     */
+    List<SysRoleDO> selectRolesByUserId(Long userId);
+
+    /**
      * 按主键查询。
      *
      * @param id 主键
@@ -76,4 +84,12 @@ public interface SysRoleMapper {
      * @return 受影响行数
      */
     int deleteById(Long id);
+
+    /**
+     * 按 ID 集合批量删除（逻辑删除）。
+     *
+     * @param ids 主键数组
+     * @return 影响行数
+     */
+    int deleteByIds(Long[] ids);
 }

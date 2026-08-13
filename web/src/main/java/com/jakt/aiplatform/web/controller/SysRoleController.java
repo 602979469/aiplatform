@@ -57,8 +57,8 @@ public class SysRoleController {
 
             @Override
             public SysRoleResponse execute(SysRoleCreateRequest param) {
-                SysRole sysRole = sysRoleManager.createSysRole(SysRoleAssembler.toModel(param));
-                return SysRoleAssembler.toResponse(sysRole);
+                // TODO 接入 SysRoleManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysRoleController {
 
             @Override
             public SysRoleResponse execute(Long param) {
-                SysRole sysRole = sysRoleManager.getSysRole(param);
-                AiPlatformInvoker.throwErrWhenNull(sysRole, ErrorCodeEnum.RESOURCE_NOT_FOUND, "角色不存在");
-                return SysRoleAssembler.toResponse(sysRole);
+                // TODO 接入 SysRoleManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysRoleController {
 
             @Override
             public PageResult<SysRoleResponse> execute(SysRoleQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysRoleQueryRequest());
-                PageResult<SysRole> page = sysRoleManager.pageSysRoles(SysRoleAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysRoleAssembler::toResponse).toList());
+                // TODO 接入 SysRoleManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysRoleController {
 
             @Override
             public void execute(SysRoleUpdateRequest param) {
-                sysRoleManager.updateSysRole(SysRoleAssembler.toModel(param, id));
+                // TODO 接入 SysRoleManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysRoleController {
 
             @Override
             public void execute(Long id) {
-                sysRoleManager.deleteSysRole(id);
+                // TODO 接入 SysRoleManager（RuoYi 移植过渡）
             }
         });
     }

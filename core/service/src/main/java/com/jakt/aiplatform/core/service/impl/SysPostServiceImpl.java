@@ -1,59 +1,19 @@
 package com.jakt.aiplatform.core.service.impl;
 
-import com.jakt.aiplatform.core.model.domain.SysPost;
-import com.jakt.aiplatform.core.model.param.SysPostQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 import com.jakt.aiplatform.core.repository.SysPostRepository;
-import com.jakt.aiplatform.core.service.SysPostService;
+import com.jakt.aiplatform.core.service.SysPost;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 /**
- * 岗位领域服务实现：承载岗位相关的业务规则。只写规则，不碰持久化细节。
+ * SysPost 领域服务实现（RuoYi 移植过渡：方法清空，构造器保留待嵌入 RuoYi service 逻辑）。
  */
 @Service
-public class SysPostServiceImpl implements SysPostService {
+public class SysPostServiceImpl implements SysPost {
 
-    /** 岗位仓储。 */
-    private final SysPostRepository sysPostRepository;
+    /** SysPost 仓储。 */
+    private final SysPostRepository postRepository;
 
-    public SysPostServiceImpl(SysPostRepository sysPostRepository) {
-        this.sysPostRepository = sysPostRepository;
-    }
-
-    @Override
-    public SysPost createSysPost(SysPost sysPost) {
-        return sysPostRepository.insert(sysPost);
-    }
-
-    @Override
-    public void updateSysPost(SysPost sysPost) {
-        sysPostRepository.update(sysPost);
-    }
-
-    @Override
-    public void updateByCondition(SysPost sysPost) {
-        sysPostRepository.updateByCondition(sysPost);
-    }
-
-    @Override
-    public void deleteSysPost(Long id) {
-        sysPostRepository.deleteById(id);
-    }
-
-    @Override
-    public SysPost getSysPost(Long id) {
-        return sysPostRepository.findById(id);
-    }
-
-    @Override
-    public PageResult<SysPost> findPage(SysPostQueryParam query) {
-        return sysPostRepository.findPage(query);
-    }
-
-    @Override
-    public List<SysPost> findList(SysPostQueryParam query) {
-        return sysPostRepository.findList(query);
+    public SysPostServiceImpl(SysPostRepository postRepository) {
+        this.postRepository = postRepository;
     }
 }

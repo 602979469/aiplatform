@@ -1,9 +1,9 @@
 package com.jakt.aiplatform.web.result;
 
 import java.time.LocalDateTime;
-import com.jakt.aiplatform.core.model.enums.BusinessTypeEnum;
-import com.jakt.aiplatform.core.model.enums.OperatorTypeEnum;
-import com.jakt.aiplatform.core.model.enums.BusinessStatusEnum;
+import com.jakt.aiplatform.core.model.enums.BusinessType;
+import com.jakt.aiplatform.core.model.enums.OperatorType;
+import com.jakt.aiplatform.core.model.enums.BusinessStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,7 +27,7 @@ public class SysOperLogResponse extends BaseResult {
     private String title;
 
     /** 业务类型（0其它 1新增 2修改 3删除）。 */
-    private BusinessTypeEnum businessType;
+    private BusinessType businessType;
 
     /** 方法名称。 */
     private String method;
@@ -36,7 +36,7 @@ public class SysOperLogResponse extends BaseResult {
     private String requestMethod;
 
     /** 操作类别（0其它 1后台用户 2手机端用户）。 */
-    private OperatorTypeEnum operatorType;
+    private OperatorType operatorType;
 
     /** 操作人员。 */
     private String operName;
@@ -60,7 +60,7 @@ public class SysOperLogResponse extends BaseResult {
     private String jsonResult;
 
     /** 操作状态（0正常 1异常）。 */
-    private BusinessStatusEnum status;
+    private BusinessStatus status;
 
     /** 错误消息。 */
     private String errorMsg;

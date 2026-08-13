@@ -57,8 +57,8 @@ public class SysDictDataController {
 
             @Override
             public SysDictDataResponse execute(SysDictDataCreateRequest param) {
-                SysDictData sysDictData = sysDictDataManager.createSysDictData(SysDictDataAssembler.toModel(param));
-                return SysDictDataAssembler.toResponse(sysDictData);
+                // TODO 接入 SysDictDataManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysDictDataController {
 
             @Override
             public SysDictDataResponse execute(Long param) {
-                SysDictData sysDictData = sysDictDataManager.getSysDictData(param);
-                AiPlatformInvoker.throwErrWhenNull(sysDictData, ErrorCodeEnum.RESOURCE_NOT_FOUND, "字典数据不存在");
-                return SysDictDataAssembler.toResponse(sysDictData);
+                // TODO 接入 SysDictDataManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysDictDataController {
 
             @Override
             public PageResult<SysDictDataResponse> execute(SysDictDataQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysDictDataQueryRequest());
-                PageResult<SysDictData> page = sysDictDataManager.pageSysDictDatas(SysDictDataAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysDictDataAssembler::toResponse).toList());
+                // TODO 接入 SysDictDataManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysDictDataController {
 
             @Override
             public void execute(SysDictDataUpdateRequest param) {
-                sysDictDataManager.updateSysDictData(SysDictDataAssembler.toModel(param, id));
+                // TODO 接入 SysDictDataManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysDictDataController {
 
             @Override
             public void execute(Long id) {
-                sysDictDataManager.deleteSysDictData(id);
+                // TODO 接入 SysDictDataManager（RuoYi 移植过渡）
             }
         });
     }

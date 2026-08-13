@@ -2,6 +2,7 @@ package com.jakt.aiplatform.common.dal.mapper;
 
 import com.jakt.aiplatform.common.dal.dataobject.SysMenuDO;
 import com.jakt.aiplatform.core.model.param.SysMenuQueryParam;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -76,4 +77,115 @@ public interface SysMenuMapper {
      * @return 受影响行数
      */
     int deleteById(Long id);
+
+    /**
+     * 查询全部菜单（按 parent_id、order_num 排序）。
+     *
+     * @return 菜单数据对象列表
+     */
+    List<SysMenuDO> selectMenuAll();
+
+    /**
+     * 按用户ID查询全部菜单（join 角色）。
+     *
+     * @param userId 用户ID
+     * @return 菜单数据对象列表
+     */
+    List<SysMenuDO> selectMenuAllByUserId(Long userId);
+
+    /**
+     * 查询正常状态菜单（菜单/按钮 + visible=0）。
+     *
+     * @return 菜单数据对象列表
+     */
+    List<SysMenuDO> selectMenuNormalAll();
+
+    /**
+     * 按用户ID查询可用菜单（菜单/按钮 + visible=0 + 角色正常）。
+     *
+     * @param userId 用户ID
+     * @return 菜单数据对象列表
+     */
+    List<SysMenuDO> selectMenusByUserId(Long userId);
+
+    /**
+     * 按用户ID查询权限标识集合。
+     *
+     * @param userId 用户ID
+     * @return 权限标识集合
+     */
+    List<String> selectPermsByUserId(Long userId);
+
+    /**
+     * 按角色ID查询权限标识集合。
+     *
+     * @param roleId 角色ID
+     * @return 权限标识集合
+     */
+    List<String> selectPermsByRoleId(Long roleId);
+
+    /**
+     * 按角色ID查询菜单树标识集合。
+     *
+     * @param roleId 角色ID
+     * @return 菜单树标识集合
+     */
+    List<String> selectMenuTree(Long roleId);
+
+    /**
+     * 按条件查询菜单列表（menu_name 模糊 + visible）。
+     *
+     * @param query 查询参数
+     * @return 菜单数据对象列表
+     */
+    List<SysMenuDO> selectMenuList(SysMenuQueryParam query);
+
+    /**
+     * 按用户ID与条件查询菜单列表。
+     *
+     * @param query 查询参数（userId 放 params）
+     * @return 菜单数据对象列表
+     */
+    List<SysMenuDO> selectMenuListByUserId(SysMenuQueryParam query);
+
+    /**
+     * 按菜单ID删除菜单及其子菜单。
+     *
+     * @param menuId 菜单ID
+     * @return 影响行数
+     */
+    int deleteMenuById(Long menuId);
+
+    /**
+     * 按菜单ID查询菜单（含父菜单名称）。
+     *
+     * @param menuId 菜单ID
+     * @return 菜单数据对象
+     */
+    SysMenuDO selectMenuById(Long menuId);
+
+    /**
+     * 按父菜单ID统计子菜单数量。
+     *
+     * @param parentId 父菜单ID
+     * @return 子菜单数量
+     */
+    int selectCountMenuByParentId(Long parentId);
+
+    /**
+     * 仅更新菜单排序。
+     *
+     * @param sysMenuDO 菜单数据对象（menuId + orderNum）
+     * @return 影响行数
+     */
+    int updateMenuSort(SysMenuDO sysMenuDO);
+
+    /**
+     * 校验菜单名称在同级下唯一。
+     *
+     * @param menuName 菜单名称
+     * @param parentId 父菜单ID
+     * @return 菜单数据对象（limit 1）
+     */
+    SysMenuDO checkMenuNameUnique(@Param("menuName") String menuName, @Param("parentId") Long parentId);
 }

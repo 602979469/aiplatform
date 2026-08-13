@@ -57,8 +57,8 @@ public class GenTableController {
 
             @Override
             public GenTableResponse execute(GenTableCreateRequest param) {
-                GenTable genTable = genTableManager.createGenTable(GenTableAssembler.toModel(param));
-                return GenTableAssembler.toResponse(genTable);
+                // TODO 接入 GenTableManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class GenTableController {
 
             @Override
             public GenTableResponse execute(Long param) {
-                GenTable genTable = genTableManager.getGenTable(param);
-                AiPlatformInvoker.throwErrWhenNull(genTable, ErrorCodeEnum.RESOURCE_NOT_FOUND, "代码生成不存在");
-                return GenTableAssembler.toResponse(genTable);
+                // TODO 接入 GenTableManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class GenTableController {
 
             @Override
             public PageResult<GenTableResponse> execute(GenTableQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new GenTableQueryRequest());
-                PageResult<GenTable> page = genTableManager.pageGenTables(GenTableAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(GenTableAssembler::toResponse).toList());
+                // TODO 接入 GenTableManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class GenTableController {
 
             @Override
             public void execute(GenTableUpdateRequest param) {
-                genTableManager.updateGenTable(GenTableAssembler.toModel(param, id));
+                // TODO 接入 GenTableManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class GenTableController {
 
             @Override
             public void execute(Long id) {
-                genTableManager.deleteGenTable(id);
+                // TODO 接入 GenTableManager（RuoYi 移植过渡）
             }
         });
     }

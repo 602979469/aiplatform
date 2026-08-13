@@ -57,8 +57,8 @@ public class SysMenuController {
 
             @Override
             public SysMenuResponse execute(SysMenuCreateRequest param) {
-                SysMenu sysMenu = sysMenuManager.createSysMenu(SysMenuAssembler.toModel(param));
-                return SysMenuAssembler.toResponse(sysMenu);
+                // TODO 接入 SysMenuManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysMenuController {
 
             @Override
             public SysMenuResponse execute(Long param) {
-                SysMenu sysMenu = sysMenuManager.getSysMenu(param);
-                AiPlatformInvoker.throwErrWhenNull(sysMenu, ErrorCodeEnum.RESOURCE_NOT_FOUND, "菜单不存在");
-                return SysMenuAssembler.toResponse(sysMenu);
+                // TODO 接入 SysMenuManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysMenuController {
 
             @Override
             public PageResult<SysMenuResponse> execute(SysMenuQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysMenuQueryRequest());
-                PageResult<SysMenu> page = sysMenuManager.pageSysMenus(SysMenuAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysMenuAssembler::toResponse).toList());
+                // TODO 接入 SysMenuManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysMenuController {
 
             @Override
             public void execute(SysMenuUpdateRequest param) {
-                sysMenuManager.updateSysMenu(SysMenuAssembler.toModel(param, id));
+                // TODO 接入 SysMenuManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysMenuController {
 
             @Override
             public void execute(Long id) {
-                sysMenuManager.deleteSysMenu(id);
+                // TODO 接入 SysMenuManager（RuoYi 移植过渡）
             }
         });
     }

@@ -2,7 +2,7 @@ package com.jakt.aiplatform.core.repository.convertor;
 
 import com.jakt.aiplatform.common.dal.dataobject.SysRoleDeptDO;
 import com.jakt.aiplatform.core.model.domain.SysRoleDept;
-
+import com.jakt.aiplatform.core.model.param.SysRoleDeptQueryParam;
 
 /**
  * 角色部门关联 DO 与领域模型互转，只存在于 repository。
@@ -11,6 +11,34 @@ import com.jakt.aiplatform.core.model.domain.SysRoleDept;
 public final class SysRoleDeptConvertor {
 
     private SysRoleDeptConvertor() {
+    }
+
+    /**
+     * 领域模型 → 查询参数（显式赋值）。
+     *
+     * @param roleDept 角色部门关联领域模型
+     * @return 角色部门关联查询参数
+     */
+    public static SysRoleDeptQueryParam toQueryParam(SysRoleDept roleDept) {
+        SysRoleDeptQueryParam query = new SysRoleDeptQueryParam();
+        query.setId(roleDept.getId());
+        query.setRoleId(roleDept.getRoleId());
+        query.setDeptId(roleDept.getDeptId());
+        return query;
+    }
+
+    /**
+     * 数据对象 → 查询参数（显式赋值，仅拷贝查询相关字段）。
+     *
+     * @param condition 角色部门关联数据对象（条件载体）
+     * @return 角色部门关联查询参数
+     */
+    public static SysRoleDeptQueryParam toQueryParam(SysRoleDeptDO condition) {
+        SysRoleDeptQueryParam query = new SysRoleDeptQueryParam();
+        query.setId(condition.getId());
+        query.setRoleId(condition.getRoleId());
+        query.setDeptId(condition.getDeptId());
+        return query;
     }
 
     /**

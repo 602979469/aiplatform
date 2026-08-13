@@ -1,67 +1,82 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.SysDictType;
-import com.jakt.aiplatform.core.model.param.SysDictTypeQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 
 import java.util.List;
 
 /**
- * 字典类型仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 字典类型仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface SysDictTypeRepository {
 
     /**
-     * 按主键查询。
+     * 查询字典类型列表。
      *
-     * @param id 主键
-     * @return 字典类型领域模型
-     */
-    SysDictType findById(Long id);
-
-    /**
-     * 分页查询。
-     *
-     * @param query 查询参数
-     * @return 分页结果
-     */
-    PageResult<SysDictType> findPage(SysDictTypeQueryParam query);
-
-    /**
-     * 列表查询。
-     *
-     * @param query 查询参数
+     * @param dictType 查询条件
      * @return 字典类型列表
      */
-    List<SysDictType> findList(SysDictTypeQueryParam query);
+    List<SysDictType> selectDictTypeList(SysDictType dictType);
 
     /**
-     * 新增。
+     * 查询全部字典类型。
      *
-     * @param sysDictType 字典类型
-     * @return 新增后的字典类型（主键已回填）
+     * @return 字典类型列表
      */
-    SysDictType insert(SysDictType sysDictType);
+    List<SysDictType> selectDictTypeAll();
 
     /**
-     * 更新。
+     * 按主键查询字典类型。
      *
-     * @param sysDictType 字典类型
+     * @param dictId 字典类型ID
+     * @return 字典类型领域模型
      */
-    void update(SysDictType sysDictType);
+    SysDictType selectDictTypeById(Long dictId);
 
     /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
+     * 按字典类型查询。
      *
-     * @param sysDictType 字典类型（至少含主键）
+     * @param dictType 字典类型
+     * @return 字典类型领域模型
      */
-    void updateByCondition(SysDictType sysDictType);
+    SysDictType selectDictTypeByType(String dictType);
+
+    /**
+     * 校验字典类型唯一。
+     *
+     * @param dictType 字典类型（含 dictId 用于排除自身）
+     * @return 是否唯一
+     */
+    boolean checkDictTypeUnique(SysDictType dictType);
 
     /**
      * 按主键删除。
      *
-     * @param id 主键
+     * @param dictId 字典类型ID
+     * @return 影响行数
      */
-    void deleteById(Long id);
+    int deleteDictTypeById(Long dictId);
+
+    /**
+     * 按 ID 集合批量删除。
+     *
+     * @param ids 字典类型ID集合（逗号分隔）
+     * @return 影响行数
+     */
+    int deleteDictTypeByIds(String ids);
+
+    /**
+     * 全量更新。
+     *
+     * @param dictType 字典类型
+     * @return 影响行数
+     */
+    int updateDictType(SysDictType dictType);
+
+    /**
+     * 新增。
+     *
+     * @param dictType 字典类型
+     * @return 影响行数
+     */
+    int insertDictType(SysDictType dictType);
 }

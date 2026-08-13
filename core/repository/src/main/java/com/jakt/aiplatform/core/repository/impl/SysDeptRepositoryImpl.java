@@ -2,21 +2,18 @@ package com.jakt.aiplatform.core.repository.impl;
 
 import com.jakt.aiplatform.common.dal.dataobject.SysDeptDO;
 import com.jakt.aiplatform.common.dal.mapper.SysDeptMapper;
-import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.util.tools.ListUtil;
 import com.jakt.aiplatform.core.model.domain.SysDept;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.SysDeptQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
 import com.jakt.aiplatform.core.repository.SysDeptRepository;
 import com.jakt.aiplatform.core.repository.convertor.SysDeptConvertor;
+import cn.hutool.core.util.ObjectUtil;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 /**
- * 部门仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 部门仓储实现（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 @Repository
 public class SysDeptRepositoryImpl implements SysDeptRepository {
@@ -29,49 +26,79 @@ public class SysDeptRepositoryImpl implements SysDeptRepository {
     }
 
     @Override
-    public SysDept findById(Long id) {
-        return SysDeptConvertor.toModel(sysDeptMapper.selectById(id));
+    public int selectDeptCount(SysDept dept) {
+        return sysDeptMapper.selectDeptCount(SysDeptConvertor.toQueryParam(dept));
     }
 
     @Override
-    public List<SysDept> findList(SysDeptQueryParam query) {
-        return sysDeptMapper.selectList(query).stream().map(SysDeptConvertor::toModel).toList();
+    public int checkDeptExistUser(Long deptId) {
+        return sysDeptMapper.checkDeptExistUser(deptId);
     }
 
     @Override
-    public PageResult<SysDept> findPage(SysDeptQueryParam query) {
-        List<SysDeptDO> doList = sysDeptMapper.selectPage(query);
-        long total = sysDeptMapper.countByQuery(query);
-        List<SysDept> list = doList.stream().map(SysDeptConvertor::toModel).toList();
-        return new PageResult<>(total, query.getPageNum(), query.getPageSize(), list);
+    public List<SysDept> selectDeptList(SysDept dept) {
+        List<SysDeptDO> list = sysDeptMapper.selectDeptList(SysDeptConvertor.toQueryParam(dept));
+        return ListUtil.convert(list, SysDeptConvertor::toModel);
     }
 
     @Override
-    public SysDept insert(SysDept sysDept) {
-        SysDeptDO sysDeptDO = SysDeptConvertor.toDO(sysDept);
-        sysDeptMapper.insert(sysDeptDO);
-        return SysDeptConvertor.toModel(sysDeptDO);
+    public int deleteDeptById(Long deptId) {
+        return sysDeptMapper.deleteById(deptId);
     }
 
     @Override
-    public void update(SysDept sysDept) {
-        SysDeptDO sysDeptDO = SysDeptConvertor.toDO(sysDept);
-        int affected = sysDeptMapper.update(sysDeptDO);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysDeptRepository.update deptId={} 影响行数={}", sysDept.getDeptId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public int insertDept(SysDept dept) {
+        return sysDeptMapper.insert(SysDeptConvertor.toDO(dept));
     }
 
     @Override
-    public void updateByCondition(SysDept sysDept) {
-        int affected = sysDeptMapper.updateByCondition(SysDeptConvertor.toDO(sysDept));
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysDeptRepository.updateByCondition deptId={} 影响行数={}", sysDept.getDeptId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public int updateDept(SysDept dept) {
+        return sysDeptMapper.update(SysDeptConvertor.toDO(dept));
     }
 
     @Override
-    public void deleteById(Long id) {
-        int affected = sysDeptMapper.deleteById(id);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysDeptRepository.deleteById id={} 影响行数={}", id, affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.DELETE_FAILED, "删除失败：记录不存在或已被删除");
+    public int updateDeptChildren(List<SysDept> depts) {
+        List<SysDeptDO> doList = ListUtil.convert(depts, SysDeptConvertor::toDO);
+        return sysDeptMapper.updateDeptChildren(doList);
+    }
+
+    @Override
+    public SysDept selectDeptById(Long deptId) {
+        return SysDeptConvertor.toModel(sysDeptMapper.selectDeptById(deptId));
+    }
+
+    @Override
+    public boolean checkDeptNameUnique(SysDept dept) {
+        SysDeptDO target = sysDeptMapper.checkDeptNameUnique(dept.getDeptName(), dept.getParentId());
+        if (target == null) {
+            return true;
+        }
+        return ObjectUtil.equal(target.getDeptId(), dept.getDeptId());
+    }
+
+    @Override
+    public List<String> selectRoleDeptTree(Long roleId) {
+        return sysDeptMapper.selectRoleDeptTree(roleId);
+    }
+
+    @Override
+    public int updateDeptStatusNormal(Long[] deptIds) {
+        return sysDeptMapper.updateDeptStatusNormal(deptIds);
+    }
+
+    @Override
+    public List<SysDept> selectChildrenDeptById(Long deptId) {
+        List<SysDeptDO> list = sysDeptMapper.selectChildrenDeptById(deptId);
+        return ListUtil.convert(list, SysDeptConvertor::toModel);
+    }
+
+    @Override
+    public int selectNormalChildrenDeptById(Long deptId) {
+        return sysDeptMapper.selectNormalChildrenDeptById(deptId);
+    }
+
+    @Override
+    public int updateDeptSort(SysDept dept) {
+        return sysDeptMapper.updateDeptSort(SysDeptConvertor.toDO(dept));
     }
 }

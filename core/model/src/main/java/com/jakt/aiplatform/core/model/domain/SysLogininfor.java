@@ -2,17 +2,17 @@ package com.jakt.aiplatform.core.model.domain;
 
 import java.time.LocalDateTime;
 import com.jakt.aiplatform.core.model.enums.LoginStatusEnum;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 登录日志领域模型。
+ * 登录日志领域模型（RuoYi 结构：继承 BaseEntity）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysLogininfor extends BaseModel {
-    /** 主键。 */
+public class SysLogininfor extends BaseEntity {
+
+    /** 访问ID。 */
     private Long infoId;
 
     /** 登录账号。 */
@@ -38,5 +38,4 @@ public class SysLogininfor extends BaseModel {
 
     /** 访问时间。 */
     private LocalDateTime loginTime;
-
 }

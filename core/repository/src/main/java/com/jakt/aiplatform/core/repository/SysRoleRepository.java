@@ -1,67 +1,83 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.SysRole;
-import com.jakt.aiplatform.core.model.param.SysRoleQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 
 import java.util.List;
 
 /**
- * 角色仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 角色仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface SysRoleRepository {
 
     /**
-     * 按主键查询。
+     * 按条件查询角色列表。
      *
-     * @param id 主键
-     * @return 角色领域模型
-     */
-    SysRole findById(Long id);
-
-    /**
-     * 分页查询。
-     *
-     * @param query 查询参数
-     * @return 分页结果
-     */
-    PageResult<SysRole> findPage(SysRoleQueryParam query);
-
-    /**
-     * 列表查询。
-     *
-     * @param query 查询参数
+     * @param role 查询条件（实体即条件）
      * @return 角色列表
      */
-    List<SysRole> findList(SysRoleQueryParam query);
+    List<SysRole> selectRoleList(SysRole role);
 
     /**
-     * 新增。
+     * 按用户ID查询角色列表。
      *
-     * @param sysRole 角色
-     * @return 新增后的角色（主键已回填）
+     * @param userId 用户ID
+     * @return 角色列表
      */
-    SysRole insert(SysRole sysRole);
+    List<SysRole> selectRolesByUserId(Long userId);
 
     /**
-     * 更新。
+     * 按主键查询角色。
      *
-     * @param sysRole 角色
+     * @param roleId 角色ID
+     * @return 角色领域模型
      */
-    void update(SysRole sysRole);
+    SysRole selectRoleById(Long roleId);
 
     /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
+     * 按主键删除角色（逻辑删除）。
      *
-     * @param sysRole 角色（至少含主键）
+     * @param roleId 角色ID
+     * @return 影响行数
      */
-    void updateByCondition(SysRole sysRole);
+    int deleteRoleById(Long roleId);
 
     /**
-     * 按主键删除。
+     * 按 ID 集合批量删除角色（逻辑删除）。
      *
-     * @param id 主键
+     * @param ids 角色ID集合（逗号分隔）
+     * @return 影响行数
      */
-    void deleteById(Long id);
+    int deleteRoleByIds(String ids);
+
+    /**
+     * 全量更新角色。
+     *
+     * @param role 角色
+     * @return 影响行数
+     */
+    int updateRole(SysRole role);
+
+    /**
+     * 新增角色。
+     *
+     * @param role 角色
+     * @return 影响行数
+     */
+    int insertRole(SysRole role);
+
+    /**
+     * 校验角色名称唯一。
+     *
+     * @param role 角色（含 roleId 用于排除自身）
+     * @return 是否唯一
+     */
+    boolean checkRoleNameUnique(SysRole role);
+
+    /**
+     * 校验角色权限字符串唯一。
+     *
+     * @param role 角色（含 roleId 用于排除自身）
+     * @return 是否唯一
+     */
+    boolean checkRoleKeyUnique(SysRole role);
 }

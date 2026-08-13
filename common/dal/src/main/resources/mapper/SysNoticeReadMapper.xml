@@ -97,4 +97,69 @@
     <delete id="deleteById">
         DELETE FROM sys_notice_read WHERE read_id = #{id}
     </delete>
+
+    <insert id="insertNoticeRead" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysNoticeReadDO">
+        INSERT IGNORE INTO sys_notice_read (notice_id, user_id, read_time)
+        VALUES (#{noticeId}, #{userId}, sysdate())
+    </insert>
+
+    <select id="selectUnreadCount" resultType="int">
+        SELECT COUNT(*)
+        FROM sys_notice n
+        WHERE n.status = '0'
+          AND NOT EXISTS (SELECT 1 FROM sys_notice_read r WHERE r.notice_id = n.notice_id AND r.user_id = #{userId})
+    </select>
+
+    <select id="selectIsRead" resultType="int">
+        SELECT COUNT(*) FROM sys_notice_read WHERE notice_id = #{noticeId} AND user_id = #{userId}
+    </select>
+
+    <insert id="insertNoticeReadBatch">
+        INSERT IGNORE INTO sys_notice_read (notice_id, user_id, read_time)
+        VALUES
+        <foreach collection="noticeIds" item="noticeId" separator=",">
+            (#{noticeId}, #{userId}, sysdate())
+        </foreach>
+    </insert>
+
+    <select id="selectNoticeListWithReadStatus" resultType="com.jakt.aiplatform.core.model.result.SysNoticeListResult">
+        SELECT n.notice_id    AS noticeId,
+               n.notice_title AS noticeTitle,
+               n.notice_type  AS noticeType,
+               n.status       AS status,
+               n.create_by    AS createBy,
+               n.create_time  AS createTime,
+               CASE WHEN r.notice_id IS NOT NULL THEN TRUE ELSE FALSE END AS isRead
+        FROM sys_notice n
+                 LEFT JOIN sys_notice_read r
+                           ON r.notice_id = n.notice_id AND r.user_id = #{userId}
+        WHERE n.status = '0'
+        ORDER BY n.notice_id DESC
+        LIMIT #{limit}
+    </select>
+
+    <delete id="deleteByNoticeIds">
+        DELETE FROM sys_notice_read WHERE notice_id IN
+        <foreach collection="noticeIds" item="noticeId" open="(" separator="," close=")">
+            #{noticeId}
+        </foreach>
+    </delete>
+
+    <select id="selectReadUsersByNoticeId" resultType="com.jakt.aiplatform.core.model.result.SysReadUserResult">
+        SELECT u.user_id     AS userId,
+               u.login_name  AS loginName,
+               u.user_name   AS userName,
+               d.dept_name   AS deptName,
+               u.phonenumber AS phonenumber,
+               r.read_time   AS readTime
+        FROM sys_notice_read r
+                 INNER JOIN sys_user u ON u.user_id = r.user_id AND u.del_flag = '0'
+                 LEFT JOIN sys_dept d ON d.dept_id = u.dept_id
+        WHERE r.notice_id = #{noticeId}
+        <if test="searchValue != null and searchValue != ''">
+            AND (u.login_name LIKE concat('%', #{searchValue}, '%')
+                OR u.user_name LIKE concat('%', #{searchValue}, '%'))
+        </if>
+        ORDER BY r.read_time DESC
+    </select>
 </mapper>

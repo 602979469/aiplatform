@@ -1,67 +1,123 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.SysDept;
-import com.jakt.aiplatform.core.model.param.SysDeptQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 
 import java.util.List;
 
 /**
- * 部门仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 部门仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface SysDeptRepository {
 
     /**
-     * 按主键查询。
+     * 按条件统计部门数量。
      *
-     * @param id 主键
-     * @return 部门领域模型
+     * @param dept 查询条件
+     * @return 部门数量
      */
-    SysDept findById(Long id);
+    int selectDeptCount(SysDept dept);
 
     /**
-     * 分页查询。
+     * 校验部门下是否存在用户。
      *
-     * @param query 查询参数
-     * @return 分页结果
+     * @param deptId 部门ID
+     * @return 用户数量
      */
-    PageResult<SysDept> findPage(SysDeptQueryParam query);
+    int checkDeptExistUser(Long deptId);
 
     /**
-     * 列表查询。
+     * 按条件查询部门列表。
      *
-     * @param query 查询参数
+     * @param dept 查询条件（实体即条件）
      * @return 部门列表
      */
-    List<SysDept> findList(SysDeptQueryParam query);
+    List<SysDept> selectDeptList(SysDept dept);
 
     /**
-     * 新增。
+     * 按部门ID删除部门（逻辑删除）。
      *
-     * @param sysDept 部门
-     * @return 新增后的部门（主键已回填）
+     * @param deptId 部门ID
+     * @return 影响行数
      */
-    SysDept insert(SysDept sysDept);
+    int deleteDeptById(Long deptId);
 
     /**
-     * 更新。
+     * 新增部门。
      *
-     * @param sysDept 部门
+     * @param dept 部门
+     * @return 影响行数
      */
-    void update(SysDept sysDept);
+    int insertDept(SysDept dept);
 
     /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
+     * 全量更新部门。
      *
-     * @param sysDept 部门（至少含主键）
+     * @param dept 部门
+     * @return 影响行数
      */
-    void updateByCondition(SysDept sysDept);
+    int updateDept(SysDept dept);
 
     /**
-     * 按主键删除。
+     * 批量更新部门祖级列表。
      *
-     * @param id 主键
+     * @param depts 部门列表
+     * @return 影响行数
      */
-    void deleteById(Long id);
+    int updateDeptChildren(List<SysDept> depts);
+
+    /**
+     * 按部门ID查询部门（含父部门名称）。
+     *
+     * @param deptId 部门ID
+     * @return 部门领域模型
+     */
+    SysDept selectDeptById(Long deptId);
+
+    /**
+     * 校验部门名称在同级下唯一。
+     *
+     * @param dept 部门（deptName + parentId，deptId 用于排除自身）
+     * @return 是否唯一
+     */
+    boolean checkDeptNameUnique(SysDept dept);
+
+    /**
+     * 按角色ID查询部门树标识集合。
+     *
+     * @param roleId 角色ID
+     * @return 部门树标识集合
+     */
+    List<String> selectRoleDeptTree(Long roleId);
+
+    /**
+     * 批量恢复部门状态为正常。
+     *
+     * @param deptIds 部门ID数组
+     * @return 影响行数
+     */
+    int updateDeptStatusNormal(Long[] deptIds);
+
+    /**
+     * 查询某部门全部子部门。
+     *
+     * @param deptId 部门ID
+     * @return 子部门列表
+     */
+    List<SysDept> selectChildrenDeptById(Long deptId);
+
+    /**
+     * 查询某部门正常状态的子部门数量。
+     *
+     * @param deptId 部门ID
+     * @return 子部门数量
+     */
+    int selectNormalChildrenDeptById(Long deptId);
+
+    /**
+     * 仅更新部门排序。
+     *
+     * @param dept 部门（deptId + orderNum）
+     * @return 影响行数
+     */
+    int updateDeptSort(SysDept dept);
 }

@@ -57,8 +57,8 @@ public class SysOperLogController {
 
             @Override
             public SysOperLogResponse execute(SysOperLogCreateRequest param) {
-                SysOperLog sysOperLog = sysOperLogManager.createSysOperLog(SysOperLogAssembler.toModel(param));
-                return SysOperLogAssembler.toResponse(sysOperLog);
+                // TODO 接入 SysOperLogManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysOperLogController {
 
             @Override
             public SysOperLogResponse execute(Long param) {
-                SysOperLog sysOperLog = sysOperLogManager.getSysOperLog(param);
-                AiPlatformInvoker.throwErrWhenNull(sysOperLog, ErrorCodeEnum.RESOURCE_NOT_FOUND, "操作日志不存在");
-                return SysOperLogAssembler.toResponse(sysOperLog);
+                // TODO 接入 SysOperLogManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysOperLogController {
 
             @Override
             public PageResult<SysOperLogResponse> execute(SysOperLogQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysOperLogQueryRequest());
-                PageResult<SysOperLog> page = sysOperLogManager.pageSysOperLogs(SysOperLogAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysOperLogAssembler::toResponse).toList());
+                // TODO 接入 SysOperLogManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysOperLogController {
 
             @Override
             public void execute(SysOperLogUpdateRequest param) {
-                sysOperLogManager.updateSysOperLog(SysOperLogAssembler.toModel(param, id));
+                // TODO 接入 SysOperLogManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysOperLogController {
 
             @Override
             public void execute(Long id) {
-                sysOperLogManager.deleteSysOperLog(id);
+                // TODO 接入 SysOperLogManager（RuoYi 移植过渡）
             }
         });
     }

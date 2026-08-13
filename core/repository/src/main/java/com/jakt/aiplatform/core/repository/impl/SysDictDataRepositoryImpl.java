@@ -3,20 +3,20 @@ package com.jakt.aiplatform.core.repository.impl;
 import com.jakt.aiplatform.common.dal.dataobject.SysDictDataDO;
 import com.jakt.aiplatform.common.dal.mapper.SysDictDataMapper;
 import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.util.tools.ListUtil;
 import com.jakt.aiplatform.core.model.domain.SysDictData;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.SysDictDataQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
 import com.jakt.aiplatform.core.repository.SysDictDataRepository;
 import com.jakt.aiplatform.core.repository.convertor.SysDictDataConvertor;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.convert.Convert;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 /**
- * 字典数据仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 字典数据仓储实现（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 @Repository
 public class SysDictDataRepositoryImpl implements SysDictDataRepository {
@@ -28,50 +28,73 @@ public class SysDictDataRepositoryImpl implements SysDictDataRepository {
         this.sysDictDataMapper = sysDictDataMapper;
     }
 
-    @Override
-    public SysDictData findById(Long id) {
-        return SysDictDataConvertor.toModel(sysDictDataMapper.selectById(id));
+    private SysDictData findOne(SysDictDataDO sysDictDataDO) {
+        SysDictDataQueryParam query = SysDictDataConvertor.toQueryParam(sysDictDataDO);
+        List<SysDictDataDO> list = sysDictDataMapper.selectList(query);
+        if (CollUtil.isEmpty(list)) {
+            return null;
+        }
+        AiPlatformInvoker.throwErrWhenTrue(list.size() > 1, ErrorCodeEnum.RESULT_NOT_UNIQUE, "查询结果不唯一");
+        return SysDictDataConvertor.toModel(list.get(0));
     }
 
     @Override
-    public List<SysDictData> findList(SysDictDataQueryParam query) {
-        return sysDictDataMapper.selectList(query).stream().map(SysDictDataConvertor::toModel).toList();
+    public List<SysDictData> selectDictDataList(SysDictData dictData) {
+        List<SysDictDataDO> list = sysDictDataMapper.selectList(SysDictDataConvertor.toQueryParam(dictData));
+        return ListUtil.convert(list, SysDictDataConvertor::toModel);
     }
 
     @Override
-    public PageResult<SysDictData> findPage(SysDictDataQueryParam query) {
-        List<SysDictDataDO> doList = sysDictDataMapper.selectPage(query);
-        long total = sysDictDataMapper.countByQuery(query);
-        List<SysDictData> list = doList.stream().map(SysDictDataConvertor::toModel).toList();
-        return new PageResult<>(total, query.getPageNum(), query.getPageSize(), list);
+    public List<SysDictData> selectDictDataByType(String dictType) {
+        SysDictDataQueryParam query = new SysDictDataQueryParam();
+        query.setDictType(dictType);
+        List<SysDictDataDO> list = sysDictDataMapper.selectList(query);
+        return ListUtil.convert(list, SysDictDataConvertor::toModel);
     }
 
     @Override
-    public SysDictData insert(SysDictData sysDictData) {
-        SysDictDataDO sysDictDataDO = SysDictDataConvertor.toDO(sysDictData);
-        sysDictDataMapper.insert(sysDictDataDO);
-        return SysDictDataConvertor.toModel(sysDictDataDO);
+    public String selectDictLabel(SysDictData dictData) {
+        SysDictDataDO condition = new SysDictDataDO();
+        condition.setDictType(dictData.getDictType());
+        condition.setDictValue(dictData.getDictValue());
+        SysDictData data = findOne(condition);
+        return data == null ? null : data.getDictLabel();
     }
 
     @Override
-    public void update(SysDictData sysDictData) {
-        SysDictDataDO sysDictDataDO = SysDictDataConvertor.toDO(sysDictData);
-        int affected = sysDictDataMapper.update(sysDictDataDO);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysDictDataRepository.update dictCode={} 影响行数={}", sysDictData.getDictCode(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public SysDictData selectDictDataById(Long dictCode) {
+        return SysDictDataConvertor.toModel(sysDictDataMapper.selectById(dictCode));
     }
 
     @Override
-    public void updateByCondition(SysDictData sysDictData) {
-        int affected = sysDictDataMapper.updateByCondition(SysDictDataConvertor.toDO(sysDictData));
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysDictDataRepository.updateByCondition dictCode={} 影响行数={}", sysDictData.getDictCode(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public int countDictDataByType(SysDictData dictData) {
+        SysDictDataQueryParam query = new SysDictDataQueryParam();
+        query.setDictType(dictData.getDictType());
+        return (int) sysDictDataMapper.countByQuery(query);
     }
 
     @Override
-    public void deleteById(Long id) {
-        int affected = sysDictDataMapper.deleteById(id);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysDictDataRepository.deleteById id={} 影响行数={}", id, affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.DELETE_FAILED, "删除失败：记录不存在或已被删除");
+    public int deleteDictDataById(Long dictCode) {
+        return sysDictDataMapper.deleteById(dictCode);
+    }
+
+    @Override
+    public int deleteDictDataByIds(String ids) {
+        return sysDictDataMapper.deleteByIds(Convert.toLongArray(ids));
+    }
+
+    @Override
+    public int updateDictData(SysDictData dictData) {
+        return sysDictDataMapper.update(SysDictDataConvertor.toDO(dictData));
+    }
+
+    @Override
+    public int updateDictDataType(String oldDictType, String newDictType) {
+        return sysDictDataMapper.updateDictDataType(oldDictType, newDictType);
+    }
+
+    @Override
+    public int insertDictData(SysDictData dictData) {
+        return sysDictDataMapper.insert(SysDictDataConvertor.toDO(dictData));
     }
 }

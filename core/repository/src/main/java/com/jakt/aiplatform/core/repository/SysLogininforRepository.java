@@ -1,67 +1,42 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.SysLogininfor;
-import com.jakt.aiplatform.core.model.param.SysLogininforQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 
 import java.util.List;
 
 /**
- * 登录日志仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 登录日志仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface SysLogininforRepository {
 
     /**
-     * 按主键查询。
+     * 新增登录日志。
      *
-     * @param id 主键
-     * @return 登录日志领域模型
+     * @param logininfor 登录日志
+     * @return 影响行数
      */
-    SysLogininfor findById(Long id);
+    int insertLogininfor(SysLogininfor logininfor);
 
     /**
-     * 分页查询。
+     * 按条件查询登录日志列表。
      *
-     * @param query 查询参数
-     * @return 分页结果
-     */
-    PageResult<SysLogininfor> findPage(SysLogininforQueryParam query);
-
-    /**
-     * 列表查询。
-     *
-     * @param query 查询参数
+     * @param logininfor 查询条件（实体即条件）
      * @return 登录日志列表
      */
-    List<SysLogininfor> findList(SysLogininforQueryParam query);
+    List<SysLogininfor> selectLogininforList(SysLogininfor logininfor);
 
     /**
-     * 新增。
+     * 按 ID 集合批量删除登录日志。
      *
-     * @param sysLogininfor 登录日志
-     * @return 新增后的登录日志（主键已回填）
+     * @param ids 登录日志ID集合（逗号分隔）
+     * @return 影响行数
      */
-    SysLogininfor insert(SysLogininfor sysLogininfor);
+    int deleteLogininforByIds(String ids);
 
     /**
-     * 更新。
+     * 清空登录日志。
      *
-     * @param sysLogininfor 登录日志
+     * @return 影响行数
      */
-    void update(SysLogininfor sysLogininfor);
-
-    /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
-     *
-     * @param sysLogininfor 登录日志（至少含主键）
-     */
-    void updateByCondition(SysLogininfor sysLogininfor);
-
-    /**
-     * 按主键删除。
-     *
-     * @param id 主键
-     */
-    void deleteById(Long id);
+    int cleanLogininfor();
 }

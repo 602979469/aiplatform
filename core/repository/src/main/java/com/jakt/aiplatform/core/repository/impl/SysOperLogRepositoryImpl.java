@@ -1,22 +1,19 @@
 package com.jakt.aiplatform.core.repository.impl;
 
-import com.jakt.aiplatform.common.dal.dataobject.SysOperLogDO;
 import com.jakt.aiplatform.common.dal.mapper.SysOperLogMapper;
-import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.dal.dataobject.SysOperLogDO;
+import com.jakt.aiplatform.common.util.tools.ListUtil;
 import com.jakt.aiplatform.core.model.domain.SysOperLog;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.SysOperLogQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
 import com.jakt.aiplatform.core.repository.SysOperLogRepository;
 import com.jakt.aiplatform.core.repository.convertor.SysOperLogConvertor;
+import cn.hutool.core.convert.Convert;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 /**
- * 操作日志仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 操作日志仓储实现（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 @Repository
 public class SysOperLogRepositoryImpl implements SysOperLogRepository {
@@ -29,49 +26,28 @@ public class SysOperLogRepositoryImpl implements SysOperLogRepository {
     }
 
     @Override
-    public SysOperLog findById(Long id) {
-        return SysOperLogConvertor.toModel(sysOperLogMapper.selectById(id));
+    public int insertOperlog(SysOperLog operLog) {
+        return sysOperLogMapper.insert(SysOperLogConvertor.toDO(operLog));
     }
 
     @Override
-    public List<SysOperLog> findList(SysOperLogQueryParam query) {
-        return sysOperLogMapper.selectList(query).stream().map(SysOperLogConvertor::toModel).toList();
+    public List<SysOperLog> selectOperLogList(SysOperLog operLog) {
+        List<SysOperLogDO> list = sysOperLogMapper.selectList(SysOperLogConvertor.toQueryParam(operLog));
+        return ListUtil.convert(list, SysOperLogConvertor::toModel);
     }
 
     @Override
-    public PageResult<SysOperLog> findPage(SysOperLogQueryParam query) {
-        List<SysOperLogDO> doList = sysOperLogMapper.selectPage(query);
-        long total = sysOperLogMapper.countByQuery(query);
-        List<SysOperLog> list = doList.stream().map(SysOperLogConvertor::toModel).toList();
-        return new PageResult<>(total, query.getPageNum(), query.getPageSize(), list);
+    public int deleteOperLogByIds(String ids) {
+        return sysOperLogMapper.deleteByIds(Convert.toLongArray(ids));
     }
 
     @Override
-    public SysOperLog insert(SysOperLog sysOperLog) {
-        SysOperLogDO sysOperLogDO = SysOperLogConvertor.toDO(sysOperLog);
-        sysOperLogMapper.insert(sysOperLogDO);
-        return SysOperLogConvertor.toModel(sysOperLogDO);
+    public SysOperLog selectOperLogById(Long operId) {
+        return SysOperLogConvertor.toModel(sysOperLogMapper.selectById(operId));
     }
 
     @Override
-    public void update(SysOperLog sysOperLog) {
-        SysOperLogDO sysOperLogDO = SysOperLogConvertor.toDO(sysOperLog);
-        int affected = sysOperLogMapper.update(sysOperLogDO);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysOperLogRepository.update operId={} 影响行数={}", sysOperLog.getOperId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
-    }
-
-    @Override
-    public void updateByCondition(SysOperLog sysOperLog) {
-        int affected = sysOperLogMapper.updateByCondition(SysOperLogConvertor.toDO(sysOperLog));
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysOperLogRepository.updateByCondition operId={} 影响行数={}", sysOperLog.getOperId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
-    }
-
-    @Override
-    public void deleteById(Long id) {
-        int affected = sysOperLogMapper.deleteById(id);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysOperLogRepository.deleteById id={} 影响行数={}", id, affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.DELETE_FAILED, "删除失败：记录不存在或已被删除");
+    public int cleanOperLog() {
+        return sysOperLogMapper.cleanOperLog();
     }
 }

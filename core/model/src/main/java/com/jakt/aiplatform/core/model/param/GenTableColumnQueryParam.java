@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class GenTableColumnQueryParam extends PageParam {
+public class GenTableColumnQueryParam extends PageQueryParam {
 
     /** 主键。 */
     private Long columnId;

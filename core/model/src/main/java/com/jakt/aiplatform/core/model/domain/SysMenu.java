@@ -1,21 +1,26 @@
 package com.jakt.aiplatform.core.model.domain;
 
+import java.util.ArrayList;
+import java.util.List;
 import com.jakt.aiplatform.core.model.enums.VisibleEnum;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 菜单领域模型。
+ * 菜单领域模型（RuoYi 结构：继承 BaseEntity，含组装字段 parentName/children）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysMenu extends BaseModel {
-    /** 主键。 */
+public class SysMenu extends BaseEntity {
+
+    /** 菜单ID。 */
     private Long menuId;
 
     /** 菜单名称。 */
     private String menuName;
+
+    /** 父菜单名称（组装字段）。 */
+    private String parentName;
 
     /** 父菜单ID。 */
     private Long parentId;
@@ -44,7 +49,6 @@ public class SysMenu extends BaseModel {
     /** 菜单图标。 */
     private String icon;
 
-    /** 备注。 */
-    private String remark;
-
+    /** 子菜单（组装字段）。 */
+    private List<SysMenu> children = new ArrayList<>();
 }

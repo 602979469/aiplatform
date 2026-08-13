@@ -2,8 +2,8 @@ package com.jakt.aiplatform.core.repository.convertor;
 
 import com.jakt.aiplatform.common.dal.dataobject.SysUserOnlineDO;
 import com.jakt.aiplatform.core.model.domain.SysUserOnline;
+import com.jakt.aiplatform.core.model.param.SysUserOnlineQueryParam;
 import cn.hutool.core.convert.Convert;
-
 
 /**
  * 在线用户 DO 与领域模型互转，只存在于 repository。
@@ -12,6 +12,52 @@ import cn.hutool.core.convert.Convert;
 public final class SysUserOnlineConvertor {
 
     private SysUserOnlineConvertor() {
+    }
+
+    /**
+     * 领域模型 → 查询参数（expireTime Long 转 Integer，显式赋值）。
+     *
+     * @param userOnline 在线用户领域模型
+     * @return 在线用户查询参数
+     */
+    public static SysUserOnlineQueryParam toQueryParam(SysUserOnline userOnline) {
+        SysUserOnlineQueryParam query = new SysUserOnlineQueryParam();
+        query.setSessionId(userOnline.getSessionId());
+        query.setLoginName(userOnline.getLoginName());
+        query.setDeptName(userOnline.getDeptName());
+        query.setIpaddr(userOnline.getIpaddr());
+        query.setLoginLocation(userOnline.getLoginLocation());
+        query.setBrowser(userOnline.getBrowser());
+        query.setOs(userOnline.getOs());
+        query.setStatus(userOnline.getStatus());
+        query.setStartTimestamp(userOnline.getStartTimestamp());
+        query.setLastAccessTime(userOnline.getLastAccessTime());
+        query.setExpireTime(userOnline.getExpireTime() == null ? null : userOnline.getExpireTime().intValue());
+        query.setSessionData(userOnline.getSessionData());
+        return query;
+    }
+
+    /**
+     * 数据对象 → 查询参数（显式赋值，仅拷贝查询相关字段）。
+     *
+     * @param condition 在线用户数据对象（条件载体）
+     * @return 在线用户查询参数
+     */
+    public static SysUserOnlineQueryParam toQueryParam(SysUserOnlineDO condition) {
+        SysUserOnlineQueryParam query = new SysUserOnlineQueryParam();
+        query.setSessionId(condition.getSessionId());
+        query.setLoginName(condition.getLoginName());
+        query.setDeptName(condition.getDeptName());
+        query.setIpaddr(condition.getIpaddr());
+        query.setLoginLocation(condition.getLoginLocation());
+        query.setBrowser(condition.getBrowser());
+        query.setOs(condition.getOs());
+        query.setStatus(condition.getStatus());
+        query.setStartTimestamp(condition.getStartTimestamp());
+        query.setLastAccessTime(condition.getLastAccessTime());
+        query.setExpireTime(condition.getExpireTime());
+        query.setSessionData(condition.getSessionData());
+        return query;
     }
 
     /**

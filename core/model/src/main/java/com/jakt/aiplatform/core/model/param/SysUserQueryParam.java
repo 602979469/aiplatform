@@ -10,13 +10,16 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysUserQueryParam extends PageParam {
+public class SysUserQueryParam extends PageQueryParam {
 
     /** 主键。 */
     private Long userId;
 
     /** 部门ID。 */
     private Long deptId;
+
+    /** 角色ID（列表/角色分配查询用）。 */
+    private Long roleId;
 
     /** 登录账号。 */
     private String loginName;

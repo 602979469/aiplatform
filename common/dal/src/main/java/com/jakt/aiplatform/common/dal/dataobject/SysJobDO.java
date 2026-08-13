@@ -36,4 +36,9 @@ public class SysJobDO extends BaseDO {
     /** 备注信息。 */
     private String remark;
 
+    /** 创建者。 */
+    private String createBy;
+
+    /** 更新者。 */
+    private String updateBy;
 }

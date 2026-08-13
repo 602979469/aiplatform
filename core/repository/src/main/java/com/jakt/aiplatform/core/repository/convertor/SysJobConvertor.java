@@ -5,6 +5,7 @@ import com.jakt.aiplatform.core.model.domain.SysJob;
 import com.jakt.aiplatform.core.model.enums.MisfirePolicyEnum;
 import com.jakt.aiplatform.core.model.enums.ConcurrentEnum;
 import com.jakt.aiplatform.core.model.enums.JobStatusEnum;
+import com.jakt.aiplatform.core.model.param.SysJobQueryParam;
 import cn.hutool.core.util.ObjectUtil;
 
 
@@ -15,6 +16,46 @@ import cn.hutool.core.util.ObjectUtil;
 public final class SysJobConvertor {
 
     private SysJobConvertor() {
+    }
+
+    /**
+     * 领域模型 → 查询参数（枚举转 code，显式赋值）。
+     *
+     * @param job 定时任务领域模型
+     * @return 定时任务查询参数
+     */
+    public static SysJobQueryParam toQueryParam(SysJob job) {
+        SysJobQueryParam query = new SysJobQueryParam();
+        query.setJobId(job.getJobId());
+        query.setJobName(job.getJobName());
+        query.setJobGroup(job.getJobGroup());
+        query.setInvokeTarget(job.getInvokeTarget());
+        query.setCronExpression(job.getCronExpression());
+        query.setMisfirePolicy(job.getMisfirePolicy() == null ? null : job.getMisfirePolicy().getCode());
+        query.setConcurrent(job.getConcurrent() == null ? null : job.getConcurrent().getCode());
+        query.setStatus(job.getStatus() == null ? null : job.getStatus().getCode());
+        query.setRemark(job.getRemark());
+        return query;
+    }
+
+    /**
+     * 数据对象 → 查询参数（显式赋值，仅拷贝查询相关字段）。
+     *
+     * @param condition 定时任务数据对象（条件载体）
+     * @return 定时任务查询参数
+     */
+    public static SysJobQueryParam toQueryParam(SysJobDO condition) {
+        SysJobQueryParam query = new SysJobQueryParam();
+        query.setJobId(condition.getJobId());
+        query.setJobName(condition.getJobName());
+        query.setJobGroup(condition.getJobGroup());
+        query.setInvokeTarget(condition.getInvokeTarget());
+        query.setCronExpression(condition.getCronExpression());
+        query.setMisfirePolicy(condition.getMisfirePolicy());
+        query.setConcurrent(condition.getConcurrent());
+        query.setStatus(condition.getStatus());
+        query.setRemark(condition.getRemark());
+        return query;
     }
 
     /**
@@ -37,6 +78,8 @@ public final class SysJobConvertor {
         target.setConcurrent(ConcurrentEnum.fromCode(source.getConcurrent()));
         target.setStatus(JobStatusEnum.fromCode(source.getStatus()));
         target.setRemark(source.getRemark());
+        target.setCreateBy(source.getCreateBy());
+        target.setUpdateBy(source.getUpdateBy());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
         return target;
@@ -59,6 +102,8 @@ public final class SysJobConvertor {
         target.setConcurrent(ObjectUtil.isNull(source.getConcurrent()) ? null : source.getConcurrent().getCode());
         target.setStatus(ObjectUtil.isNull(source.getStatus()) ? null : source.getStatus().getCode());
         target.setRemark(source.getRemark());
+        target.setCreateBy(source.getCreateBy());
+        target.setUpdateBy(source.getUpdateBy());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
         return target;

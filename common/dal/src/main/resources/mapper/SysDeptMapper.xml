@@ -3,7 +3,7 @@
 <mapper namespace="com.jakt.aiplatform.common.dal.mapper.SysDeptMapper">
 
     <sql id="selectColumns">
-        dept_id, parent_id, ancestors, dept_name, order_num, leader, phone, email, status, create_time, update_time
+        dept_id, parent_id, ancestors, dept_name, order_num, leader, phone, email, status, del_flag, create_by, update_by, create_time, update_time
     </sql>
 
     <sql id="queryConditions">
@@ -81,8 +81,8 @@
 
     <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO"
             useGeneratedKeys="true" keyProperty="deptId">
-        INSERT INTO sys_dept (parent_id, ancestors, dept_name, order_num, leader, phone, email, status)
-        VALUES (#{parentId}, #{ancestors}, #{deptName}, #{orderNum}, #{leader}, #{phone}, #{email}, #{status})
+        INSERT INTO sys_dept (parent_id, ancestors, dept_name, order_num, leader, phone, email, status, create_by, update_by)
+        VALUES (#{parentId}, #{ancestors}, #{deptName}, #{orderNum}, #{leader}, #{phone}, #{email}, #{status}, #{createBy}, #{updateBy})
     </insert>
 
     <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO">
@@ -94,7 +94,8 @@
             leader = #{leader},
             phone = #{phone},
             email = #{email},
-            status = #{status}
+            status = #{status},
+            update_by = #{updateBy}
         WHERE dept_id = #{deptId}
         AND del_flag = '0'
     </update>
@@ -137,5 +138,102 @@
         UPDATE sys_dept
         SET del_flag = '2'
         WHERE dept_id = #{id} AND del_flag = '0'
+    </update>
+
+    <select id="selectDeptCount" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_dept
+        WHERE del_flag = '0'
+        <if test="deptId != null and deptId != 0">
+            AND dept_id = #{deptId}
+        </if>
+        <if test="parentId != null and parentId != 0">
+            AND parent_id = #{parentId}
+        </if>
+    </select>
+
+    <select id="checkDeptExistUser" resultType="int">
+        SELECT COUNT(1) FROM sys_user WHERE dept_id = #{deptId} AND del_flag = '0'
+    </select>
+
+    <select id="selectDeptList" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_dept
+        WHERE del_flag = '0'
+        <if test="deptId != null and deptId != 0">
+            AND dept_id = #{deptId}
+        </if>
+        <if test="parentId != null and parentId != 0">
+            AND parent_id = #{parentId}
+        </if>
+        <if test="deptName != null and deptName != ''">
+            AND dept_name LIKE concat('%', #{deptName}, '%')
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY parent_id, order_num
+    </select>
+
+    <select id="selectDeptById" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO">
+        SELECT d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader, d.phone, d.email, d.status,
+               d.del_flag, d.create_by, d.update_by, d.create_time, d.update_time,
+               (SELECT dept_name FROM sys_dept WHERE dept_id = d.parent_id) AS parent_name
+        FROM sys_dept d
+        WHERE d.dept_id = #{deptId}
+    </select>
+
+    <select id="checkDeptNameUnique" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_dept
+        WHERE dept_name = #{deptName} AND parent_id = #{parentId} AND del_flag = '0'
+        LIMIT 1
+    </select>
+
+    <select id="selectRoleDeptTree" resultType="String">
+        SELECT concat(d.dept_id, d.dept_name) AS dept_name
+        FROM sys_dept d
+                 LEFT JOIN sys_role_dept rd ON d.dept_id = rd.dept_id
+        WHERE d.del_flag = '0' AND rd.role_id = #{roleId}
+        ORDER BY d.parent_id, d.order_num
+    </select>
+
+    <update id="updateDeptStatusNormal">
+        UPDATE sys_dept
+        SET status = '0'
+        WHERE dept_id IN
+        <foreach collection="array" item="deptId" open="(" separator="," close=")">
+            #{deptId}
+        </foreach>
+    </update>
+
+    <select id="selectChildrenDeptById" resultType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_dept
+        WHERE find_in_set(#{deptId}, ancestors)
+    </select>
+
+    <select id="selectNormalChildrenDeptById" resultType="int">
+        SELECT COUNT(*)
+        FROM sys_dept
+        WHERE status = 0 AND del_flag = '0' AND find_in_set(#{deptId}, ancestors)
+    </select>
+
+    <update id="updateDeptChildren" parameterType="java.util.List">
+        UPDATE sys_dept
+        SET ancestors =
+        <foreach collection="depts" item="item" index="index" separator=" " open="case dept_id" close="end">
+            WHEN #{item.deptId} THEN #{item.ancestors}
+        </foreach>
+        WHERE dept_id IN
+        <foreach collection="depts" item="item" index="index" separator="," open="(" close=")">
+            #{item.deptId}
+        </foreach>
+    </update>
+
+    <update id="updateDeptSort" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysDeptDO">
+        UPDATE sys_dept
+        SET order_num = #{orderNum}
+        WHERE dept_id = #{deptId}
     </update>
 </mapper>

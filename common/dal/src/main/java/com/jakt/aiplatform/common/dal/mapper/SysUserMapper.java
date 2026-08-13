@@ -1,6 +1,8 @@
 package com.jakt.aiplatform.common.dal.mapper;
 
 import com.jakt.aiplatform.common.dal.dataobject.SysUserDO;
+import com.jakt.aiplatform.core.model.result.SysUserDetailResult;
+import com.jakt.aiplatform.core.model.result.SysUserListResult;
 import com.jakt.aiplatform.core.model.param.SysUserQueryParam;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -11,6 +13,46 @@ import java.util.List;
  */
 @Mapper
 public interface SysUserMapper {
+
+    /**
+     * 用户列表（join 部门，返回投影结果）。
+     *
+     * @param query 查询条件
+     * @return 用户投影列表
+     */
+    List<SysUserListResult> selectUserList(SysUserQueryParam query);
+
+    /**
+     * 已分配指定角色的用户列表（join 部门）。
+     *
+     * @param query 查询条件（roleId 必填）
+     * @return 用户投影列表
+     */
+    List<SysUserListResult> selectAllocatedList(SysUserQueryParam query);
+
+    /**
+     * 未分配指定角色的用户列表（join 部门）。
+     *
+     * @param query 查询条件（roleId 必填）
+     * @return 用户投影列表
+     */
+    List<SysUserListResult> selectUnallocatedList(SysUserQueryParam query);
+
+    /**
+     * 用户详情（selectUserVo 语义：join 部门 + 角色，一行 = 用户 × 一个角色）。
+     *
+     * @param query 查询条件（userId/loginName/phonenumber/email）
+     * @return 用户详情投影行
+     */
+    List<SysUserDetailResult> selectUserDetail(SysUserQueryParam query);
+
+    /**
+     * 按 ID 集合批量删除（逻辑删除）。
+     *
+     * @param ids 用户ID数组
+     * @return 影响行数
+     */
+    int deleteByIds(Long[] ids);
 
     /**
      * 按主键查询。

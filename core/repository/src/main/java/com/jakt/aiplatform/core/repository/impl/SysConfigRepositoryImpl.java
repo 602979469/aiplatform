@@ -3,20 +3,21 @@ package com.jakt.aiplatform.core.repository.impl;
 import com.jakt.aiplatform.common.dal.dataobject.SysConfigDO;
 import com.jakt.aiplatform.common.dal.mapper.SysConfigMapper;
 import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.util.tools.ListUtil;
 import com.jakt.aiplatform.core.model.domain.SysConfig;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.SysConfigQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
 import com.jakt.aiplatform.core.repository.SysConfigRepository;
 import com.jakt.aiplatform.core.repository.convertor.SysConfigConvertor;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.convert.Convert;
+import cn.hutool.core.util.ObjectUtil;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 /**
- * 参数配置仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 参数配置仓储实现（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 @Repository
 public class SysConfigRepositoryImpl implements SysConfigRepository {
@@ -28,50 +29,65 @@ public class SysConfigRepositoryImpl implements SysConfigRepository {
         this.sysConfigMapper = sysConfigMapper;
     }
 
-    @Override
-    public SysConfig findById(Long id) {
-        return SysConfigConvertor.toModel(sysConfigMapper.selectById(id));
+    private SysConfig findOne(SysConfigDO sysConfigDO) {
+        SysConfigQueryParam query = SysConfigConvertor.toQueryParam(sysConfigDO);
+        List<SysConfigDO> list = sysConfigMapper.selectList(query);
+        if (CollUtil.isEmpty(list)) {
+            return null;
+        }
+        AiPlatformInvoker.throwErrWhenTrue(list.size() > 1, ErrorCodeEnum.RESULT_NOT_UNIQUE, "查询结果不唯一");
+        return SysConfigConvertor.toModel(list.get(0));
     }
 
     @Override
-    public List<SysConfig> findList(SysConfigQueryParam query) {
-        return sysConfigMapper.selectList(query).stream().map(SysConfigConvertor::toModel).toList();
+    public SysConfig selectConfig(SysConfig config) {
+        SysConfigDO condition = new SysConfigDO();
+        condition.setConfigKey(config.getConfigKey());
+        return findOne(condition);
     }
 
     @Override
-    public PageResult<SysConfig> findPage(SysConfigQueryParam query) {
-        List<SysConfigDO> doList = sysConfigMapper.selectPage(query);
-        long total = sysConfigMapper.countByQuery(query);
-        List<SysConfig> list = doList.stream().map(SysConfigConvertor::toModel).toList();
-        return new PageResult<>(total, query.getPageNum(), query.getPageSize(), list);
+    public List<SysConfig> selectConfigList(SysConfig config) {
+        List<SysConfigDO> list = sysConfigMapper.selectList(SysConfigConvertor.toQueryParam(config));
+        return ListUtil.convert(list, SysConfigConvertor::toModel);
     }
 
     @Override
-    public SysConfig insert(SysConfig sysConfig) {
-        SysConfigDO sysConfigDO = SysConfigConvertor.toDO(sysConfig);
-        sysConfigMapper.insert(sysConfigDO);
-        return SysConfigConvertor.toModel(sysConfigDO);
+    public SysConfig selectConfigById(Long configId) {
+        return SysConfigConvertor.toModel(sysConfigMapper.selectById(configId));
     }
 
     @Override
-    public void update(SysConfig sysConfig) {
-        SysConfigDO sysConfigDO = SysConfigConvertor.toDO(sysConfig);
-        int affected = sysConfigMapper.update(sysConfigDO);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysConfigRepository.update configId={} 影响行数={}", sysConfig.getConfigId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public boolean checkConfigKeyUnique(SysConfig config) {
+        SysConfigQueryParam query = new SysConfigQueryParam();
+        query.setConfigKey(config.getConfigKey());
+        List<SysConfigDO> list = sysConfigMapper.selectList(query);
+        if (CollUtil.isEmpty(list)) {
+            return true;
+        }
+        if (list.size() > 1) {
+            return false;
+        }
+        return ObjectUtil.equal(list.get(0).getConfigId(), config.getConfigId());
     }
 
     @Override
-    public void updateByCondition(SysConfig sysConfig) {
-        int affected = sysConfigMapper.updateByCondition(SysConfigConvertor.toDO(sysConfig));
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysConfigRepository.updateByCondition configId={} 影响行数={}", sysConfig.getConfigId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public int insertConfig(SysConfig config) {
+        return sysConfigMapper.insert(SysConfigConvertor.toDO(config));
     }
 
     @Override
-    public void deleteById(Long id) {
-        int affected = sysConfigMapper.deleteById(id);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysConfigRepository.deleteById id={} 影响行数={}", id, affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.DELETE_FAILED, "删除失败：记录不存在或已被删除");
+    public int updateConfig(SysConfig config) {
+        return sysConfigMapper.update(SysConfigConvertor.toDO(config));
+    }
+
+    @Override
+    public int deleteConfigById(Long configId) {
+        return sysConfigMapper.deleteById(configId);
+    }
+
+    @Override
+    public int deleteConfigByIds(String ids) {
+        return sysConfigMapper.deleteByIds(Convert.toLongArray(ids));
     }
 }

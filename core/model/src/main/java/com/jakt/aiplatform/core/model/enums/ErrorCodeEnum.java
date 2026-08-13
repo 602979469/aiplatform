@@ -29,6 +29,9 @@ public enum ErrorCodeEnum implements ErrorCode {
     /** 枚举值未匹配。 */
     ENUM_NOT_MATCHED(30004, "枚举值未匹配"),
 
+    /** 查询结果不唯一（findOne 等单条查询返回多条）。 */
+    RESULT_NOT_UNIQUE(30005, "查询结果不唯一"),
+
     /** 外部服务调用失败。 */
     EXTERNAL_ERROR(40000, "外部服务调用失败");
 

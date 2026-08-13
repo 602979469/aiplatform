@@ -45,4 +45,13 @@ public class SysMenuDO extends BaseDO {
     /** 备注。 */
     private String remark;
 
+    /** 父菜单名称（join 查询投影字段，非表列）。 */
+    private String parentName;
+
+    /** 创建者。 */
+    private String createBy;
+
+    /** 更新者。 */
+    private String updateBy;
+
 }

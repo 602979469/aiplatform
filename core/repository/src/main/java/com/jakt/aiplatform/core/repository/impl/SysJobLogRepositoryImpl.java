@@ -3,20 +3,20 @@ package com.jakt.aiplatform.core.repository.impl;
 import com.jakt.aiplatform.common.dal.dataobject.SysJobLogDO;
 import com.jakt.aiplatform.common.dal.mapper.SysJobLogMapper;
 import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.util.tools.ListUtil;
 import com.jakt.aiplatform.core.model.domain.SysJobLog;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.SysJobLogQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
 import com.jakt.aiplatform.core.repository.SysJobLogRepository;
 import com.jakt.aiplatform.core.repository.convertor.SysJobLogConvertor;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.convert.Convert;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 /**
- * 定时任务日志仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 定时任务日志仓储实现（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 @Repository
 public class SysJobLogRepositoryImpl implements SysJobLogRepository {
@@ -28,50 +28,52 @@ public class SysJobLogRepositoryImpl implements SysJobLogRepository {
         this.sysJobLogMapper = sysJobLogMapper;
     }
 
-    @Override
-    public SysJobLog findById(Long id) {
-        return SysJobLogConvertor.toModel(sysJobLogMapper.selectById(id));
+    /** 按条件取单条：空返回 null，多条抛 RESULT_NOT_UNIQUE。 */
+    private SysJobLog findOne(SysJobLogDO condition) {
+        List<SysJobLogDO> list = sysJobLogMapper.selectList(SysJobLogConvertor.toQueryParam(condition));
+        if (CollUtil.isEmpty(list)) {
+            return null;
+        }
+        AiPlatformInvoker.throwErrWhenTrue(list.size() > 1, ErrorCodeEnum.RESULT_NOT_UNIQUE, "查询结果不唯一");
+        return SysJobLogConvertor.toModel(list.get(0));
     }
 
     @Override
-    public List<SysJobLog> findList(SysJobLogQueryParam query) {
-        return sysJobLogMapper.selectList(query).stream().map(SysJobLogConvertor::toModel).toList();
+    public List<SysJobLog> selectJobLogList(SysJobLog jobLog) {
+        List<SysJobLogDO> list = sysJobLogMapper.selectList(SysJobLogConvertor.toQueryParam(jobLog));
+        return ListUtil.convert(list, SysJobLogConvertor::toModel);
     }
 
     @Override
-    public PageResult<SysJobLog> findPage(SysJobLogQueryParam query) {
-        List<SysJobLogDO> doList = sysJobLogMapper.selectPage(query);
-        long total = sysJobLogMapper.countByQuery(query);
-        List<SysJobLog> list = doList.stream().map(SysJobLogConvertor::toModel).toList();
-        return new PageResult<>(total, query.getPageNum(), query.getPageSize(), list);
+    public List<SysJobLog> selectJobLogAll() {
+        List<SysJobLogDO> list = sysJobLogMapper.selectList(new SysJobLogQueryParam());
+        return ListUtil.convert(list, SysJobLogConvertor::toModel);
     }
 
     @Override
-    public SysJobLog insert(SysJobLog sysJobLog) {
-        SysJobLogDO sysJobLogDO = SysJobLogConvertor.toDO(sysJobLog);
-        sysJobLogMapper.insert(sysJobLogDO);
-        return SysJobLogConvertor.toModel(sysJobLogDO);
+    public SysJobLog selectJobLogById(Long jobLogId) {
+        SysJobLogDO condition = new SysJobLogDO();
+        condition.setJobLogId(jobLogId);
+        return findOne(condition);
     }
 
     @Override
-    public void update(SysJobLog sysJobLog) {
-        SysJobLogDO sysJobLogDO = SysJobLogConvertor.toDO(sysJobLog);
-        int affected = sysJobLogMapper.update(sysJobLogDO);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysJobLogRepository.update jobLogId={} 影响行数={}", sysJobLog.getJobLogId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public int insertJobLog(SysJobLog jobLog) {
+        return sysJobLogMapper.insert(SysJobLogConvertor.toDO(jobLog));
     }
 
     @Override
-    public void updateByCondition(SysJobLog sysJobLog) {
-        int affected = sysJobLogMapper.updateByCondition(SysJobLogConvertor.toDO(sysJobLog));
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysJobLogRepository.updateByCondition jobLogId={} 影响行数={}", sysJobLog.getJobLogId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public int deleteJobLogByIds(String ids) {
+        return sysJobLogMapper.deleteByIds(Convert.toLongArray(ids));
     }
 
     @Override
-    public void deleteById(Long id) {
-        int affected = sysJobLogMapper.deleteById(id);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysJobLogRepository.deleteById id={} 影响行数={}", id, affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.DELETE_FAILED, "删除失败：记录不存在或已被删除");
+    public int deleteJobLogById(Long jobLogId) {
+        return sysJobLogMapper.deleteById(jobLogId);
+    }
+
+    @Override
+    public int cleanJobLog() {
+        return sysJobLogMapper.cleanJobLog();
     }
 }

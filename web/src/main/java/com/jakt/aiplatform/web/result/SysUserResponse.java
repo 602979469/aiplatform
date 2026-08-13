@@ -3,7 +3,7 @@ package com.jakt.aiplatform.web.result;
 import java.time.LocalDateTime;
 import com.jakt.aiplatform.core.model.enums.UserTypeEnum;
 import com.jakt.aiplatform.core.model.enums.SexEnum;
-import com.jakt.aiplatform.core.model.enums.UserStatusEnum;
+import com.jakt.aiplatform.core.model.enums.UserStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,7 +54,7 @@ public class SysUserResponse extends BaseResult {
     private String salt;
 
     /** 账号状态（0正常 1停用）。 */
-    private UserStatusEnum status;
+    private UserStatus status;
 
     /** 最后登录IP。 */
     private String loginIp;

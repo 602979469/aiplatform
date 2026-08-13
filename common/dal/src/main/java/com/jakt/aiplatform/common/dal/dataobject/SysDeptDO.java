@@ -36,4 +36,16 @@ public class SysDeptDO extends BaseDO {
     /** 部门状态（0正常 1停用）。 */
     private String status;
 
+    /** 删除标志（0代表存在 2代表删除）。 */
+    private String delFlag;
+
+    /** 创建者。 */
+    private String createBy;
+
+    /** 更新者。 */
+    private String updateBy;
+
+    /** 父部门名称（join 查询投影字段，非表列）。 */
+    private String parentName;
+
 }

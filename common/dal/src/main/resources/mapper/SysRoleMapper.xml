@@ -3,7 +3,7 @@
 <mapper namespace="com.jakt.aiplatform.common.dal.mapper.SysRoleMapper">
 
     <sql id="selectColumns">
-        role_id, role_name, role_key, role_sort, data_scope, status, remark, create_time, update_time
+        role_id, role_name, role_key, role_sort, data_scope, status, remark, create_by, update_by, del_flag, create_time, update_time
     </sql>
 
     <sql id="queryConditions">
@@ -75,8 +75,8 @@
 
     <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysRoleDO"
             useGeneratedKeys="true" keyProperty="roleId">
-        INSERT INTO sys_role (role_name, role_key, role_sort, data_scope, status, remark)
-        VALUES (#{roleName}, #{roleKey}, #{roleSort}, #{dataScope}, #{status}, #{remark})
+        INSERT INTO sys_role (role_name, role_key, role_sort, data_scope, status, remark, create_by, update_by)
+        VALUES (#{roleName}, #{roleKey}, #{roleSort}, #{dataScope}, #{status}, #{remark}, #{createBy}, #{updateBy})
     </insert>
 
     <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysRoleDO">
@@ -124,4 +124,21 @@
         SET del_flag = '2'
         WHERE role_id = #{id} AND del_flag = '0'
     </update>
+
+    <update id="deleteByIds">
+        UPDATE sys_role
+        SET del_flag = '2'
+        WHERE role_id IN
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND del_flag = '0'
+    </update>
+
+    <select id="selectRolesByUserId" resultType="com.jakt.aiplatform.common.dal.dataobject.SysRoleDO">
+        SELECT r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.status
+        FROM sys_role r
+        LEFT JOIN sys_user_role ur ON ur.role_id = r.role_id
+        WHERE ur.user_id = #{userId} AND r.del_flag = '0'
+    </select>
 </mapper>

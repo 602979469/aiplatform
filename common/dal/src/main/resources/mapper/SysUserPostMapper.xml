@@ -90,4 +90,26 @@
     <delete id="deleteById">
         DELETE FROM sys_user_post WHERE id = #{id}
     </delete>
+
+    <delete id="deleteUserPostByUserId">
+        DELETE FROM sys_user_post WHERE user_id = #{userId}
+    </delete>
+
+    <select id="countUserPostById" resultType="int">
+        SELECT COUNT(1) FROM sys_user_post WHERE post_id = #{postId}
+    </select>
+
+    <delete id="deleteUserPost">
+        DELETE FROM sys_user_post WHERE user_id IN
+        <foreach collection="array" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </delete>
+
+    <insert id="batchUserPost">
+        INSERT INTO sys_user_post (user_id, post_id) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.userId}, #{item.postId})
+        </foreach>
+    </insert>
 </mapper>

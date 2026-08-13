@@ -1,67 +1,68 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.SysUserRole;
-import com.jakt.aiplatform.core.model.param.SysUserRoleQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 
 import java.util.List;
 
 /**
- * 用户角色关联仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 用户角色关联仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface SysUserRoleRepository {
 
     /**
-     * 按主键查询。
+     * 按用户ID查询关联列表。
      *
-     * @param id 主键
-     * @return 用户角色关联领域模型
-     */
-    SysUserRole findById(Long id);
-
-    /**
-     * 分页查询。
-     *
-     * @param query 查询参数
-     * @return 分页结果
-     */
-    PageResult<SysUserRole> findPage(SysUserRoleQueryParam query);
-
-    /**
-     * 列表查询。
-     *
-     * @param query 查询参数
+     * @param userId 用户ID
      * @return 用户角色关联列表
      */
-    List<SysUserRole> findList(SysUserRoleQueryParam query);
+    List<SysUserRole> selectUserRoleByUserId(Long userId);
 
     /**
-     * 新增。
+     * 按用户ID删除关联。
      *
-     * @param sysUserRole 用户角色关联
-     * @return 新增后的用户角色关联（主键已回填）
+     * @param userId 用户ID
+     * @return 影响行数
      */
-    SysUserRole insert(SysUserRole sysUserRole);
+    int deleteUserRoleByUserId(Long userId);
 
     /**
-     * 更新。
+     * 按用户ID集合批量删除关联。
      *
-     * @param sysUserRole 用户角色关联
+     * @param ids 用户ID数组
+     * @return 影响行数
      */
-    void update(SysUserRole sysUserRole);
+    int deleteUserRole(Long[] ids);
 
     /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
+     * 按角色ID统计关联数量。
      *
-     * @param sysUserRole 用户角色关联（至少含主键）
+     * @param roleId 角色ID
+     * @return 关联数量
      */
-    void updateByCondition(SysUserRole sysUserRole);
+    int countUserRoleByRoleId(Long roleId);
 
     /**
-     * 按主键删除。
+     * 批量新增用户角色关联。
      *
-     * @param id 主键
+     * @param userRoleList 用户角色关联列表
+     * @return 影响行数
      */
-    void deleteById(Long id);
+    int batchUserRole(List<SysUserRole> userRoleList);
+
+    /**
+     * 按用户ID与角色ID删除单条关联。
+     *
+     * @param userRole 用户角色关联（userId + roleId）
+     * @return 影响行数
+     */
+    int deleteUserRoleInfo(SysUserRole userRole);
+
+    /**
+     * 按角色ID与用户ID集合批量删除关联。
+     *
+     * @param roleId  角色ID
+     * @param userIds 用户ID数组
+     * @return 影响行数
+     */
+    int deleteUserRoleInfos(Long roleId, Long[] userIds);
 }

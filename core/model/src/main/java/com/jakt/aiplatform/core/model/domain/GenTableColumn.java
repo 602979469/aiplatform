@@ -1,16 +1,16 @@
 package com.jakt.aiplatform.core.model.domain;
 
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 代码生成字段领域模型。
+ * 代码生成表字段领域模型（RuoYi 结构：继承 BaseEntity）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class GenTableColumn extends BaseModel {
-    /** 主键。 */
+public class GenTableColumn extends BaseEntity {
+
+    /** 编号。 */
     private Long columnId;
 
     /** 归属表编号。 */
@@ -52,10 +52,10 @@ public class GenTableColumn extends BaseModel {
     /** 是否查询字段（1是）。 */
     private String isQuery;
 
-    /** 查询方式（等于、不等于、大于、小于、范围）。 */
+    /** 查询方式。 */
     private String queryType;
 
-    /** 显示类型（文本框、文本域、下拉框、复选框、单选框、日期控件）。 */
+    /** 显示类型。 */
     private String htmlType;
 
     /** 字典类型。 */
@@ -63,5 +63,4 @@ public class GenTableColumn extends BaseModel {
 
     /** 排序。 */
     private Integer sort;
-
 }

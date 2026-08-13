@@ -1,67 +1,156 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.SysUser;
-import com.jakt.aiplatform.core.model.param.SysUserQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 
 import java.util.List;
 
 /**
- * 用户仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 用户仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface SysUserRepository {
 
     /**
-     * 按主键查询。
+     * 按登录账号查询用户。
      *
-     * @param id 主键
+     * @param loginName 登录账号
      * @return 用户领域模型
      */
-    SysUser findById(Long id);
+    SysUser selectUserByLoginName(String loginName);
 
     /**
-     * 分页查询。
+     * 按手机号码查询用户。
      *
-     * @param query 查询参数
-     * @return 分页结果
+     * @param phonenumber 手机号码
+     * @return 用户领域模型
      */
-    PageResult<SysUser> findPage(SysUserQueryParam query);
+    SysUser selectUserByPhoneNumber(String phonenumber);
 
     /**
-     * 列表查询。
+     * 按邮箱查询用户。
      *
-     * @param query 查询参数
+     * @param email 邮箱
+     * @return 用户领域模型
+     */
+    SysUser selectUserByEmail(String email);
+
+    /**
+     * 查询用户列表（join 部门）。
+     *
+     * @param user 查询条件（实体即条件）
      * @return 用户列表
      */
-    List<SysUser> findList(SysUserQueryParam query);
+    List<SysUser> selectUserList(SysUser user);
 
     /**
-     * 新增。
+     * 查询已分配指定角色的用户列表。
      *
-     * @param sysUser 用户
-     * @return 新增后的用户（主键已回填）
+     * @param user 查询条件（roleId 必填）
+     * @return 用户列表
      */
-    SysUser insert(SysUser sysUser);
+    List<SysUser> selectAllocatedList(SysUser user);
 
     /**
-     * 更新。
+     * 查询未分配指定角色的用户列表。
      *
-     * @param sysUser 用户
+     * @param user 查询条件（roleId 必填）
+     * @return 用户列表
      */
-    void update(SysUser sysUser);
+    List<SysUser> selectUnallocatedList(SysUser user);
 
     /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
+     * 校验登录账号唯一。
      *
-     * @param sysUser 用户（至少含主键）
+     * @param user 用户（含 userId 用于排除自身）
+     * @return 是否唯一
      */
-    void updateByCondition(SysUser sysUser);
+    boolean checkLoginNameUnique(SysUser user);
 
     /**
-     * 按主键删除。
+     * 校验手机号码唯一。
      *
-     * @param id 主键
+     * @param user 用户
+     * @return 是否唯一
      */
-    void deleteById(Long id);
+    boolean checkPhoneUnique(SysUser user);
+
+    /**
+     * 校验邮箱唯一。
+     *
+     * @param user 用户
+     * @return 是否唯一
+     */
+    boolean checkEmailUnique(SysUser user);
+
+    /**
+     * 按用户ID查询用户。
+     *
+     * @param userId 用户ID
+     * @return 用户领域模型
+     */
+    SysUser selectUserById(Long userId);
+
+    /**
+     * 按用户ID删除。
+     *
+     * @param userId 用户ID
+     * @return 影响行数
+     */
+    int deleteUserById(Long userId);
+
+    /**
+     * 按 ID 集合批量删除。
+     *
+     * @param ids 用户ID集合（逗号分隔）
+     * @return 影响行数
+     */
+    int deleteUserByIds(String ids);
+
+    /**
+     * 更新用户头像。
+     *
+     * @param userId 用户ID
+     * @param avatar 头像路径
+     * @return 影响行数
+     */
+    int updateUserAvatar(Long userId, String avatar);
+
+    /**
+     * 重置密码。
+     *
+     * @param user 用户（userId/password/salt/pwdUpdateDate）
+     * @return 影响行数
+     */
+    int resetUserPwd(SysUser user);
+
+    /**
+     * 修改用户状态。
+     *
+     * @param user 用户（userId/status）
+     * @return 影响行数
+     */
+    int updateUserStatus(SysUser user);
+
+    /**
+     * 更新登录信息。
+     *
+     * @param user 用户（userId/loginIp/loginDate）
+     * @return 影响行数
+     */
+    int updateLoginInfo(SysUser user);
+
+    /**
+     * 全量更新用户。
+     *
+     * @param user 用户
+     * @return 影响行数
+     */
+    int updateUser(SysUser user);
+
+    /**
+     * 新增用户。
+     *
+     * @param user 用户
+     * @return 影响行数
+     */
+    int insertUser(SysUser user);
 }

@@ -1,17 +1,17 @@
 package com.jakt.aiplatform.core.model.domain;
 
 import com.jakt.aiplatform.core.model.enums.ConfigTypeEnum;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 参数配置领域模型。
+ * 参数配置领域模型（RuoYi 结构：继承 BaseEntity）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysConfig extends BaseModel {
-    /** 主键。 */
+public class SysConfig extends BaseEntity {
+
+    /** 参数主键。 */
     private Long configId;
 
     /** 参数名称。 */
@@ -25,8 +25,4 @@ public class SysConfig extends BaseModel {
 
     /** 系统内置（Y是 N否）。 */
     private ConfigTypeEnum configType;
-
-    /** 备注。 */
-    private String remark;
-
 }

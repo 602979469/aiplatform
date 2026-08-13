@@ -2,7 +2,7 @@ package com.jakt.aiplatform.core.repository.convertor;
 
 import com.jakt.aiplatform.common.dal.dataobject.SysRoleMenuDO;
 import com.jakt.aiplatform.core.model.domain.SysRoleMenu;
-
+import com.jakt.aiplatform.core.model.param.SysRoleMenuQueryParam;
 
 /**
  * 角色菜单关联 DO 与领域模型互转，只存在于 repository。
@@ -11,6 +11,34 @@ import com.jakt.aiplatform.core.model.domain.SysRoleMenu;
 public final class SysRoleMenuConvertor {
 
     private SysRoleMenuConvertor() {
+    }
+
+    /**
+     * 领域模型 → 查询参数（显式赋值）。
+     *
+     * @param roleMenu 角色菜单关联领域模型
+     * @return 角色菜单关联查询参数
+     */
+    public static SysRoleMenuQueryParam toQueryParam(SysRoleMenu roleMenu) {
+        SysRoleMenuQueryParam query = new SysRoleMenuQueryParam();
+        query.setId(roleMenu.getId());
+        query.setRoleId(roleMenu.getRoleId());
+        query.setMenuId(roleMenu.getMenuId());
+        return query;
+    }
+
+    /**
+     * 数据对象 → 查询参数（显式赋值，仅拷贝查询相关字段）。
+     *
+     * @param condition 角色菜单关联数据对象（条件载体）
+     * @return 角色菜单关联查询参数
+     */
+    public static SysRoleMenuQueryParam toQueryParam(SysRoleMenuDO condition) {
+        SysRoleMenuQueryParam query = new SysRoleMenuQueryParam();
+        query.setId(condition.getId());
+        query.setRoleId(condition.getRoleId());
+        query.setMenuId(condition.getMenuId());
+        return query;
     }
 
     /**

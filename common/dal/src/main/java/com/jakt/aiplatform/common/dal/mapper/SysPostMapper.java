@@ -76,4 +76,20 @@ public interface SysPostMapper {
      * @return 受影响行数
      */
     int deleteById(Long id);
+
+    /**
+     * 按 ID 集合批量删除。
+     *
+     * @param ids 主键数组
+     * @return 影响行数
+     */
+    int deleteByIds(Long[] ids);
+
+    /**
+     * 按用户ID查询岗位列表（join sys_user_post）。
+     *
+     * @param userId 用户ID
+     * @return 岗位数据对象列表
+     */
+    List<SysPostDO> selectPostsByUserId(Long userId);
 }

@@ -57,8 +57,8 @@ public class SysUserController {
 
             @Override
             public SysUserResponse execute(SysUserCreateRequest param) {
-                SysUser sysUser = sysUserManager.createSysUser(SysUserAssembler.toModel(param));
-                return SysUserAssembler.toResponse(sysUser);
+                // TODO 接入 SysUserManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysUserController {
 
             @Override
             public SysUserResponse execute(Long param) {
-                SysUser sysUser = sysUserManager.getSysUser(param);
-                AiPlatformInvoker.throwErrWhenNull(sysUser, ErrorCodeEnum.RESOURCE_NOT_FOUND, "用户不存在");
-                return SysUserAssembler.toResponse(sysUser);
+                // TODO 接入 SysUserManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysUserController {
 
             @Override
             public PageResult<SysUserResponse> execute(SysUserQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysUserQueryRequest());
-                PageResult<SysUser> page = sysUserManager.pageSysUsers(SysUserAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysUserAssembler::toResponse).toList());
+                // TODO 接入 SysUserManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysUserController {
 
             @Override
             public void execute(SysUserUpdateRequest param) {
-                sysUserManager.updateSysUser(SysUserAssembler.toModel(param, id));
+                // TODO 接入 SysUserManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysUserController {
 
             @Override
             public void execute(Long id) {
-                sysUserManager.deleteSysUser(id);
+                // TODO 接入 SysUserManager（RuoYi 移植过渡）
             }
         });
     }

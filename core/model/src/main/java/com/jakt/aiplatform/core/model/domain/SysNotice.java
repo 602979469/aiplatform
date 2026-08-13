@@ -1,18 +1,18 @@
 package com.jakt.aiplatform.core.model.domain;
 
-import com.jakt.aiplatform.core.model.enums.NoticeTypeEnum;
 import com.jakt.aiplatform.core.model.enums.NoticeStatusEnum;
-
+import com.jakt.aiplatform.core.model.enums.NoticeTypeEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 通知公告领域模型。
+ * 通知公告领域模型（RuoYi 结构：继承 BaseEntity，含组装字段 isRead）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysNotice extends BaseModel {
-    /** 主键。 */
+public class SysNotice extends BaseEntity {
+
+    /** 公告ID。 */
     private Long noticeId;
 
     /** 公告标题。 */
@@ -27,7 +27,6 @@ public class SysNotice extends BaseModel {
     /** 公告状态（0正常 1关闭）。 */
     private NoticeStatusEnum status;
 
-    /** 备注。 */
-    private String remark;
-
+    /** 是否已读（组装字段）。 */
+    private boolean isRead;
 }

@@ -3,6 +3,7 @@ package com.jakt.aiplatform.core.repository.convertor;
 import com.jakt.aiplatform.common.dal.dataobject.SysConfigDO;
 import com.jakt.aiplatform.core.model.domain.SysConfig;
 import com.jakt.aiplatform.core.model.enums.ConfigTypeEnum;
+import com.jakt.aiplatform.core.model.param.SysConfigQueryParam;
 import cn.hutool.core.util.ObjectUtil;
 
 
@@ -13,6 +14,40 @@ import cn.hutool.core.util.ObjectUtil;
 public final class SysConfigConvertor {
 
     private SysConfigConvertor() {
+    }
+
+    /**
+     * 领域模型 → 查询参数（枚举转 code，显式赋值）。
+     *
+     * @param config 参数配置领域模型
+     * @return 参数配置查询参数
+     */
+    public static SysConfigQueryParam toQueryParam(SysConfig config) {
+        SysConfigQueryParam query = new SysConfigQueryParam();
+        query.setConfigId(config.getConfigId());
+        query.setConfigName(config.getConfigName());
+        query.setConfigKey(config.getConfigKey());
+        query.setConfigValue(config.getConfigValue());
+        query.setConfigType(config.getConfigType() == null ? null : config.getConfigType().getCode());
+        query.setRemark(config.getRemark());
+        return query;
+    }
+
+    /**
+     * 数据对象 → 查询参数（显式赋值，仅拷贝查询相关字段）。
+     *
+     * @param condition 参数配置数据对象（条件载体）
+     * @return 参数配置查询参数
+     */
+    public static SysConfigQueryParam toQueryParam(SysConfigDO condition) {
+        SysConfigQueryParam query = new SysConfigQueryParam();
+        query.setConfigId(condition.getConfigId());
+        query.setConfigName(condition.getConfigName());
+        query.setConfigKey(condition.getConfigKey());
+        query.setConfigValue(condition.getConfigValue());
+        query.setConfigType(condition.getConfigType());
+        query.setRemark(condition.getRemark());
+        return query;
     }
 
     /**
@@ -32,6 +67,8 @@ public final class SysConfigConvertor {
         target.setConfigValue(source.getConfigValue());
         target.setConfigType(ConfigTypeEnum.fromCode(source.getConfigType()));
         target.setRemark(source.getRemark());
+        target.setCreateBy(source.getCreateBy());
+        target.setUpdateBy(source.getUpdateBy());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
         return target;
@@ -51,6 +88,8 @@ public final class SysConfigConvertor {
         target.setConfigValue(source.getConfigValue());
         target.setConfigType(ObjectUtil.isNull(source.getConfigType()) ? null : source.getConfigType().getCode());
         target.setRemark(source.getRemark());
+        target.setCreateBy(source.getCreateBy());
+        target.setUpdateBy(source.getUpdateBy());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
         return target;

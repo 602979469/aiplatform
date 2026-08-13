@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysDeptQueryParam extends PageParam {
+public class SysDeptQueryParam extends PageQueryParam {
 
     /** 主键。 */
     private Long deptId;

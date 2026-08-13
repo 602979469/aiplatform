@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysDictTypeQueryParam extends PageParam {
+public class SysDictTypeQueryParam extends PageQueryParam {
 
     /** 主键。 */
     private Long dictId;

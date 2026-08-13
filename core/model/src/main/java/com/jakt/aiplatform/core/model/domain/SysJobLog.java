@@ -2,17 +2,17 @@ package com.jakt.aiplatform.core.model.domain;
 
 import java.time.LocalDateTime;
 import com.jakt.aiplatform.core.model.enums.JobLogStatusEnum;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 定时任务日志领域模型。
+ * 定时任务日志领域模型（RuoYi 结构：继承 BaseEntity）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysJobLog extends BaseModel {
-    /** 主键。 */
+public class SysJobLog extends BaseEntity {
+
+    /** 任务日志ID。 */
     private Long jobLogId;
 
     /** 任务名称。 */
@@ -38,5 +38,4 @@ public class SysJobLog extends BaseModel {
 
     /** 执行结束时间。 */
     private LocalDateTime endTime;
-
 }

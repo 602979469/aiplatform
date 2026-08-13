@@ -63,4 +63,10 @@ public class GenTableColumnDO extends BaseDO {
     /** 排序。 */
     private Integer sort;
 
+    /** 创建者。 */
+    private String createBy;
+
+    /** 更新者。 */
+    private String updateBy;
+
 }

@@ -3,7 +3,7 @@
 <mapper namespace="com.jakt.aiplatform.common.dal.mapper.SysJobMapper">
 
     <sql id="selectColumns">
-        job_id, job_name, job_group, invoke_target, cron_expression, misfire_policy, concurrent, status, remark, create_time, update_time
+        job_id, job_name, job_group, invoke_target, cron_expression, misfire_policy, concurrent, status, remark, create_by, update_by, create_time, update_time
     </sql>
 
     <sql id="queryConditions">
@@ -79,8 +79,8 @@
 
     <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysJobDO"
             useGeneratedKeys="true" keyProperty="jobId">
-        INSERT INTO sys_job (job_name, job_group, invoke_target, cron_expression, misfire_policy, concurrent, status, remark)
-        VALUES (#{jobName}, #{jobGroup}, #{invokeTarget}, #{cronExpression}, #{misfirePolicy}, #{concurrent}, #{status}, #{remark})
+        INSERT INTO sys_job (job_name, job_group, invoke_target, cron_expression, misfire_policy, concurrent, status, remark, create_by, update_by)
+        VALUES (#{jobName}, #{jobGroup}, #{invokeTarget}, #{cronExpression}, #{misfirePolicy}, #{concurrent}, #{status}, #{remark}, #{createBy}, #{updateBy})
     </insert>
 
     <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.SysJobDO">
@@ -131,5 +131,12 @@
 
     <delete id="deleteById">
         DELETE FROM sys_job WHERE job_id = #{id}
+    </delete>
+
+    <delete id="deleteByIds">
+        DELETE FROM sys_job WHERE job_id IN
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </delete>
 </mapper>

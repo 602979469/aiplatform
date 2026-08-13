@@ -57,8 +57,8 @@ public class SysLogininforController {
 
             @Override
             public SysLogininforResponse execute(SysLogininforCreateRequest param) {
-                SysLogininfor sysLogininfor = sysLogininforManager.createSysLogininfor(SysLogininforAssembler.toModel(param));
-                return SysLogininforAssembler.toResponse(sysLogininfor);
+                // TODO 接入 SysLogininforManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysLogininforController {
 
             @Override
             public SysLogininforResponse execute(Long param) {
-                SysLogininfor sysLogininfor = sysLogininforManager.getSysLogininfor(param);
-                AiPlatformInvoker.throwErrWhenNull(sysLogininfor, ErrorCodeEnum.RESOURCE_NOT_FOUND, "登录日志不存在");
-                return SysLogininforAssembler.toResponse(sysLogininfor);
+                // TODO 接入 SysLogininforManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysLogininforController {
 
             @Override
             public PageResult<SysLogininforResponse> execute(SysLogininforQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysLogininforQueryRequest());
-                PageResult<SysLogininfor> page = sysLogininforManager.pageSysLogininfors(SysLogininforAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysLogininforAssembler::toResponse).toList());
+                // TODO 接入 SysLogininforManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysLogininforController {
 
             @Override
             public void execute(SysLogininforUpdateRequest param) {
-                sysLogininforManager.updateSysLogininfor(SysLogininforAssembler.toModel(param, id));
+                // TODO 接入 SysLogininforManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysLogininforController {
 
             @Override
             public void execute(Long id) {
-                sysLogininforManager.deleteSysLogininfor(id);
+                // TODO 接入 SysLogininforManager（RuoYi 移植过渡）
             }
         });
     }

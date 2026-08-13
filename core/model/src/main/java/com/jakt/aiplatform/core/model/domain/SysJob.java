@@ -1,19 +1,19 @@
 package com.jakt.aiplatform.core.model.domain;
 
-import com.jakt.aiplatform.core.model.enums.MisfirePolicyEnum;
 import com.jakt.aiplatform.core.model.enums.ConcurrentEnum;
 import com.jakt.aiplatform.core.model.enums.JobStatusEnum;
-
+import com.jakt.aiplatform.core.model.enums.MisfirePolicyEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 定时任务领域模型。
+ * 定时任务领域模型（RuoYi 结构：继承 BaseEntity）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysJob extends BaseModel {
-    /** 主键。 */
+public class SysJob extends BaseEntity {
+
+    /** 任务ID。 */
     private Long jobId;
 
     /** 任务名称。 */
@@ -36,8 +36,4 @@ public class SysJob extends BaseModel {
 
     /** 状态（0正常 1暂停）。 */
     private JobStatusEnum status;
-
-    /** 备注信息。 */
-    private String remark;
-
 }

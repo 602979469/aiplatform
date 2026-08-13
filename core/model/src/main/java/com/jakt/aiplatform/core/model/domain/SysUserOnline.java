@@ -1,17 +1,19 @@
 package com.jakt.aiplatform.core.model.domain;
 
 import java.time.LocalDateTime;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 在线用户领域模型。
+ * 在线用户领域模型（RuoYi 结构：继承 BaseEntity）。
+ *
+ * <p>session 组装字段依赖 RuoYi OnlineSession 对象，待会话能力接线时补充。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysUserOnline extends BaseModel {
-    /** 主键。 */
+public class SysUserOnline extends BaseEntity {
+
+    /** 用户会话id。 */
     private String sessionId;
 
     /** 登录账号。 */
@@ -32,7 +34,7 @@ public class SysUserOnline extends BaseModel {
     /** 操作系统。 */
     private String os;
 
-    /** 在线状态on_line在线off_line离线。 */
+    /** 在线状态（on_line在线 off_line离线）。 */
     private String status;
 
     /** session创建时间。 */
@@ -41,10 +43,9 @@ public class SysUserOnline extends BaseModel {
     /** session最后访问时间。 */
     private LocalDateTime lastAccessTime;
 
-    /** 超时时间，单位为分钟。 */
+    /** 超时时间（分钟）。 */
     private Long expireTime;
 
-    /** 序列化的Session数据，用于服务重启后恢复会话。 */
+    /** 序列化的Session数据。 */
     private String sessionData;
-
 }

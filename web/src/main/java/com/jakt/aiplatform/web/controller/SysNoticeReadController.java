@@ -57,8 +57,8 @@ public class SysNoticeReadController {
 
             @Override
             public SysNoticeReadResponse execute(SysNoticeReadCreateRequest param) {
-                SysNoticeRead sysNoticeRead = sysNoticeReadManager.createSysNoticeRead(SysNoticeReadAssembler.toModel(param));
-                return SysNoticeReadAssembler.toResponse(sysNoticeRead);
+                // TODO 接入 SysNoticeReadManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysNoticeReadController {
 
             @Override
             public SysNoticeReadResponse execute(Long param) {
-                SysNoticeRead sysNoticeRead = sysNoticeReadManager.getSysNoticeRead(param);
-                AiPlatformInvoker.throwErrWhenNull(sysNoticeRead, ErrorCodeEnum.RESOURCE_NOT_FOUND, "公告已读记录不存在");
-                return SysNoticeReadAssembler.toResponse(sysNoticeRead);
+                // TODO 接入 SysNoticeReadManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysNoticeReadController {
 
             @Override
             public PageResult<SysNoticeReadResponse> execute(SysNoticeReadQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysNoticeReadQueryRequest());
-                PageResult<SysNoticeRead> page = sysNoticeReadManager.pageSysNoticeReads(SysNoticeReadAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysNoticeReadAssembler::toResponse).toList());
+                // TODO 接入 SysNoticeReadManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysNoticeReadController {
 
             @Override
             public void execute(SysNoticeReadUpdateRequest param) {
-                sysNoticeReadManager.updateSysNoticeRead(SysNoticeReadAssembler.toModel(param, id));
+                // TODO 接入 SysNoticeReadManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysNoticeReadController {
 
             @Override
             public void execute(Long id) {
-                sysNoticeReadManager.deleteSysNoticeRead(id);
+                // TODO 接入 SysNoticeReadManager（RuoYi 移植过渡）
             }
         });
     }

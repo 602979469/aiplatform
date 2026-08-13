@@ -1,9 +1,9 @@
 package com.jakt.aiplatform.web.param;
 import java.time.LocalDateTime;
 import jakarta.validation.constraints.Size;
-import com.jakt.aiplatform.core.model.enums.BusinessTypeEnum;
-import com.jakt.aiplatform.core.model.enums.OperatorTypeEnum;
-import com.jakt.aiplatform.core.model.enums.BusinessStatusEnum;
+import com.jakt.aiplatform.core.model.enums.BusinessType;
+import com.jakt.aiplatform.core.model.enums.OperatorType;
+import com.jakt.aiplatform.core.model.enums.BusinessStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -20,7 +20,7 @@ public class SysOperLogCreateRequest extends BaseRequest {
     private String title;
 
     /** 业务类型（0其它 1新增 2修改 3删除）。 */
-    private BusinessTypeEnum businessType;
+    private BusinessType businessType;
 
     /** 方法名称。 */
     @Size(max = 200, message = "方法名称长度不能超过 200")
@@ -31,7 +31,7 @@ public class SysOperLogCreateRequest extends BaseRequest {
     private String requestMethod;
 
     /** 操作类别（0其它 1后台用户 2手机端用户）。 */
-    private OperatorTypeEnum operatorType;
+    private OperatorType operatorType;
 
     /** 操作人员。 */
     @Size(max = 50, message = "操作人员长度不能超过 50")
@@ -62,7 +62,7 @@ public class SysOperLogCreateRequest extends BaseRequest {
     private String jsonResult;
 
     /** 操作状态（0正常 1异常）。 */
-    private BusinessStatusEnum status;
+    private BusinessStatus status;
 
     /** 错误消息。 */
     @Size(max = 2000, message = "错误消息长度不能超过 2000")

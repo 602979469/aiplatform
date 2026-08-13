@@ -76,4 +76,59 @@ public interface GenTableMapper {
      * @return 受影响行数
      */
     int deleteById(Long id);
+
+    /**
+     * 按条件查询代码生成业务表列表（table_name/table_comment 模糊）。
+     *
+     * @param query 查询参数
+     * @return 代码生成业务表数据对象列表
+     */
+    List<GenTableDO> selectGenTableList(GenTableQueryParam query);
+
+    /**
+     * 查询数据库未导入的业务表（information_schema，排除 qrtz_/gen_ 与已导入表）。
+     *
+     * @param query 查询参数
+     * @return 数据库业务表数据对象列表
+     */
+    List<GenTableDO> selectDbTableList(GenTableQueryParam query);
+
+    /**
+     * 按表名集合查询数据库业务表。
+     *
+     * @param tableNames 表名数组
+     * @return 数据库业务表数据对象列表
+     */
+    List<GenTableDO> selectDbTableListByNames(String[] tableNames);
+
+    /**
+     * 查询全部代码生成业务表。
+     *
+     * @return 代码生成业务表数据对象列表
+     */
+    List<GenTableDO> selectGenTableAll();
+
+    /**
+     * 按表名查询代码生成业务表。
+     *
+     * @param tableName 表名
+     * @return 代码生成业务表数据对象
+     */
+    GenTableDO selectGenTableByName(String tableName);
+
+    /**
+     * 按 ID 集合批量删除代码生成业务表。
+     *
+     * @param ids 主键数组
+     * @return 影响行数
+     */
+    int deleteGenTableByIds(Long[] ids);
+
+    /**
+     * 执行建表 SQL（代码生成动态建表）。
+     *
+     * @param sql 建表 SQL
+     * @return 影响行数
+     */
+    int createTable(String sql);
 }

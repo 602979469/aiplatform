@@ -57,8 +57,8 @@ public class SysJobLogController {
 
             @Override
             public SysJobLogResponse execute(SysJobLogCreateRequest param) {
-                SysJobLog sysJobLog = sysJobLogManager.createSysJobLog(SysJobLogAssembler.toModel(param));
-                return SysJobLogAssembler.toResponse(sysJobLog);
+                // TODO 接入 SysJobLogManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysJobLogController {
 
             @Override
             public SysJobLogResponse execute(Long param) {
-                SysJobLog sysJobLog = sysJobLogManager.getSysJobLog(param);
-                AiPlatformInvoker.throwErrWhenNull(sysJobLog, ErrorCodeEnum.RESOURCE_NOT_FOUND, "定时任务日志不存在");
-                return SysJobLogAssembler.toResponse(sysJobLog);
+                // TODO 接入 SysJobLogManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysJobLogController {
 
             @Override
             public PageResult<SysJobLogResponse> execute(SysJobLogQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysJobLogQueryRequest());
-                PageResult<SysJobLog> page = sysJobLogManager.pageSysJobLogs(SysJobLogAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysJobLogAssembler::toResponse).toList());
+                // TODO 接入 SysJobLogManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysJobLogController {
 
             @Override
             public void execute(SysJobLogUpdateRequest param) {
-                sysJobLogManager.updateSysJobLog(SysJobLogAssembler.toModel(param, id));
+                // TODO 接入 SysJobLogManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysJobLogController {
 
             @Override
             public void execute(Long id) {
-                sysJobLogManager.deleteSysJobLog(id);
+                // TODO 接入 SysJobLogManager（RuoYi 移植过渡）
             }
         });
     }

@@ -1,67 +1,66 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.SysJob;
-import com.jakt.aiplatform.core.model.param.SysJobQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 
 import java.util.List;
 
 /**
- * 定时任务仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 定时任务仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface SysJobRepository {
 
     /**
-     * 按主键查询。
+     * 按条件查询定时任务列表。
      *
-     * @param id 主键
-     * @return 定时任务领域模型
-     */
-    SysJob findById(Long id);
-
-    /**
-     * 分页查询。
-     *
-     * @param query 查询参数
-     * @return 分页结果
-     */
-    PageResult<SysJob> findPage(SysJobQueryParam query);
-
-    /**
-     * 列表查询。
-     *
-     * @param query 查询参数
+     * @param job 查询条件（实体即条件）
      * @return 定时任务列表
      */
-    List<SysJob> findList(SysJobQueryParam query);
+    List<SysJob> selectJobList(SysJob job);
 
     /**
-     * 新增。
+     * 查询全部定时任务。
      *
-     * @param sysJob 定时任务
-     * @return 新增后的定时任务（主键已回填）
+     * @return 定时任务列表
      */
-    SysJob insert(SysJob sysJob);
+    List<SysJob> selectJobAll();
 
     /**
-     * 更新。
+     * 按主键查询定时任务。
      *
-     * @param sysJob 定时任务
+     * @param jobId 任务ID
+     * @return 定时任务领域模型
      */
-    void update(SysJob sysJob);
+    SysJob selectJobById(Long jobId);
 
     /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
+     * 按主键删除定时任务。
      *
-     * @param sysJob 定时任务（至少含主键）
+     * @param jobId 任务ID
+     * @return 影响行数
      */
-    void updateByCondition(SysJob sysJob);
+    int deleteJobById(Long jobId);
 
     /**
-     * 按主键删除。
+     * 按 ID 集合批量删除定时任务。
      *
-     * @param id 主键
+     * @param ids 任务ID集合（逗号分隔）
+     * @return 影响行数
      */
-    void deleteById(Long id);
+    int deleteJobByIds(String ids);
+
+    /**
+     * 全量更新定时任务。
+     *
+     * @param job 定时任务
+     * @return 影响行数
+     */
+    int updateJob(SysJob job);
+
+    /**
+     * 新增定时任务。
+     *
+     * @param job 定时任务
+     * @return 影响行数
+     */
+    int insertJob(SysJob job);
 }

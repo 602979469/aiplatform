@@ -76,4 +76,28 @@ public interface SysUserOnlineMapper {
      * @return 受影响行数
      */
     int deleteById(String id);
+
+    /**
+     * 新增/覆盖在线用户（replace into）。
+     *
+     * @param sysUserOnlineDO 数据对象
+     * @return 影响行数
+     */
+    int saveOnline(SysUserOnlineDO sysUserOnlineDO);
+
+    /**
+     * 按条件查询在线用户列表（login_name/ipaddr 模糊匹配）。
+     *
+     * @param query 查询参数
+     * @return 在线用户数据对象列表
+     */
+    List<SysUserOnlineDO> selectUserOnlineList(SysUserOnlineQueryParam query);
+
+    /**
+     * 查询最后访问时间早于指定时间的在线用户（按最后访问时间升序）。
+     *
+     * @param lastAccessTime 最后访问时间
+     * @return 在线用户数据对象列表
+     */
+    List<SysUserOnlineDO> selectOnlineByExpired(String lastAccessTime);
 }

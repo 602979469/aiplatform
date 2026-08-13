@@ -2,13 +2,8 @@ package com.jakt.aiplatform.core.repository.impl;
 
 import com.jakt.aiplatform.common.dal.dataobject.SysUserRoleDO;
 import com.jakt.aiplatform.common.dal.mapper.SysUserRoleMapper;
-import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.util.tools.ListUtil;
 import com.jakt.aiplatform.core.model.domain.SysUserRole;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
-import com.jakt.aiplatform.core.model.param.SysUserRoleQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
 import com.jakt.aiplatform.core.repository.SysUserRoleRepository;
 import com.jakt.aiplatform.core.repository.convertor.SysUserRoleConvertor;
 import org.springframework.stereotype.Repository;
@@ -16,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * 用户角色关联仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 用户角色关联仓储实现（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 @Repository
 public class SysUserRoleRepositoryImpl implements SysUserRoleRepository {
@@ -29,49 +24,39 @@ public class SysUserRoleRepositoryImpl implements SysUserRoleRepository {
     }
 
     @Override
-    public SysUserRole findById(Long id) {
-        return SysUserRoleConvertor.toModel(sysUserRoleMapper.selectById(id));
+    public List<SysUserRole> selectUserRoleByUserId(Long userId) {
+        List<SysUserRoleDO> list = sysUserRoleMapper.selectUserRoleByUserId(userId);
+        return ListUtil.convert(list, SysUserRoleConvertor::toModel);
     }
 
     @Override
-    public List<SysUserRole> findList(SysUserRoleQueryParam query) {
-        return sysUserRoleMapper.selectList(query).stream().map(SysUserRoleConvertor::toModel).toList();
+    public int deleteUserRoleByUserId(Long userId) {
+        return sysUserRoleMapper.deleteUserRoleByUserId(userId);
     }
 
     @Override
-    public PageResult<SysUserRole> findPage(SysUserRoleQueryParam query) {
-        List<SysUserRoleDO> doList = sysUserRoleMapper.selectPage(query);
-        long total = sysUserRoleMapper.countByQuery(query);
-        List<SysUserRole> list = doList.stream().map(SysUserRoleConvertor::toModel).toList();
-        return new PageResult<>(total, query.getPageNum(), query.getPageSize(), list);
+    public int deleteUserRole(Long[] ids) {
+        return sysUserRoleMapper.deleteUserRole(ids);
     }
 
     @Override
-    public SysUserRole insert(SysUserRole sysUserRole) {
-        SysUserRoleDO sysUserRoleDO = SysUserRoleConvertor.toDO(sysUserRole);
-        sysUserRoleMapper.insert(sysUserRoleDO);
-        return SysUserRoleConvertor.toModel(sysUserRoleDO);
+    public int countUserRoleByRoleId(Long roleId) {
+        return sysUserRoleMapper.countUserRoleByRoleId(roleId);
     }
 
     @Override
-    public void update(SysUserRole sysUserRole) {
-        SysUserRoleDO sysUserRoleDO = SysUserRoleConvertor.toDO(sysUserRole);
-        int affected = sysUserRoleMapper.update(sysUserRoleDO);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysUserRoleRepository.update id={} 影响行数={}", sysUserRole.getId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public int batchUserRole(List<SysUserRole> userRoleList) {
+        List<SysUserRoleDO> doList = ListUtil.convert(userRoleList, SysUserRoleConvertor::toDO);
+        return sysUserRoleMapper.batchUserRole(doList);
     }
 
     @Override
-    public void updateByCondition(SysUserRole sysUserRole) {
-        int affected = sysUserRoleMapper.updateByCondition(SysUserRoleConvertor.toDO(sysUserRole));
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysUserRoleRepository.updateByCondition id={} 影响行数={}", sysUserRole.getId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public int deleteUserRoleInfo(SysUserRole userRole) {
+        return sysUserRoleMapper.deleteUserRoleInfo(SysUserRoleConvertor.toDO(userRole));
     }
 
     @Override
-    public void deleteById(Long id) {
-        int affected = sysUserRoleMapper.deleteById(id);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "SysUserRoleRepository.deleteById id={} 影响行数={}", id, affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.DELETE_FAILED, "删除失败：记录不存在或已被删除");
+    public int deleteUserRoleInfos(Long roleId, Long[] userIds) {
+        return sysUserRoleMapper.deleteUserRoleInfos(roleId, userIds);
     }
 }

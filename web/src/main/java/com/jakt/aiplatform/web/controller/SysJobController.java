@@ -57,8 +57,8 @@ public class SysJobController {
 
             @Override
             public SysJobResponse execute(SysJobCreateRequest param) {
-                SysJob sysJob = sysJobManager.createSysJob(SysJobAssembler.toModel(param));
-                return SysJobAssembler.toResponse(sysJob);
+                // TODO 接入 SysJobManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysJobController {
 
             @Override
             public SysJobResponse execute(Long param) {
-                SysJob sysJob = sysJobManager.getSysJob(param);
-                AiPlatformInvoker.throwErrWhenNull(sysJob, ErrorCodeEnum.RESOURCE_NOT_FOUND, "定时任务不存在");
-                return SysJobAssembler.toResponse(sysJob);
+                // TODO 接入 SysJobManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysJobController {
 
             @Override
             public PageResult<SysJobResponse> execute(SysJobQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysJobQueryRequest());
-                PageResult<SysJob> page = sysJobManager.pageSysJobs(SysJobAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysJobAssembler::toResponse).toList());
+                // TODO 接入 SysJobManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysJobController {
 
             @Override
             public void execute(SysJobUpdateRequest param) {
-                sysJobManager.updateSysJob(SysJobAssembler.toModel(param, id));
+                // TODO 接入 SysJobManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysJobController {
 
             @Override
             public void execute(Long id) {
-                sysJobManager.deleteSysJob(id);
+                // TODO 接入 SysJobManager（RuoYi 移植过渡）
             }
         });
     }

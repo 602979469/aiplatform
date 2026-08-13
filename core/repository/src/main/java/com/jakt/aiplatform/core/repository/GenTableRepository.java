@@ -1,67 +1,90 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.GenTable;
-import com.jakt.aiplatform.core.model.param.GenTableQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 
 import java.util.List;
 
 /**
- * 代码生成仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 代码生成业务表仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface GenTableRepository {
 
     /**
-     * 按主键查询。
+     * 按条件查询代码生成业务表列表。
+     *
+     * @param genTable 查询条件（实体即条件）
+     * @return 代码生成业务表列表
+     */
+    List<GenTable> selectGenTableList(GenTable genTable);
+
+    /**
+     * 查询数据库未导入的业务表（information_schema）。
+     *
+     * @param genTable 查询条件
+     * @return 数据库业务表列表
+     */
+    List<GenTable> selectDbTableList(GenTable genTable);
+
+    /**
+     * 按表名集合查询数据库业务表。
+     *
+     * @param tableNames 表名数组
+     * @return 数据库业务表列表
+     */
+    List<GenTable> selectDbTableListByNames(String[] tableNames);
+
+    /**
+     * 查询全部代码生成业务表（含字段）。
+     *
+     * @return 代码生成业务表列表
+     */
+    List<GenTable> selectGenTableAll();
+
+    /**
+     * 按主键查询代码生成业务表（含字段）。
      *
      * @param id 主键
-     * @return 代码生成领域模型
+     * @return 代码生成业务表领域模型
      */
-    GenTable findById(Long id);
+    GenTable selectGenTableById(Long id);
 
     /**
-     * 分页查询。
+     * 按表名查询代码生成业务表（含字段）。
      *
-     * @param query 查询参数
-     * @return 分页结果
+     * @param tableName 表名
+     * @return 代码生成业务表领域模型
      */
-    PageResult<GenTable> findPage(GenTableQueryParam query);
+    GenTable selectGenTableByName(String tableName);
 
     /**
-     * 列表查询。
+     * 新增代码生成业务表。
      *
-     * @param query 查询参数
-     * @return 代码生成列表
+     * @param genTable 代码生成业务表
+     * @return 影响行数
      */
-    List<GenTable> findList(GenTableQueryParam query);
+    int insertGenTable(GenTable genTable);
 
     /**
-     * 新增。
+     * 全量更新代码生成业务表。
      *
-     * @param genTable 代码生成
-     * @return 新增后的代码生成（主键已回填）
+     * @param genTable 代码生成业务表
+     * @return 影响行数
      */
-    GenTable insert(GenTable genTable);
+    int updateGenTable(GenTable genTable);
 
     /**
-     * 更新。
+     * 按 ID 集合批量删除代码生成业务表。
      *
-     * @param genTable 代码生成
+     * @param ids 主键数组
+     * @return 影响行数
      */
-    void update(GenTable genTable);
+    int deleteGenTableByIds(Long[] ids);
 
     /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
+     * 执行建表 SQL（代码生成动态建表）。
      *
-     * @param genTable 代码生成（至少含主键）
+     * @param sql 建表 SQL
+     * @return 影响行数
      */
-    void updateByCondition(GenTable genTable);
-
-    /**
-     * 按主键删除。
-     *
-     * @param id 主键
-     */
-    void deleteById(Long id);
+    int createTable(String sql);
 }

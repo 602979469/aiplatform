@@ -2,6 +2,7 @@ package com.jakt.aiplatform.common.dal.mapper;
 
 import com.jakt.aiplatform.common.dal.dataobject.SysDeptDO;
 import com.jakt.aiplatform.core.model.param.SysDeptQueryParam;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -76,4 +77,93 @@ public interface SysDeptMapper {
      * @return 受影响行数
      */
     int deleteById(Long id);
+
+    /**
+     * 按条件统计部门数量。
+     *
+     * @param query 查询参数
+     * @return 部门数量
+     */
+    int selectDeptCount(SysDeptQueryParam query);
+
+    /**
+     * 校验部门下是否存在用户。
+     *
+     * @param deptId 部门ID
+     * @return 用户数量
+     */
+    int checkDeptExistUser(Long deptId);
+
+    /**
+     * 按条件查询部门列表（dept_name 模糊，按 parent_id、order_num 排序）。
+     *
+     * @param query 查询参数
+     * @return 部门数据对象列表
+     */
+    List<SysDeptDO> selectDeptList(SysDeptQueryParam query);
+
+    /**
+     * 批量更新部门祖级列表。
+     *
+     * @param depts 部门数据对象列表
+     * @return 影响行数
+     */
+    int updateDeptChildren(List<SysDeptDO> depts);
+
+    /**
+     * 按部门ID查询部门（含父部门名称）。
+     *
+     * @param deptId 部门ID
+     * @return 部门数据对象
+     */
+    SysDeptDO selectDeptById(Long deptId);
+
+    /**
+     * 校验部门名称在同级下唯一。
+     *
+     * @param deptName 部门名称
+     * @param parentId 父部门ID
+     * @return 部门数据对象（limit 1）
+     */
+    SysDeptDO checkDeptNameUnique(@Param("deptName") String deptName, @Param("parentId") Long parentId);
+
+    /**
+     * 按角色ID查询部门树标识集合。
+     *
+     * @param roleId 角色ID
+     * @return 部门树标识集合
+     */
+    List<String> selectRoleDeptTree(Long roleId);
+
+    /**
+     * 批量恢复部门状态为正常。
+     *
+     * @param deptIds 部门ID数组
+     * @return 影响行数
+     */
+    int updateDeptStatusNormal(Long[] deptIds);
+
+    /**
+     * 查询某部门全部子部门。
+     *
+     * @param deptId 部门ID
+     * @return 部门数据对象列表
+     */
+    List<SysDeptDO> selectChildrenDeptById(Long deptId);
+
+    /**
+     * 查询某部门正常状态的子部门数量。
+     *
+     * @param deptId 部门ID
+     * @return 子部门数量
+     */
+    int selectNormalChildrenDeptById(Long deptId);
+
+    /**
+     * 仅更新部门排序。
+     *
+     * @param sysDeptDO 部门数据对象（deptId + orderNum）
+     * @return 影响行数
+     */
+    int updateDeptSort(SysDeptDO sysDeptDO);
 }

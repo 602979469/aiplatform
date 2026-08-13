@@ -90,4 +90,43 @@
     <delete id="deleteById">
         DELETE FROM sys_user_role WHERE id = #{id}
     </delete>
+
+    <select id="selectUserRoleByUserId" resultType="com.jakt.aiplatform.common.dal.dataobject.SysUserRoleDO">
+        SELECT <include refid="selectColumns"/>
+        FROM sys_user_role
+        WHERE user_id = #{userId}
+    </select>
+
+    <delete id="deleteUserRoleByUserId">
+        DELETE FROM sys_user_role WHERE user_id = #{userId}
+    </delete>
+
+    <delete id="deleteUserRole">
+        DELETE FROM sys_user_role WHERE user_id IN
+        <foreach collection="array" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </delete>
+
+    <select id="countUserRoleByRoleId" resultType="int">
+        SELECT COUNT(1) FROM sys_user_role WHERE role_id = #{roleId}
+    </select>
+
+    <insert id="batchUserRole">
+        INSERT INTO sys_user_role (user_id, role_id) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.userId}, #{item.roleId})
+        </foreach>
+    </insert>
+
+    <delete id="deleteUserRoleInfo">
+        DELETE FROM sys_user_role WHERE user_id = #{userId} AND role_id = #{roleId}
+    </delete>
+
+    <delete id="deleteUserRoleInfos">
+        DELETE FROM sys_user_role WHERE role_id = #{roleId} AND user_id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </delete>
 </mapper>

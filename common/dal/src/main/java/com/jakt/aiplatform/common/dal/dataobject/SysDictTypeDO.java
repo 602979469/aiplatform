@@ -24,4 +24,9 @@ public class SysDictTypeDO extends BaseDO {
     /** 备注。 */
     private String remark;
 
+    /** 创建者。 */
+    private String createBy;
+
+    /** 更新者。 */
+    private String updateBy;
 }

@@ -57,8 +57,8 @@ public class SysPostController {
 
             @Override
             public SysPostResponse execute(SysPostCreateRequest param) {
-                SysPost sysPost = sysPostManager.createSysPost(SysPostAssembler.toModel(param));
-                return SysPostAssembler.toResponse(sysPost);
+                // TODO 接入 SysPostManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysPostController {
 
             @Override
             public SysPostResponse execute(Long param) {
-                SysPost sysPost = sysPostManager.getSysPost(param);
-                AiPlatformInvoker.throwErrWhenNull(sysPost, ErrorCodeEnum.RESOURCE_NOT_FOUND, "岗位不存在");
-                return SysPostAssembler.toResponse(sysPost);
+                // TODO 接入 SysPostManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysPostController {
 
             @Override
             public PageResult<SysPostResponse> execute(SysPostQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysPostQueryRequest());
-                PageResult<SysPost> page = sysPostManager.pageSysPosts(SysPostAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysPostAssembler::toResponse).toList());
+                // TODO 接入 SysPostManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysPostController {
 
             @Override
             public void execute(SysPostUpdateRequest param) {
-                sysPostManager.updateSysPost(SysPostAssembler.toModel(param, id));
+                // TODO 接入 SysPostManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysPostController {
 
             @Override
             public void execute(Long id) {
-                sysPostManager.deleteSysPost(id);
+                // TODO 接入 SysPostManager（RuoYi 移植过渡）
             }
         });
     }

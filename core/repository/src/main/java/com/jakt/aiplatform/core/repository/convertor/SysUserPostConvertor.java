@@ -2,7 +2,7 @@ package com.jakt.aiplatform.core.repository.convertor;
 
 import com.jakt.aiplatform.common.dal.dataobject.SysUserPostDO;
 import com.jakt.aiplatform.core.model.domain.SysUserPost;
-
+import com.jakt.aiplatform.core.model.param.SysUserPostQueryParam;
 
 /**
  * 用户岗位关联 DO 与领域模型互转，只存在于 repository。
@@ -11,6 +11,34 @@ import com.jakt.aiplatform.core.model.domain.SysUserPost;
 public final class SysUserPostConvertor {
 
     private SysUserPostConvertor() {
+    }
+
+    /**
+     * 领域模型 → 查询参数（显式赋值）。
+     *
+     * @param userPost 用户岗位关联领域模型
+     * @return 用户岗位关联查询参数
+     */
+    public static SysUserPostQueryParam toQueryParam(SysUserPost userPost) {
+        SysUserPostQueryParam query = new SysUserPostQueryParam();
+        query.setId(userPost.getId());
+        query.setUserId(userPost.getUserId());
+        query.setPostId(userPost.getPostId());
+        return query;
+    }
+
+    /**
+     * 数据对象 → 查询参数（显式赋值，仅拷贝查询相关字段）。
+     *
+     * @param condition 用户岗位关联数据对象（条件载体）
+     * @return 用户岗位关联查询参数
+     */
+    public static SysUserPostQueryParam toQueryParam(SysUserPostDO condition) {
+        SysUserPostQueryParam query = new SysUserPostQueryParam();
+        query.setId(condition.getId());
+        query.setUserId(condition.getUserId());
+        query.setPostId(condition.getPostId());
+        return query;
     }
 
     /**

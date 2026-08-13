@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotBlank;
 import com.jakt.aiplatform.core.model.enums.UserTypeEnum;
 import com.jakt.aiplatform.core.model.enums.SexEnum;
-import com.jakt.aiplatform.core.model.enums.UserStatusEnum;
+import com.jakt.aiplatform.core.model.enums.UserStatus;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -56,7 +56,7 @@ public class SysUserUpdateRequest extends BaseRequest {
     private String salt;
 
     /** 账号状态（0正常 1停用）。 */
-    private UserStatusEnum status;
+    private UserStatus status;
 
     /** 最后登录IP。 */
     @Size(max = 128, message = "最后登录IP长度不能超过 128")

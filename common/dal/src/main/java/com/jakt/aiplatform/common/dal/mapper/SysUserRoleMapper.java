@@ -2,6 +2,7 @@ package com.jakt.aiplatform.common.dal.mapper;
 
 import com.jakt.aiplatform.common.dal.dataobject.SysUserRoleDO;
 import com.jakt.aiplatform.core.model.param.SysUserRoleQueryParam;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -76,4 +77,61 @@ public interface SysUserRoleMapper {
      * @return 受影响行数
      */
     int deleteById(Long id);
+
+    /**
+     * 按用户ID查询关联列表。
+     *
+     * @param userId 用户ID
+     * @return 用户角色关联数据对象列表
+     */
+    List<SysUserRoleDO> selectUserRoleByUserId(Long userId);
+
+    /**
+     * 按用户ID删除关联。
+     *
+     * @param userId 用户ID
+     * @return 影响行数
+     */
+    int deleteUserRoleByUserId(Long userId);
+
+    /**
+     * 按用户ID集合批量删除关联。
+     *
+     * @param ids 用户ID数组
+     * @return 影响行数
+     */
+    int deleteUserRole(Long[] ids);
+
+    /**
+     * 按角色ID统计关联数量。
+     *
+     * @param roleId 角色ID
+     * @return 关联数量
+     */
+    int countUserRoleByRoleId(Long roleId);
+
+    /**
+     * 批量新增用户角色关联。
+     *
+     * @param userRoleList 关联数据对象列表
+     * @return 影响行数
+     */
+    int batchUserRole(List<SysUserRoleDO> userRoleList);
+
+    /**
+     * 按用户ID与角色ID删除单条关联。
+     *
+     * @param userRole 关联数据对象（user_id + role_id）
+     * @return 影响行数
+     */
+    int deleteUserRoleInfo(SysUserRoleDO userRole);
+
+    /**
+     * 按角色ID与用户ID集合批量删除关联。
+     *
+     * @param roleId  角色ID
+     * @param userIds 用户ID数组
+     * @return 影响行数
+     */
+    int deleteUserRoleInfos(@Param("roleId") Long roleId, @Param("userIds") Long[] userIds);
 }

@@ -1,67 +1,75 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.SysConfig;
-import com.jakt.aiplatform.core.model.param.SysConfigQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 
 import java.util.List;
 
 /**
- * 参数配置仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 参数配置仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface SysConfigRepository {
 
     /**
-     * 按主键查询。
+     * 按条件查询参数配置。
      *
-     * @param id 主键
+     * @param config 查询条件（实体即条件）
      * @return 参数配置领域模型
      */
-    SysConfig findById(Long id);
+    SysConfig selectConfig(SysConfig config);
 
     /**
-     * 分页查询。
+     * 查询参数配置列表。
      *
-     * @param query 查询参数
-     * @return 分页结果
-     */
-    PageResult<SysConfig> findPage(SysConfigQueryParam query);
-
-    /**
-     * 列表查询。
-     *
-     * @param query 查询参数
+     * @param config 查询条件
      * @return 参数配置列表
      */
-    List<SysConfig> findList(SysConfigQueryParam query);
+    List<SysConfig> selectConfigList(SysConfig config);
 
     /**
-     * 新增。
+     * 按主键查询参数配置。
      *
-     * @param sysConfig 参数配置
-     * @return 新增后的参数配置（主键已回填）
+     * @param configId 参数配置ID
+     * @return 参数配置领域模型
      */
-    SysConfig insert(SysConfig sysConfig);
+    SysConfig selectConfigById(Long configId);
 
     /**
-     * 更新。
+     * 校验参数键名唯一。
      *
-     * @param sysConfig 参数配置
+     * @param config 参数配置（含 configId 用于排除自身）
+     * @return 是否唯一
      */
-    void update(SysConfig sysConfig);
+    boolean checkConfigKeyUnique(SysConfig config);
 
     /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
+     * 新增参数配置。
      *
-     * @param sysConfig 参数配置（至少含主键）
+     * @param config 参数配置
+     * @return 影响行数
      */
-    void updateByCondition(SysConfig sysConfig);
+    int insertConfig(SysConfig config);
 
     /**
-     * 按主键删除。
+     * 全量更新参数配置。
      *
-     * @param id 主键
+     * @param config 参数配置
+     * @return 影响行数
      */
-    void deleteById(Long id);
+    int updateConfig(SysConfig config);
+
+    /**
+     * 按主键删除参数配置。
+     *
+     * @param configId 参数配置ID
+     * @return 影响行数
+     */
+    int deleteConfigById(Long configId);
+
+    /**
+     * 按 ID 集合批量删除参数配置。
+     *
+     * @param ids 参数配置ID集合（逗号分隔）
+     * @return 影响行数
+     */
+    int deleteConfigByIds(String ids);
 }

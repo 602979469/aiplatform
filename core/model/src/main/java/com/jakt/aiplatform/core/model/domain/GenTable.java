@@ -1,18 +1,19 @@
 package com.jakt.aiplatform.core.model.domain;
 
+import java.util.List;
 import com.jakt.aiplatform.core.model.enums.GenTplCategoryEnum;
 import com.jakt.aiplatform.core.model.enums.GenTypeEnum;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 代码生成领域模型。
+ * 代码生成表领域模型（RuoYi 结构：继承 BaseEntity，含组装字段 pkColumn/subTable/columns 等）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class GenTable extends BaseModel {
-    /** 主键。 */
+public class GenTable extends BaseEntity {
+
+    /** 编号。 */
     private Long tableId;
 
     /** 表名称。 */
@@ -30,7 +31,7 @@ public class GenTable extends BaseModel {
     /** 实体类名称。 */
     private String className;
 
-    /** 使用的模板（crud单表操作 tree树表操作 sub主子表操作）。 */
+    /** 使用的模板（crud单表 tree树表 sub主子表）。 */
     private GenTplCategoryEnum tplCategory;
 
     /** 生成包路径。 */
@@ -57,10 +58,33 @@ public class GenTable extends BaseModel {
     /** 生成路径（不填默认项目路径）。 */
     private String genPath;
 
+    /** 主键信息（组装字段）。 */
+    private GenTableColumn pkColumn;
+
+    /** 子表信息（组装字段）。 */
+    private GenTable subTable;
+
+    /** 表列信息（组装字段）。 */
+    private List<GenTableColumn> columns;
+
     /** 其它生成选项。 */
     private String options;
 
-    /** 备注。 */
-    private String remark;
+    /** 树编码字段（组装字段）。 */
+    private String treeCode;
 
+    /** 树父编码字段（组装字段）。 */
+    private String treeParentCode;
+
+    /** 树名称字段（组装字段）。 */
+    private String treeName;
+
+    /** 上级菜单ID（组装字段）。 */
+    private String parentMenuId;
+
+    /** 上级菜单名称（组装字段）。 */
+    private String parentMenuName;
+
+    /** 是否视图（组装字段）。 */
+    private boolean isView;
 }

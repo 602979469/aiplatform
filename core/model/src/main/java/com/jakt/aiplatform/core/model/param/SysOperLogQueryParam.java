@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysOperLogQueryParam extends PageParam {
+public class SysOperLogQueryParam extends PageQueryParam {
 
     /** 主键。 */
     private Long operId;

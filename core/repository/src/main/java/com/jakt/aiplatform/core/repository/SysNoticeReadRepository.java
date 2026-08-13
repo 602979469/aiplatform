@@ -1,67 +1,73 @@
 package com.jakt.aiplatform.core.repository;
 
+import com.jakt.aiplatform.core.model.domain.SysNotice;
 import com.jakt.aiplatform.core.model.domain.SysNoticeRead;
-import com.jakt.aiplatform.core.model.param.SysNoticeReadQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
+import com.jakt.aiplatform.core.model.result.SysReadUserResult;
 
 import java.util.List;
 
 /**
- * 公告已读记录仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 公告已读记录仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface SysNoticeReadRepository {
 
     /**
-     * 按主键查询。
+     * 新增已读记录（忽略重复）。
      *
-     * @param id 主键
-     * @return 公告已读记录领域模型
+     * @param noticeRead 已读记录
+     * @return 影响行数
      */
-    SysNoticeRead findById(Long id);
+    int insertNoticeRead(SysNoticeRead noticeRead);
 
     /**
-     * 分页查询。
+     * 查询某用户未读公告数量。
      *
-     * @param query 查询参数
-     * @return 分页结果
+     * @param userId 用户ID
+     * @return 未读数量
      */
-    PageResult<SysNoticeRead> findPage(SysNoticeReadQueryParam query);
+    int selectUnreadCount(Long userId);
 
     /**
-     * 列表查询。
+     * 查询某用户是否已读某公告。
      *
-     * @param query 查询参数
-     * @return 公告已读记录列表
+     * @param noticeId 公告ID
+     * @param userId   用户ID
+     * @return 已读记录数（0未读 1已读）
      */
-    List<SysNoticeRead> findList(SysNoticeReadQueryParam query);
+    int selectIsRead(Long noticeId, Long userId);
 
     /**
-     * 新增。
+     * 批量标记已读。
      *
-     * @param sysNoticeRead 公告已读记录
-     * @return 新增后的公告已读记录（主键已回填）
+     * @param userId    用户ID
+     * @param noticeIds 公告ID数组
+     * @return 影响行数
      */
-    SysNoticeRead insert(SysNoticeRead sysNoticeRead);
+    int insertNoticeReadBatch(Long userId, Long[] noticeIds);
 
     /**
-     * 更新。
+     * 查询带已读状态的公告列表（SQL 层限制条数）。
      *
-     * @param sysNoticeRead 公告已读记录
+     * @param userId 用户ID
+     * @param limit  最多返回条数
+     * @return 公告列表（含 isRead 标记）
      */
-    void update(SysNoticeRead sysNoticeRead);
+    List<SysNotice> selectNoticeListWithReadStatus(Long userId, int limit);
 
     /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
+     * 公告删除时清理对应已读记录。
      *
-     * @param sysNoticeRead 公告已读记录（至少含主键）
+     * @param noticeIds 公告ID数组
+     * @return 影响行数
      */
-    void updateByCondition(SysNoticeRead sysNoticeRead);
+    int deleteByNoticeIds(String[] noticeIds);
 
     /**
-     * 按主键删除。
+     * 查询已阅读某公告的用户列表。
      *
-     * @param id 主键
+     * @param noticeId    公告ID
+     * @param searchValue 搜索值
+     * @return 已读用户列表
      */
-    void deleteById(Long id);
+    List<SysReadUserResult> selectReadUsersByNoticeId(Long noticeId, String searchValue);
 }

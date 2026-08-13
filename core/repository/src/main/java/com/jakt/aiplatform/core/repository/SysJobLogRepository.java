@@ -1,67 +1,65 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.SysJobLog;
-import com.jakt.aiplatform.core.model.param.SysJobLogQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 
 import java.util.List;
 
 /**
- * 定时任务日志仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 定时任务日志仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface SysJobLogRepository {
 
     /**
-     * 按主键查询。
+     * 按条件查询定时任务日志列表。
      *
-     * @param id 主键
-     * @return 定时任务日志领域模型
-     */
-    SysJobLog findById(Long id);
-
-    /**
-     * 分页查询。
-     *
-     * @param query 查询参数
-     * @return 分页结果
-     */
-    PageResult<SysJobLog> findPage(SysJobLogQueryParam query);
-
-    /**
-     * 列表查询。
-     *
-     * @param query 查询参数
+     * @param jobLog 查询条件（实体即条件）
      * @return 定时任务日志列表
      */
-    List<SysJobLog> findList(SysJobLogQueryParam query);
+    List<SysJobLog> selectJobLogList(SysJobLog jobLog);
 
     /**
-     * 新增。
+     * 查询全部定时任务日志。
      *
-     * @param sysJobLog 定时任务日志
-     * @return 新增后的定时任务日志（主键已回填）
+     * @return 定时任务日志列表
      */
-    SysJobLog insert(SysJobLog sysJobLog);
+    List<SysJobLog> selectJobLogAll();
 
     /**
-     * 更新。
+     * 按主键查询定时任务日志。
      *
-     * @param sysJobLog 定时任务日志
+     * @param jobLogId 任务日志ID
+     * @return 定时任务日志领域模型
      */
-    void update(SysJobLog sysJobLog);
+    SysJobLog selectJobLogById(Long jobLogId);
 
     /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
+     * 新增定时任务日志。
      *
-     * @param sysJobLog 定时任务日志（至少含主键）
+     * @param jobLog 定时任务日志
+     * @return 影响行数
      */
-    void updateByCondition(SysJobLog sysJobLog);
+    int insertJobLog(SysJobLog jobLog);
 
     /**
-     * 按主键删除。
+     * 按 ID 集合批量删除定时任务日志。
      *
-     * @param id 主键
+     * @param ids 任务日志ID集合（逗号分隔）
+     * @return 影响行数
      */
-    void deleteById(Long id);
+    int deleteJobLogByIds(String ids);
+
+    /**
+     * 按主键删除定时任务日志。
+     *
+     * @param jobLogId 任务日志ID
+     * @return 影响行数
+     */
+    int deleteJobLogById(Long jobLogId);
+
+    /**
+     * 清空定时任务日志。
+     *
+     * @return 影响行数
+     */
+    int cleanJobLog();
 }

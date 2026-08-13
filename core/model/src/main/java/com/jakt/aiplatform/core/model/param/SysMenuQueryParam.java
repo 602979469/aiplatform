@@ -1,6 +1,7 @@
 package com.jakt.aiplatform.core.model.param;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -10,7 +11,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysMenuQueryParam extends PageParam {
+public class SysMenuQueryParam extends PageQueryParam {
 
     /** 主键。 */
     private Long menuId;
@@ -59,5 +60,8 @@ public class SysMenuQueryParam extends PageParam {
 
     /** 更新时间止。 */
     private LocalDateTime updateTimeEnd;
+
+    /** 请求参数（RuoYi 语义：selectMenuListByUserId 的 params.userId 等）。 */
+    private Map<String, Object> params;
 
 }

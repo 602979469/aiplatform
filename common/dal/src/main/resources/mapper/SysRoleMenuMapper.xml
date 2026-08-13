@@ -90,4 +90,26 @@
     <delete id="deleteById">
         DELETE FROM sys_role_menu WHERE id = #{id}
     </delete>
+
+    <delete id="deleteRoleMenuByRoleId">
+        DELETE FROM sys_role_menu WHERE role_id = #{roleId}
+    </delete>
+
+    <select id="selectCountRoleMenuByMenuId" resultType="int">
+        SELECT COUNT(1) FROM sys_role_menu WHERE menu_id = #{menuId}
+    </select>
+
+    <delete id="deleteRoleMenu">
+        DELETE FROM sys_role_menu WHERE role_id IN
+        <foreach collection="array" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+    </delete>
+
+    <insert id="batchRoleMenu">
+        INSERT INTO sys_role_menu (role_id, menu_id) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.roleId}, #{item.menuId})
+        </foreach>
+    </insert>
 </mapper>

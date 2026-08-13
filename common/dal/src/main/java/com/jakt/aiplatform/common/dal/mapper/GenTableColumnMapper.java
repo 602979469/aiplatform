@@ -76,4 +76,36 @@ public interface GenTableColumnMapper {
      * @return 受影响行数
      */
     int deleteById(Long id);
+
+    /**
+     * 查询数据库表的列信息（information_schema）。
+     *
+     * @param tableName 表名
+     * @return 代码生成字段数据对象列表
+     */
+    List<GenTableColumnDO> selectDbTableColumnsByName(String tableName);
+
+    /**
+     * 按表ID查询已配置的字段列表（按 sort 排序）。
+     *
+     * @param query 查询参数（tableId 必填）
+     * @return 代码生成字段数据对象列表
+     */
+    List<GenTableColumnDO> selectGenTableColumnListByTableId(GenTableColumnQueryParam query);
+
+    /**
+     * 按表ID集合批量删除字段。
+     *
+     * @param tableIds 表ID数组
+     * @return 影响行数
+     */
+    int deleteGenTableColumnByIds(Long[] tableIds);
+
+    /**
+     * 按字段列表批量删除字段。
+     *
+     * @param columns 字段数据对象列表
+     * @return 影响行数
+     */
+    int deleteGenTableColumns(List<GenTableColumnDO> columns);
 }

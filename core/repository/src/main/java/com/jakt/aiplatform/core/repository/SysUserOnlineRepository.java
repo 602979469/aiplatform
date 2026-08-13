@@ -1,67 +1,51 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.SysUserOnline;
-import com.jakt.aiplatform.core.model.param.SysUserOnlineQueryParam;
-import com.jakt.aiplatform.core.model.result.PageResult;
 
 import java.util.List;
 
 /**
- * 在线用户仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。
+ * 在线用户仓储（RuoYi 方法 1:1 还原）：封装 Mapper，对外只暴露领域模型。
  */
 public interface SysUserOnlineRepository {
 
     /**
-     * 按主键查询。
+     * 按会话ID查询在线用户。
      *
-     * @param id 主键
+     * @param sessionId 会话ID
      * @return 在线用户领域模型
      */
-    SysUserOnline findById(String id);
+    SysUserOnline selectOnlineById(String sessionId);
 
     /**
-     * 分页查询。
+     * 按会话ID删除在线用户。
      *
-     * @param query 查询参数
-     * @return 分页结果
+     * @param sessionId 会话ID
+     * @return 影响行数
      */
-    PageResult<SysUserOnline> findPage(SysUserOnlineQueryParam query);
+    int deleteOnlineById(String sessionId);
 
     /**
-     * 列表查询。
+     * 新增/覆盖在线用户。
      *
-     * @param query 查询参数
+     * @param online 在线用户
+     * @return 影响行数
+     */
+    int saveOnline(SysUserOnline online);
+
+    /**
+     * 按条件查询在线用户列表。
+     *
+     * @param userOnline 查询条件（实体即条件）
      * @return 在线用户列表
      */
-    List<SysUserOnline> findList(SysUserOnlineQueryParam query);
+    List<SysUserOnline> selectUserOnlineList(SysUserOnline userOnline);
 
     /**
-     * 新增。
+     * 查询最后访问时间早于指定时间的在线用户。
      *
-     * @param sysUserOnline 在线用户
-     * @return 新增后的在线用户（主键已回填）
+     * @param lastAccessTime 最后访问时间
+     * @return 在线用户列表
      */
-    SysUserOnline insert(SysUserOnline sysUserOnline);
-
-    /**
-     * 更新。
-     *
-     * @param sysUserOnline 在线用户
-     */
-    void update(SysUserOnline sysUserOnline);
-
-    /**
-     * 按条件更新：只更新传入的非空字段（部分更新）。
-     * 注意：无法把字段更新为 null，需要置 null 请用 {@link #update}；create_time/update_time 由数据库自动维护。
-     *
-     * @param sysUserOnline 在线用户（至少含主键）
-     */
-    void updateByCondition(SysUserOnline sysUserOnline);
-
-    /**
-     * 按主键删除。
-     *
-     * @param id 主键
-     */
-    void deleteById(String id);
+    List<SysUserOnline> selectOnlineByExpired(String lastAccessTime);
 }

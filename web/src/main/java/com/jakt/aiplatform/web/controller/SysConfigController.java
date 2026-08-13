@@ -57,8 +57,8 @@ public class SysConfigController {
 
             @Override
             public SysConfigResponse execute(SysConfigCreateRequest param) {
-                SysConfig sysConfig = sysConfigManager.createSysConfig(SysConfigAssembler.toModel(param));
-                return SysConfigAssembler.toResponse(sysConfig);
+                // TODO 接入 SysConfigManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysConfigController {
 
             @Override
             public SysConfigResponse execute(Long param) {
-                SysConfig sysConfig = sysConfigManager.getSysConfig(param);
-                AiPlatformInvoker.throwErrWhenNull(sysConfig, ErrorCodeEnum.RESOURCE_NOT_FOUND, "参数配置不存在");
-                return SysConfigAssembler.toResponse(sysConfig);
+                // TODO 接入 SysConfigManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysConfigController {
 
             @Override
             public PageResult<SysConfigResponse> execute(SysConfigQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysConfigQueryRequest());
-                PageResult<SysConfig> page = sysConfigManager.pageSysConfigs(SysConfigAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysConfigAssembler::toResponse).toList());
+                // TODO 接入 SysConfigManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysConfigController {
 
             @Override
             public void execute(SysConfigUpdateRequest param) {
-                sysConfigManager.updateSysConfig(SysConfigAssembler.toModel(param, id));
+                // TODO 接入 SysConfigManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysConfigController {
 
             @Override
             public void execute(Long id) {
-                sysConfigManager.deleteSysConfig(id);
+                // TODO 接入 SysConfigManager（RuoYi 移植过渡）
             }
         });
     }

@@ -57,8 +57,8 @@ public class SysNoticeController {
 
             @Override
             public SysNoticeResponse execute(SysNoticeCreateRequest param) {
-                SysNotice sysNotice = sysNoticeManager.createSysNotice(SysNoticeAssembler.toModel(param));
-                return SysNoticeAssembler.toResponse(sysNotice);
+                // TODO 接入 SysNoticeManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysNoticeController {
 
             @Override
             public SysNoticeResponse execute(Long param) {
-                SysNotice sysNotice = sysNoticeManager.getSysNotice(param);
-                AiPlatformInvoker.throwErrWhenNull(sysNotice, ErrorCodeEnum.RESOURCE_NOT_FOUND, "通知公告不存在");
-                return SysNoticeAssembler.toResponse(sysNotice);
+                // TODO 接入 SysNoticeManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysNoticeController {
 
             @Override
             public PageResult<SysNoticeResponse> execute(SysNoticeQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysNoticeQueryRequest());
-                PageResult<SysNotice> page = sysNoticeManager.pageSysNotices(SysNoticeAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysNoticeAssembler::toResponse).toList());
+                // TODO 接入 SysNoticeManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysNoticeController {
 
             @Override
             public void execute(SysNoticeUpdateRequest param) {
-                sysNoticeManager.updateSysNotice(SysNoticeAssembler.toModel(param, id));
+                // TODO 接入 SysNoticeManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysNoticeController {
 
             @Override
             public void execute(Long id) {
-                sysNoticeManager.deleteSysNotice(id);
+                // TODO 接入 SysNoticeManager（RuoYi 移植过渡）
             }
         });
     }

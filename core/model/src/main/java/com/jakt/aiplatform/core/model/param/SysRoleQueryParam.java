@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SysRoleQueryParam extends PageParam {
+public class SysRoleQueryParam extends PageQueryParam {
 
     /** 主键。 */
     private Long roleId;

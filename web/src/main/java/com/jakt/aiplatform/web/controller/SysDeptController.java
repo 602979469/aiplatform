@@ -57,8 +57,8 @@ public class SysDeptController {
 
             @Override
             public SysDeptResponse execute(SysDeptCreateRequest param) {
-                SysDept sysDept = sysDeptManager.createSysDept(SysDeptAssembler.toModel(param));
-                return SysDeptAssembler.toResponse(sysDept);
+                // TODO 接入 SysDeptManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -84,9 +84,8 @@ public class SysDeptController {
 
             @Override
             public SysDeptResponse execute(Long param) {
-                SysDept sysDept = sysDeptManager.getSysDept(param);
-                AiPlatformInvoker.throwErrWhenNull(sysDept, ErrorCodeEnum.RESOURCE_NOT_FOUND, "部门不存在");
-                return SysDeptAssembler.toResponse(sysDept);
+                // TODO 接入 SysDeptManager（RuoYi 移植过渡）
+                return null;
             }
 
             @Override
@@ -113,10 +112,8 @@ public class SysDeptController {
 
             @Override
             public PageResult<SysDeptResponse> execute(SysDeptQueryRequest param) {
-                param = ObjectUtil.defaultIfNull(param, new SysDeptQueryRequest());
-                PageResult<SysDept> page = sysDeptManager.pageSysDepts(SysDeptAssembler.toQueryParam(param));
-                return new PageResult<>(page.getTotal(), param.getPageNum(), param.getPageSize(),
-                        page.getDataList().stream().map(SysDeptAssembler::toResponse).toList());
+                // TODO 接入 SysDeptManager（RuoYi 移植过渡）
+                return null;
             }
         });
     }
@@ -141,7 +138,7 @@ public class SysDeptController {
 
             @Override
             public void execute(SysDeptUpdateRequest param) {
-                sysDeptManager.updateSysDept(SysDeptAssembler.toModel(param, id));
+                // TODO 接入 SysDeptManager（RuoYi 移植过渡）
             }
         });
     }
@@ -163,7 +160,7 @@ public class SysDeptController {
 
             @Override
             public void execute(Long id) {
-                sysDeptManager.deleteSysDept(id);
+                // TODO 接入 SysDeptManager（RuoYi 移植过渡）
             }
         });
     }

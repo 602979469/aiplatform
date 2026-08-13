@@ -3,6 +3,7 @@ package com.jakt.aiplatform.core.repository.convertor;
 import com.jakt.aiplatform.common.dal.dataobject.SysJobLogDO;
 import com.jakt.aiplatform.core.model.domain.SysJobLog;
 import com.jakt.aiplatform.core.model.enums.JobLogStatusEnum;
+import com.jakt.aiplatform.core.model.param.SysJobLogQueryParam;
 import cn.hutool.core.util.ObjectUtil;
 
 
@@ -13,6 +14,46 @@ import cn.hutool.core.util.ObjectUtil;
 public final class SysJobLogConvertor {
 
     private SysJobLogConvertor() {
+    }
+
+    /**
+     * 领域模型 → 查询参数（枚举转 code，显式赋值）。
+     *
+     * @param jobLog 定时任务日志领域模型
+     * @return 定时任务日志查询参数
+     */
+    public static SysJobLogQueryParam toQueryParam(SysJobLog jobLog) {
+        SysJobLogQueryParam query = new SysJobLogQueryParam();
+        query.setJobLogId(jobLog.getJobLogId());
+        query.setJobName(jobLog.getJobName());
+        query.setJobGroup(jobLog.getJobGroup());
+        query.setInvokeTarget(jobLog.getInvokeTarget());
+        query.setJobMessage(jobLog.getJobMessage());
+        query.setStatus(jobLog.getStatus() == null ? null : jobLog.getStatus().getCode());
+        query.setExceptionInfo(jobLog.getExceptionInfo());
+        query.setStartTime(jobLog.getStartTime());
+        query.setEndTime(jobLog.getEndTime());
+        return query;
+    }
+
+    /**
+     * 数据对象 → 查询参数（显式赋值，仅拷贝查询相关字段）。
+     *
+     * @param condition 定时任务日志数据对象（条件载体）
+     * @return 定时任务日志查询参数
+     */
+    public static SysJobLogQueryParam toQueryParam(SysJobLogDO condition) {
+        SysJobLogQueryParam query = new SysJobLogQueryParam();
+        query.setJobLogId(condition.getJobLogId());
+        query.setJobName(condition.getJobName());
+        query.setJobGroup(condition.getJobGroup());
+        query.setInvokeTarget(condition.getInvokeTarget());
+        query.setJobMessage(condition.getJobMessage());
+        query.setStatus(condition.getStatus());
+        query.setExceptionInfo(condition.getExceptionInfo());
+        query.setStartTime(condition.getStartTime());
+        query.setEndTime(condition.getEndTime());
+        return query;
     }
 
     /**
