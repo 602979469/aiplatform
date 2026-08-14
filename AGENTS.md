@@ -323,6 +323,8 @@ BizTemplate.execute(transactionTemplate, callback);
 - `core.service`
 - `core.service.impl`
 - `core.service.checker`
+- `core.service.capability`（AI 能力域，接口与实现同包）
+- `core.service.mirror`（镜像加速器域，接口与实现同包）
 
 `biz-service-impl`
 
