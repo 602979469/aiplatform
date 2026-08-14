@@ -21,7 +21,20 @@ public final class ClientInfoUtil {
      */
     public static String getClientIp() {
         String ip = SaHolder.getRequest().getHeader("X-Forwarded-For");
-        return StrUtil.isBlank(ip) ? "127.0.0.1" : ip;
+        if (StrUtil.isBlank(ip)) {
+            return "127.0.0.1";
+        }
+        // X-Forwarded-For 可能是逗号分隔的多级代理列表，取最左侧真实客户端 IP
+        int commaIndex = ip.indexOf(',');
+        if (commaIndex >= 0) {
+            ip = ip.substring(0, commaIndex);
+        }
+        ip = ip.trim();
+        // 代理以 IPv6 映射格式上报 IPv4（如 ::ffff:192.168.3.212），归一化为纯 IPv4
+        if (ip.startsWith("::ffff:")) {
+            ip = ip.substring("::ffff:".length());
+        }
+        return ip;
     }
 
     /**

@@ -109,7 +109,7 @@
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-        <template slot-scope="scope" v-if="scope.row.roleId !== 1">
+        <template slot-scope="scope">
           <el-button
             size="mini"
             type="text"
@@ -274,7 +274,7 @@ export default {
     },
     /** 查询菜单树结构 */
     getMenuTreeselect() {
-      menuTree().then(response => {
+      return menuTree().then(response => {
         // 后端菜单树 {menuId, menuName, children} → 树控件 {id, label, children}
         this.menuOptions = this.toTreeOptions(response.data || [])
       })
@@ -392,19 +392,19 @@ export default {
     /** 修改按钮操作 */
     handleUpdate(row) {
       this.reset()
-      this.getMenuTreeselect()
       const roleId = row.roleId || this.ids
       const roleMenu = this.getRoleMenuTreeselect(roleId)
       getRole(roleId).then(response => {
         this.form = response.data
+        // 后端角色数据不含布局字段，编辑时保持父子联动默认开启
+        this.form.menuCheckStrictly = true
         this.open = true
         this.$nextTick(() => {
-          roleMenu.then(res => {
-            let checkedKeys = res.checkedKeys
-            checkedKeys.forEach((v) => {
-                this.$nextTick(()=>{
-                    this.$refs.menu.setChecked(v, true ,false)
-                })
+          // 等菜单树和已勾选菜单都加载完再回填，避免树数据未就绪时 setChecked 失效
+          Promise.all([this.getMenuTreeselect(), roleMenu]).then(([, res]) => {
+            this.$nextTick(() => {
+              const checkedKeys = res.checkedKeys || []
+              checkedKeys.forEach(v => this.$refs.menu.setChecked(v, true, false))
             })
           })
         })

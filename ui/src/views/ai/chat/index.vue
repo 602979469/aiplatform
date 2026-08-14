@@ -76,7 +76,8 @@
           <div class="message-content">
             <div class="message-bubble" :class="message.role">
               <i class="el-icon-doc-copy bubble-copy" title="复制" @click="copyContent(message)" />
-              <span>{{ message.content }}</span>
+              <div v-if="message.role === 'assistant'" class="markdown-body" v-html="renderMarkdown(message.content)"></div>
+              <span v-else class="plain-text">{{ message.content }}</span>
             </div>
             <i
               v-if="message.role === 'user' && message.status === '1'"
@@ -101,13 +102,13 @@
       <div class="chat-input-area">
         <div class="chat-input-box">
           <el-input
+            ref="chatInput"
             v-model="input"
             type="textarea"
             :rows="3"
             resize="none"
             maxlength="4000"
             show-word-limit
-            :disabled="sending"
             placeholder="输入你的问题，Enter 发送，Shift + Enter 换行"
             @keydown.enter.native="handleKeydown"
           />
@@ -129,6 +130,24 @@
 <script>
 import { listSession, addSession, updateSession, delSession, listMessage, sendChat } from '@/api/ai/chat'
 import { parseTime } from '@/utils/ruoyi'
+import { marked } from 'marked'
+import hljs from 'highlight.js'
+import DOMPurify from 'dompurify'
+
+// 代码块高亮：命中语言用指定语言高亮，否则自动识别
+const markdownRenderer = new marked.Renderer()
+markdownRenderer.code = function (code, infostring) {
+  const lang = (infostring || '').trim().split(/\s+/)[0]
+  const highlighted = lang && hljs.getLanguage(lang)
+    ? hljs.highlight(lang, code).value
+    : hljs.highlightAuto(code).value
+  return '<pre><code class="hljs language-' + (lang || '') + '">' + highlighted + '</code></pre>'
+}
+marked.setOptions({
+  gfm: true,
+  breaks: true,
+  renderer: markdownRenderer
+})
 
 export default {
   name: 'AiChat',
@@ -157,6 +176,14 @@ export default {
   methods: {
     parseTime,
 
+    /** 将 AI 回复按 Markdown 渲染为经过净化的 HTML（代码高亮 + 防 XSS） */
+    renderMarkdown(content) {
+      if (!content) {
+        return ''
+      }
+      return DOMPurify.sanitize(marked.parse(content))
+    },
+
     /** 失败消息的提示文案 */
     messageError(message) {
       return this.failedErrors[message.messageId] || '发送失败，点击重试'
@@ -178,9 +205,12 @@ export default {
       })
     },
 
-    /** 新建会话 */
+    /** 新建会话：当前会话还没有任何消息时不重复创建，避免产生多个空白会话 */
     handleNewSession() {
-      if (!this.$auth.hasPermi('ai:chat:add')) {
+      if (!this.$auth.hasPermi('ai:chat:add') || this.sending) {
+        return
+      }
+      if (this.currentSessionId && this.messages.length === 0) {
         return
       }
       addSession({}).then(response => {
@@ -190,7 +220,10 @@ export default {
         this.currentSessionName = session.sessionName
         this.messages = []
         this.input = ''
-        this.$nextTick(() => this.scrollToBottom())
+        this.$nextTick(() => {
+          this.scrollToBottom()
+          this.focusInput()
+        })
       })
     },
 
@@ -203,6 +236,7 @@ export default {
       this.currentSessionName = session.sessionName
       this.input = ''
       this.getMessages(session.sessionId)
+      this.focusInput()
     },
 
     /** 设置会话标题 */
@@ -248,7 +282,7 @@ export default {
 
     /** 查询会话消息 */
     getMessages(sessionId) {
-      listMessage(sessionId).then(response => {
+      return listMessage(sessionId).then(response => {
         this.messages = response.data || []
         this.$nextTick(() => this.scrollToBottom())
       })
@@ -390,6 +424,14 @@ export default {
       const body = this.$refs.chatBody
       if (body) {
         body.scrollTop = body.scrollHeight
+      }
+    },
+
+    /** 聚焦输入框，方便创建/切换会话后直接粘贴问题 */
+    focusInput() {
+      const input = this.$refs.chatInput
+      if (input && input.focus) {
+        input.focus()
       }
     }
   }
@@ -681,6 +723,10 @@ export default {
   white-space: pre-wrap;
 }
 
+.message-bubble .plain-text {
+  white-space: pre-wrap;
+}
+
 .message-bubble.assistant {
   background: #ffffff;
   border: 1px solid #ebeef5;
@@ -690,6 +736,156 @@ export default {
 .message-bubble.user {
   background: #409eff;
   color: #ffffff;
+}
+
+/* AI 回复的 Markdown 渲染 */
+.message-bubble .markdown-body {
+  white-space: normal;
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.message-bubble .markdown-body ::v-deep h1,
+.message-bubble .markdown-body ::v-deep h2,
+.message-bubble .markdown-body ::v-deep h3,
+.message-bubble .markdown-body ::v-deep h4,
+.message-bubble .markdown-body ::v-deep h5,
+.message-bubble .markdown-body ::v-deep h6 {
+  margin: 12px 0 8px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.message-bubble .markdown-body ::v-deep h1 {
+  font-size: 18px;
+}
+
+.message-bubble .markdown-body ::v-deep h2 {
+  font-size: 16px;
+}
+
+.message-bubble .markdown-body ::v-deep h3 {
+  font-size: 15px;
+}
+
+.message-bubble .markdown-body ::v-deep p {
+  margin: 0 0 8px;
+}
+
+.message-bubble .markdown-body ::v-deep ul,
+.message-bubble .markdown-body ::v-deep ol {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.message-bubble .markdown-body ::v-deep li {
+  margin: 2px 0;
+}
+
+.message-bubble .markdown-body ::v-deep blockquote {
+  margin: 0 0 8px;
+  padding: 4px 12px;
+  border-left: 3px solid #dcdfe6;
+  background: #fafafa;
+  color: #606266;
+}
+
+.message-bubble .markdown-body ::v-deep code {
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: #f2f3f5;
+  color: #c7254e;
+  font-family: Menlo, Consolas, "Courier New", monospace;
+  font-size: 13px;
+}
+
+.message-bubble .markdown-body ::v-deep pre {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #282c34;
+  overflow-x: auto;
+}
+
+.message-bubble .markdown-body ::v-deep pre code {
+  padding: 0;
+  background: transparent;
+  color: #abb2bf;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.message-bubble .markdown-body ::v-deep pre code .hljs-keyword,
+.message-bubble .markdown-body ::v-deep pre code .hljs-selector-tag,
+.message-bubble .markdown-body ::v-deep pre code .hljs-literal {
+  color: #c678dd;
+}
+
+.message-bubble .markdown-body ::v-deep pre code .hljs-string,
+.message-bubble .markdown-body ::v-deep pre code .hljs-attr,
+.message-bubble .markdown-body ::v-deep pre code .hljs-template-tag {
+  color: #98c379;
+}
+
+.message-bubble .markdown-body ::v-deep pre code .hljs-number,
+.message-bubble .markdown-body ::v-deep pre code .hljs-symbol,
+.message-bubble .markdown-body ::v-deep pre code .hljs-bullet {
+  color: #d19a66;
+}
+
+.message-bubble .markdown-body ::v-deep pre code .hljs-title,
+.message-bubble .markdown-body ::v-deep pre code .hljs-function,
+.message-bubble .markdown-body ::v-deep pre code .hljs-section {
+  color: #61afef;
+}
+
+.message-bubble .markdown-body ::v-deep pre code .hljs-comment,
+.message-bubble .markdown-body ::v-deep pre code .hljs-quote {
+  color: #7f848e;
+  font-style: italic;
+}
+
+.message-bubble .markdown-body ::v-deep pre code .hljs-built_in,
+.message-bubble .markdown-body ::v-deep pre code .hljs-type,
+.message-bubble .markdown-body ::v-deep pre code .hljs-class .hljs-title {
+  color: #e5c07b;
+}
+
+.message-bubble .markdown-body ::v-deep pre code .hljs-params {
+  color: #abb2bf;
+}
+
+.message-bubble .markdown-body ::v-deep table {
+  margin: 0 0 8px;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.message-bubble .markdown-body ::v-deep th,
+.message-bubble .markdown-body ::v-deep td {
+  border: 1px solid #dcdfe6;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.message-bubble .markdown-body ::v-deep th {
+  background: #f5f7fa;
+}
+
+.message-bubble .markdown-body ::v-deep a {
+  color: #409eff;
+}
+
+.message-bubble .markdown-body ::v-deep img {
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+.message-bubble .markdown-body ::v-deep hr {
+  margin: 12px 0;
+  border: none;
+  border-top: 1px solid #ebeef5;
 }
 
 .bubble-copy {

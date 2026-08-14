@@ -28,7 +28,8 @@ module.exports = {
   transpileDependencies: ['quill'],
   // webpack-dev-server 相关配置
   devServer: {
-    host: '0.0.0.0',
+    // 监听 IPv6（含 IPv4 映射），保证 localhost(::1) 与局域网 IP 都能访问
+    host: '::',
     port: port,
     open: true,
     proxy: {

@@ -2,10 +2,11 @@ import store from '@/store'
 
 function authPermission(permission) {
   const all_permission = "*:*:*"
+  const all_permission_simple = "*" // Aiplatform 后端对管理员返回 "*"，同样视为全部权限
   const permissions = store.getters && store.getters.permissions
   if (permission && permission.length > 0) {
     return permissions.some(v => {
-      return all_permission === v || v === permission
+      return all_permission === v || all_permission_simple === v || v === permission
     })
   } else {
     return false
