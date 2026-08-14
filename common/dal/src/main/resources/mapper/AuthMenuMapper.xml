@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.AuthMenuMapper">
+
+    <sql id="selectColumns">
+        menu_id, menu_name, parent_id, order_num, path, component, menu_type, visible, status, perms, icon, remark, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="menuId != null">
+                AND menu_id = #{menuId}
+            </if>
+            <if test="menuName != null and menuName != ''">
+                AND menu_name = #{menuName}
+            </if>
+            <if test="parentId != null">
+                AND parent_id = #{parentId}
+            </if>
+            <if test="orderNum != null">
+                AND order_num = #{orderNum}
+            </if>
+            <if test="path != null and path != ''">
+                AND path = #{path}
+            </if>
+            <if test="component != null and component != ''">
+                AND component = #{component}
+            </if>
+            <if test="menuType != null">
+                AND menu_type = #{menuType.code}
+            </if>
+            <if test="visible != null">
+                AND visible = #{visible.code}
+            </if>
+            <if test="status != null">
+                AND status = #{status.code}
+            </if>
+            <if test="perms != null and perms != ''">
+                AND perms = #{perms}
+            </if>
+            <if test="icon != null and icon != ''">
+                AND icon = #{icon}
+            </if>
+            <if test="remark != null and remark != ''">
+                AND remark = #{remark}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO">
+        SELECT <include refid="selectColumns"/>
+        FROM auth_menu
+        WHERE menu_id = #{id}
+        AND del_flag = '0'
+    </select>
+
+    <select id="selectPermsByUserId" resultType="string">
+        SELECT DISTINCT m.perms
+        FROM auth_menu m
+        JOIN auth_role_menu rm ON m.menu_id = rm.menu_id
+        JOIN auth_user_role ur ON rm.role_id = ur.role_id
+        JOIN auth_role r ON r.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+          AND m.status = '0'
+          AND m.perms IS NOT NULL
+          AND m.perms != ''
+          AND r.status = '0'
+          AND r.del_flag = '0'
+    </select>
+
+    <select id="selectMenusByUserId" resultType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO">
+        SELECT m.menu_id, m.menu_name, m.parent_id, m.order_num, m.path, m.component,
+               m.menu_type, m.visible, m.status, m.perms, m.icon, m.remark, m.create_time, m.update_time
+        FROM auth_menu m
+        JOIN auth_role_menu rm ON m.menu_id = rm.menu_id
+        JOIN auth_user_role ur ON rm.role_id = ur.role_id
+        JOIN auth_role r ON r.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+          AND m.menu_type IN ('M', 'C')
+          AND m.visible = '0'
+          AND m.status = '0'
+          AND m.del_flag = '0'
+          AND r.status = '0'
+          AND r.del_flag = '0'
+        ORDER BY m.parent_id, m.order_num
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO">
+        SELECT <include refid="selectColumns"/>
+        FROM auth_menu
+        <include refid="queryConditions"/>
+        ORDER BY menu_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO">
+        SELECT <include refid="selectColumns"/>
+        FROM auth_menu
+        <include refid="queryConditions"/>
+        ORDER BY menu_id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM auth_menu
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO"
+            useGeneratedKeys="true" keyProperty="menuId">
+        INSERT INTO auth_menu (menu_name, parent_id, order_num, path, component, menu_type, visible, status, perms, icon, remark)
+        VALUES (#{menuName}, #{parentId}, #{orderNum}, #{path}, #{component}, #{menuType}, #{visible}, #{status}, #{perms}, #{icon}, #{remark})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO">
+        UPDATE auth_menu
+        SET menu_name = #{menuName},
+            parent_id = #{parentId},
+            order_num = #{orderNum},
+            path = #{path},
+            component = #{component},
+            menu_type = #{menuType},
+            visible = #{visible},
+            status = #{status},
+            perms = #{perms},
+            icon = #{icon},
+            remark = #{remark}
+        WHERE menu_id = #{menuId}
+        AND del_flag = '0'
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO">
+        <if test="menuName != null or parentId != null or orderNum != null or path != null or component != null or menuType != null or visible != null or status != null or perms != null or icon != null or remark != null">
+            UPDATE auth_menu
+        <set>
+            <if test="menuName != null">
+                menu_name = #{menuName},
+            </if>
+            <if test="parentId != null">
+                parent_id = #{parentId},
+            </if>
+            <if test="orderNum != null">
+                order_num = #{orderNum},
+            </if>
+            <if test="path != null">
+                path = #{path},
+            </if>
+            <if test="component != null">
+                component = #{component},
+            </if>
+            <if test="menuType != null">
+                menu_type = #{menuType},
+            </if>
+            <if test="visible != null">
+                visible = #{visible},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="perms != null">
+                perms = #{perms},
+            </if>
+            <if test="icon != null">
+                icon = #{icon},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+        </set>
+            WHERE menu_id = #{menuId}
+            AND del_flag = '0'
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        UPDATE auth_menu SET del_flag = '2' WHERE menu_id = #{id} AND del_flag = '0'
+    </delete>
+</mapper>

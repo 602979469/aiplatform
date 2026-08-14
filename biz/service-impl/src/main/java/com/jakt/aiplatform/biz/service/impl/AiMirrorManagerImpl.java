@@ -3,8 +3,8 @@ package com.jakt.aiplatform.biz.service.impl;
 import com.jakt.aiplatform.biz.service.AiMirrorManager;
 import com.jakt.aiplatform.core.model.domain.MirrorDownloadTask;
 import com.jakt.aiplatform.core.model.domain.MirrorSearchResponse;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
+import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.util.tools.LoggerUtil;
 import com.jakt.aiplatform.core.service.AiMirrorDownloadService;
 import com.jakt.aiplatform.core.service.AiMirrorSearchService;
 import org.springframework.stereotype.Service;
@@ -35,7 +35,7 @@ public class AiMirrorManagerImpl implements AiMirrorManager {
     @Override
     public MirrorDownloadTask generate(String repo, String tag) {
         MirrorDownloadTask task = aiMirrorDownloadService.generate(repo, tag);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE,
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
                 "【镜像加速器】生成下载任务 taskId={} repo={}:{}", task.getTaskId(), repo, tag);
         return task;
     }

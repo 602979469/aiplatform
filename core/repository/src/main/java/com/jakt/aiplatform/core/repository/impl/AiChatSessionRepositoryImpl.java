@@ -1,12 +1,14 @@
 package com.jakt.aiplatform.core.repository.impl;
 
+import com.jakt.aiplatform.common.util.tools.ConvertUtil;
+import com.jakt.aiplatform.common.dal.dataobject.AiChatSessionDO;
 import com.jakt.aiplatform.common.dal.mapper.AiChatSessionMapper;
-import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.util.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
+import com.jakt.aiplatform.common.util.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.AiChatSessionQueryParam;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
+import com.jakt.aiplatform.common.util.tools.LoggerUtil;
 import com.jakt.aiplatform.core.repository.AiChatMessageRepository;
 import com.jakt.aiplatform.core.repository.AiChatSessionRepository;
 import com.jakt.aiplatform.core.repository.convertor.AiChatSessionConvertor;
@@ -34,36 +36,31 @@ public class AiChatSessionRepositoryImpl implements AiChatSessionRepository {
 
     @Override
     public AiChatSession findById(Long id) {
-        return AiChatSessionConvertor.toModel(aiChatSessionMapper.selectById(id));
+        AiChatSessionDO sessionDO = aiChatSessionMapper.selectById(id);
+        return AiChatSessionConvertor.toModel(sessionDO);
     }
 
     @Override
     public List<AiChatSession> findList(AiChatSessionQueryParam query) {
-        return aiChatSessionMapper.selectList(query).stream().map(AiChatSessionConvertor::toModel).toList();
+        List<AiChatSessionDO> sourceList = aiChatSessionMapper.selectList(AiChatSessionConvertor.toDalQuery(query));
+        return ConvertUtil.map(sourceList, AiChatSessionConvertor::toModel);
     }
 
     @Override
     public AiChatSession insert(AiChatSession aiChatSession) {
-        var aiChatSessionDO = AiChatSessionConvertor.toDO(aiChatSession);
+        AiChatSessionDO aiChatSessionDO = AiChatSessionConvertor.toDO(aiChatSession);
         aiChatSessionMapper.insert(aiChatSessionDO);
         return AiChatSessionConvertor.toModel(aiChatSessionDO);
     }
 
     @Override
-    public void updateByCondition(AiChatSession aiChatSession) {
-        int affected = aiChatSessionMapper.updateByCondition(AiChatSessionConvertor.toDO(aiChatSession));
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE,
-                "AiChatSessionRepository.updateByCondition sessionId={} 影响行数={}",
-                aiChatSession.getSessionId(), affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    public int updateByCondition(AiChatSession aiChatSession) {
+        return aiChatSessionMapper.updateByCondition(AiChatSessionConvertor.toDO(aiChatSession));
     }
 
     @Override
-    public void deleteById(Long id) {
-        int affected = aiChatSessionMapper.deleteById(id);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE,
-                "AiChatSessionRepository.deleteById id={} 影响行数={}", id, affected);
-        AiPlatformInvoker.throwErrWhenTrue(affected == 0, ErrorCodeEnum.DELETE_FAILED, "删除失败：记录不存在或已被删除");
+    public int deleteById(Long id) {
+        return aiChatSessionMapper.deleteById(id);
     }
 
     @Override

@@ -2,7 +2,8 @@ package com.jakt.aiplatform.core.service.impl;
 
 import com.jakt.aiplatform.common.integration.deepseek.DeepSeekClient;
 import com.jakt.aiplatform.common.integration.deepseek.model.DeepSeekChatMessage;
-import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.integration.deepseek.model.DeepSeekRoleEnum;
+import com.jakt.aiplatform.common.util.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AiCapability;
 import com.jakt.aiplatform.core.model.domain.AiSystemMessage;
 import com.jakt.aiplatform.core.model.domain.AiSystemSession;
@@ -46,9 +47,9 @@ public class AiCapabilityServiceImpl implements AiCapabilityService {
     @Override
     public String invoke(String sceneCode, String capabilityCode, String input) {
         AiCapability capability = aiCapabilityRepository.getBySceneAndCode(sceneCode, capabilityCode);
-        AiPlatformInvoker.throwErrWhenNull(capability, ErrorCodeEnum.RESOURCE_NOT_FOUND,
+        AssertUtil.throwErrWhenNull(capability, ErrorCodeEnum.RESOURCE_NOT_FOUND,
                 "AI能力不存在或已停用: " + sceneCode + "/" + capabilityCode);
-        AiPlatformInvoker.throwErrWhenBlank(capability.getSkillRules(), ErrorCodeEnum.RESOURCE_NOT_FOUND,
+        AssertUtil.throwErrWhenBlank(capability.getSkillRules(), ErrorCodeEnum.RESOURCE_NOT_FOUND,
                 "AI能力未配置约束规则: " + capabilityCode);
 
         // 每次调用独立上下文：新建系统会话并落库（system规则 + user输入 + assistant回答）
@@ -60,21 +61,24 @@ public class AiCapabilityServiceImpl implements AiCapabilityService {
         session.setStatus("0");
         aiSystemSessionService.createAiSystemSession(session);
 
-        insertMessage(session.getSessionId(), "system", capability.getSkillRules());
-        insertMessage(session.getSessionId(), "user", input);
+        insertMessage(session.getSessionId(), DeepSeekRoleEnum.SYSTEM, capability.getSkillRules());
+        insertMessage(session.getSessionId(), DeepSeekRoleEnum.USER, input);
 
         List<DeepSeekChatMessage> messages = List.of(
-                new DeepSeekChatMessage("system", capability.getSkillRules()),
-                new DeepSeekChatMessage("user", input));
+                new DeepSeekChatMessage(DeepSeekRoleEnum.SYSTEM.getCode(), capability.getSkillRules()),
+                new DeepSeekChatMessage(DeepSeekRoleEnum.USER.getCode(), input));
         String reply = deepSeekClient.chat(messages);
-        insertMessage(session.getSessionId(), "assistant", reply);
+        insertMessage(session.getSessionId(), DeepSeekRoleEnum.ASSISTANT, reply);
         return reply;
     }
 
-    private void insertMessage(Long sessionId, String role, String content) {
+    /**
+ * 插入一条会话消息。
+     */
+    private void insertMessage(Long sessionId, DeepSeekRoleEnum role, String content) {
         AiSystemMessage message = new AiSystemMessage();
         message.setSessionId(sessionId);
-        message.setRole(role);
+        message.setRole(role.getCode());
         message.setContent(content);
         message.setStatus("0");
         aiSystemMessageService.createAiSystemMessage(message);

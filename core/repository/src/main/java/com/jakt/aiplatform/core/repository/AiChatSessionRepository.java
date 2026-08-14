@@ -39,14 +39,14 @@ public interface AiChatSessionRepository {
      *
      * @param aiChatSession AI会话表（至少含主键）
      */
-    void updateByCondition(AiChatSession aiChatSession);
+    int updateByCondition(AiChatSession aiChatSession);
 
     /**
      * 按主键逻辑删除。
      *
      * @param id 主键
      */
-    void deleteById(Long id);
+    int deleteById(Long id);
 
     /**
      * 删除会话并连同消息逻辑删除（组合会话/消息仓储，无事务注解，由上层事务模板包裹）。

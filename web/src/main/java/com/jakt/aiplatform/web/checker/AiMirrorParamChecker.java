@@ -1,7 +1,7 @@
 package com.jakt.aiplatform.web.checker;
 
-import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
-import com.jakt.aiplatform.common.util.tools.AiPlatformParamValidator;
+import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.util.tools.ParamValidator;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.web.param.MirrorDownloadRequest;
 import com.jakt.aiplatform.web.param.MirrorSearchRequest;
@@ -20,8 +20,8 @@ public class AiMirrorParamChecker {
      * @param request 搜索请求
      */
     public static void checkSearch(MirrorSearchRequest request) {
-        AiPlatformInvoker.throwErrWhenNull(request, ErrorCodeEnum.PARAM_INVALID, "搜索参数不能为空");
-        AiPlatformParamValidator.validate(request);
+        AssertUtil.throwErrWhenNull(request, ErrorCodeEnum.PARAM_INVALID, "搜索参数不能为空");
+        ParamValidator.validate(request);
     }
 
     /**
@@ -30,8 +30,8 @@ public class AiMirrorParamChecker {
      * @param request 下载请求
      */
     public static void checkGenerate(MirrorDownloadRequest request) {
-        AiPlatformInvoker.throwErrWhenNull(request, ErrorCodeEnum.PARAM_INVALID, "下载参数不能为空");
-        AiPlatformParamValidator.validate(request);
+        AssertUtil.throwErrWhenNull(request, ErrorCodeEnum.PARAM_INVALID, "下载参数不能为空");
+        ParamValidator.validate(request);
     }
 
     /**
@@ -40,7 +40,7 @@ public class AiMirrorParamChecker {
      * @param taskId 任务ID
      */
     public static void checkTaskId(String taskId) {
-        AiPlatformInvoker.throwErrWhenBlank(taskId, ErrorCodeEnum.PARAM_INVALID, "任务ID不能为空");
+        AssertUtil.throwErrWhenBlank(taskId, ErrorCodeEnum.PARAM_INVALID, "任务ID不能为空");
     }
 
     /**
@@ -49,6 +49,6 @@ public class AiMirrorParamChecker {
      * @param fileName 文件名
      */
     public static void checkFileName(String fileName) {
-        AiPlatformInvoker.throwErrWhenBlank(fileName, ErrorCodeEnum.PARAM_INVALID, "文件名不能为空");
+        AssertUtil.throwErrWhenBlank(fileName, ErrorCodeEnum.PARAM_INVALID, "文件名不能为空");
     }
 }

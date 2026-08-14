@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.web.assembler;
 
+import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.web.result.MirrorDownloadTask;
 import com.jakt.aiplatform.web.result.MirrorImageResult;
 import com.jakt.aiplatform.web.result.MirrorSearchResponse;
@@ -27,12 +28,12 @@ public final class AiMirrorAssembler {
         }
         List<MirrorImageResult> results = source.getResults() == null
                 ? null
-                : source.getResults().stream().map(AiMirrorAssembler::toImageResult).toList();
-        return MirrorSearchResponse.builder()
-                .os(source.getOs())
-                .arch(source.getArch())
-                .results(results)
-                .build();
+                : ConvertUtil.map(source.getResults(), AiMirrorAssembler::toImageResult);
+        MirrorSearchResponse response = new MirrorSearchResponse();
+        response.setOs(source.getOs());
+        response.setArch(source.getArch());
+        response.setResults(results);
+        return response;
     }
 
     /**
@@ -45,15 +46,15 @@ public final class AiMirrorAssembler {
         if (source == null) {
             return null;
         }
-        return MirrorImageResult.builder()
-                .vendor(source.getVendor())
-                .repo(source.getRepo())
-                .tag(source.getTag())
-                .fullName(source.getFullName())
-                .arch(source.getArch())
-                .localFileExists(source.isLocalFileExists())
-                .localFileName(source.getLocalFileName())
-                .build();
+        MirrorImageResult response = new MirrorImageResult();
+        response.setVendor(source.getVendor());
+        response.setRepo(source.getRepo());
+        response.setTag(source.getTag());
+        response.setFullName(source.getFullName());
+        response.setArch(source.getArch());
+        response.setLocalFileExists(source.isLocalFileExists());
+        response.setLocalFileName(source.getLocalFileName());
+        return response;
     }
 
     /**
@@ -66,18 +67,18 @@ public final class AiMirrorAssembler {
         if (source == null) {
             return null;
         }
-        return MirrorDownloadTask.builder()
-                .taskId(source.getTaskId())
-                .repo(source.getRepo())
-                .tag(source.getTag())
-                .fileName(source.getFileName())
-                .status(source.getStatus())
-                .progress(source.getProgress())
-                .progressMsg(source.getProgressMsg())
-                .errorCode(source.getErrorCode())
-                .errorMsg(source.getErrorMsg())
-                .createTime(source.getCreateTime())
-                .finishTime(source.getFinishTime())
-                .build();
+        MirrorDownloadTask response = new MirrorDownloadTask();
+        response.setTaskId(source.getTaskId());
+        response.setRepo(source.getRepo());
+        response.setTag(source.getTag());
+        response.setFileName(source.getFileName());
+        response.setStatus(source.getStatus());
+        response.setProgress(source.getProgress());
+        response.setProgressMsg(source.getProgressMsg());
+        response.setErrorCode(source.getErrorCode());
+        response.setErrorMsg(source.getErrorMsg());
+        response.setCreateTime(source.getCreateTime());
+        response.setFinishTime(source.getFinishTime());
+        return response;
     }
 }

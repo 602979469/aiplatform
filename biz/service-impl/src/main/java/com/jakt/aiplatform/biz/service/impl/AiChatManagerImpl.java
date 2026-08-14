@@ -2,15 +2,16 @@ package com.jakt.aiplatform.biz.service.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.biz.service.AiChatManager;
-import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.util.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.context.UserContext;
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
 import com.jakt.aiplatform.core.model.domain.AiChatResult;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
+import com.jakt.aiplatform.core.model.enums.AiChatSessionStatusEnum;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
+import com.jakt.aiplatform.common.util.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.AiChatSessionQueryParam;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
+import com.jakt.aiplatform.common.util.tools.LoggerUtil;
 import com.jakt.aiplatform.core.service.AiChatMessageService;
 import com.jakt.aiplatform.core.service.AiChatService;
 import com.jakt.aiplatform.core.service.AiChatSessionService;
@@ -24,6 +25,9 @@ import java.util.Objects;
  */
 @Service
 public class AiChatManagerImpl implements AiChatManager {
+
+    /** 默认会话名称。 */
+    public static final String DEFAULT_SESSION_NAME = "新会话";
 
     private final AiChatSessionService aiChatSessionService;
 
@@ -49,12 +53,12 @@ public class AiChatManagerImpl implements AiChatManager {
     @Override
     public AiChatSession createSession() {
         AiChatSession session = new AiChatSession();
-        session.setSessionName("新会话");
-        session.setStatus("0");
+        session.setSessionName(DEFAULT_SESSION_NAME);
+        session.setStatus(AiChatSessionStatusEnum.NORMAL);
         session.setUserId(UserContext.getUserId());
         session.setUserName(UserContext.getUserName());
         AiChatSession created = aiChatSessionService.createAiChatSession(session);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "新建AI会话 sessionId={} userId={}",
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "新建AI会话 sessionId={} userId={}",
                 created.getSessionId(), UserContext.getUserId());
         return created;
     }
@@ -62,19 +66,19 @@ public class AiChatManagerImpl implements AiChatManager {
     @Override
     public void renameSession(Long sessionId, String sessionName) {
         checkOwner(sessionId);
-        AiPlatformInvoker.throwErrWhenBlank(sessionName, ErrorCodeEnum.PARAM_INVALID, "会话标题不能为空");
+        AssertUtil.throwErrWhenBlank(sessionName, ErrorCodeEnum.PARAM_INVALID, "会话标题不能为空");
         AiChatSession update = new AiChatSession();
         update.setSessionId(sessionId);
         update.setSessionName(StrUtil.maxLength(sessionName, 100));
         aiChatSessionService.updateByCondition(update);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "修改AI会话标题 sessionId={}", sessionId);
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "修改AI会话标题 sessionId={}", sessionId);
     }
 
     @Override
     public void deleteSession(Long sessionId) {
         checkOwner(sessionId);
         aiChatSessionService.deleteAiChatSession(sessionId);
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "删除AI会话 sessionId={}", sessionId);
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "删除AI会话 sessionId={}", sessionId);
     }
 
     @Override
@@ -94,9 +98,9 @@ public class AiChatManagerImpl implements AiChatManager {
      */
     private AiChatSession checkOwner(Long sessionId) {
         AiChatSession session = aiChatSessionService.getAiChatSession(sessionId);
-        AiPlatformInvoker.throwErrWhenTrue(session == null
+        AssertUtil.throwErrWhenTrue(session == null
                         || !Objects.equals(UserContext.getUserId(), session.getUserId()),
-                ErrorCodeEnum.BIZ_ERROR, "会话不存在或无权访问");
+                ErrorCodeEnum.SESSION_ACCESS_DENIED, "会话不存在或无权访问");
         return session;
     }
 }

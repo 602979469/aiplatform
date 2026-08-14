@@ -1,7 +1,7 @@
 package com.jakt.aiplatform.common.dal.mapper;
 
 import com.jakt.aiplatform.common.dal.dataobject.AiChatSessionDO;
-import com.jakt.aiplatform.core.model.param.AiChatSessionQueryParam;
+import com.jakt.aiplatform.common.dal.query.AiChatSessionDalQuery;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -26,7 +26,7 @@ public interface AiChatSessionMapper {
      * @param query 查询参数
      * @return 会话列表
      */
-    List<AiChatSessionDO> selectList(AiChatSessionQueryParam query);
+    List<AiChatSessionDO> selectList(AiChatSessionDalQuery query);
 
     /**
      * 新增，自增主键回填到 {@code aiChatSessionDO.sessionId}。

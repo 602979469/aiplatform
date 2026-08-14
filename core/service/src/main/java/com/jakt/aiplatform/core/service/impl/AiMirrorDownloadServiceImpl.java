@@ -3,14 +3,15 @@ package com.jakt.aiplatform.core.service.impl;
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.integration.xuanyuan.XuanYuanProperties;
 import com.jakt.aiplatform.common.util.enums.ThreadPoolEnum;
-import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.util.tools.AssertUtil;
 import com.jakt.aiplatform.common.util.tools.CommandUtil;
 import com.jakt.aiplatform.common.util.tools.MirrorFileUtil;
 import com.jakt.aiplatform.common.util.tools.ThreadPoolUtil;
 import com.jakt.aiplatform.core.model.domain.MirrorDownloadTask;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
+import com.jakt.aiplatform.core.model.exception.AiPlatformException;
+import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.util.tools.LoggerUtil;
 import com.jakt.aiplatform.core.service.AiMirrorDownloadService;
 import org.springframework.stereotype.Service;
 
@@ -66,7 +67,7 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
             existed.setProgressMsg("本地已存在，可直接下载");
             existed.setCreateTime(LocalDateTime.now());
             existed.setFinishTime(LocalDateTime.now());
-            AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【DOCKER】本地已存在文件: {}", fileName);
+            LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【DOCKER】本地已存在文件: {}", fileName);
             return existed;
         }
 
@@ -88,18 +89,20 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
     @Override
     public MirrorDownloadTask getStatus(String taskId) {
         MirrorDownloadTask task = tasks.get(taskId);
-        AiPlatformInvoker.throwErrWhenNull(task, ErrorCodeEnum.BIZ_ERROR,
+        AssertUtil.throwErrWhenNull(task, ErrorCodeEnum.MIRROR_TASK_NOT_FOUND,
                 "下载任务不存在或已过期，请重新生成");
         return task;
     }
 
     @Override
     public File getFile(String fileName) {
-        AiPlatformInvoker.throwErrWhenFalse(MirrorFileUtil.isValidFileName(fileName), ErrorCodeEnum.BIZ_ERROR,
+        AssertUtil.throwErrWhenFalse(MirrorFileUtil.isValidFileName(fileName), ErrorCodeEnum.MIRROR_FILE_NAME_INVALID,
                 "非法的文件名");
         Path path = Paths.get(MirrorFileUtil.IMAGE_DIR).resolve(fileName).normalize();
         File file = path.toFile();
-        AiPlatformInvoker.throwErrWhenTrue(!file.exists() || !file.isFile(), ErrorCodeEnum.BIZ_ERROR,
+        AssertUtil.throwErrWhenFalse(file.exists(), ErrorCodeEnum.MIRROR_FILE_NOT_FOUND,
+                "本地文件不存在，请重新生成下载链接");
+        AssertUtil.throwErrWhenFalse(file.isFile(), ErrorCodeEnum.MIRROR_FILE_NOT_REGULAR,
                 "本地文件不存在，请重新生成下载链接");
         return file;
     }
@@ -121,7 +124,7 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
                     break;
                 }
                 if (attempt < PULL_MAX_RETRY) {
-                    AiPlatformLoggerUtil.warn(LogFileEnum.BIZ_SERVICE,
+                    LoggerUtil.warn(LogFileEnum.BIZ_SERVICE,
                             "【镜像加速器】【DOCKER】docker pull 第{}次失败，准备重试: repo={}, tag={}, 退出码={}, 超时={}",
                             attempt, repo, tag, pull.getExitCode(), pull.isTimeout());
                     sleepQuietly(3000L * attempt);
@@ -142,10 +145,10 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
 
             update(task, "ready", 100, "打包完成，可下载");
             task.setFinishTime(LocalDateTime.now());
-            AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE,
+            LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
                     "【镜像加速器】【DOCKER】下载生成完成: {} -> {}", remoteImage, targetFile);
         } catch (Exception e) {
-            AiPlatformLoggerUtil.error(LogFileEnum.COMMON_ERROR,
+            LoggerUtil.error(LogFileEnum.COMMON_ERROR,
                     "【镜像加速器】【DOCKER】下载生成异常: repo={}, tag={}, 错误={}", repo, tag, e.getMessage());
             update(task, "failed", 0, "生成失败");
             task.setErrorCode("UNKNOWN");
@@ -154,10 +157,13 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
         }
     }
 
+    /**
+ * 标记任务失败。
+     */
     private void fail(MirrorDownloadTask task, String phase, CommandUtil.CommandResult result) {
         String errorCode = result.isTimeout() ? "TIMEOUT" : "UNKNOWN";
         String errorMsg = result.isTimeout() ? "命令执行超时（" + phase + "）" : extractError(result.getOutput());
-        AiPlatformLoggerUtil.error(LogFileEnum.COMMON_ERROR,
+        LoggerUtil.error(LogFileEnum.COMMON_ERROR,
                 "【镜像加速器】【DOCKER】{}失败: repo={}, tag={}, 退出码={}, 超时={}, 输出={}",
                 phase, task.getRepo(), task.getTag(), result.getExitCode(), result.isTimeout(), result.getOutput());
         update(task, "failed", 0, "生成失败");
@@ -184,21 +190,29 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
         return message.length() > 500 ? message.substring(0, 500) : message;
     }
 
+    /**
+ * 更新任务进度。
+     */
     private void update(MirrorDownloadTask task, String status, int progress, String progressMsg) {
         task.setStatus(status);
         task.setProgress(progress);
         task.setProgressMsg(progressMsg);
     }
 
+    /**
+ * 确保镜像目录存在。
+     */
     private void ensureImageDir() {
         try {
             MirrorFileUtil.ensureImageDir();
         } catch (IllegalStateException e) {
-            throw new com.jakt.aiplatform.core.model.exception.AiPlatformException(
-                    ErrorCodeEnum.BIZ_ERROR, "创建镜像存储目录失败: " + e.getMessage(), e);
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.MIRROR_DIR_CREATE_FAILED.getCode(), "创建镜像存储目录失败: " + e.getMessage());
         }
     }
 
+    /**
+ * 解析注册表主机。
+     */
     private String resolveRegistryHost() {
         String url = xuanYuanProperties.getRegistryUrl();
         if (StrUtil.isBlank(url)) {
@@ -207,6 +221,9 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
         return url.replaceFirst("^https?://", "").replaceAll("/+$", "");
     }
 
+    /**
+ * 静默休眠（忽略中断异常）。
+     */
     private void sleepQuietly(long millis) {
         try {
             Thread.sleep(millis);

@@ -1,8 +1,8 @@
 package com.jakt.aiplatform.common.integration.deepseek;
 
 import cn.hutool.core.util.StrUtil;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
+import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.util.tools.LoggerUtil;
 import lombok.Data;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -63,13 +63,13 @@ public class DeepSeekProperties implements InitializingBean {
             }
         }
         if (StrUtil.isBlank(apiKey)) {
-            AiPlatformLoggerUtil.warn(LogFileEnum.COMMON_ERROR,
+            LoggerUtil.warn(LogFileEnum.COMMON_ERROR,
                     "DeepSeek API Key 未配置，请在 application.yml 配置 ai.deepseek.api-key 或设置环境变量 DEEPSEEK_API_KEY");
         }
         if (StrUtil.isNotBlank(baseUrl) && baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "DeepSeek 配置加载完成: baseUrl={}, model={}, apiKey配置={}",
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "DeepSeek 配置加载完成: baseUrl={}, model={}, apiKey配置={}",
                 baseUrl, model, StrUtil.isNotBlank(apiKey));
     }
 
@@ -89,7 +89,7 @@ public class DeepSeekProperties implements InitializingBean {
                         return config;
                     }
                 } catch (IOException e) {
-                    AiPlatformLoggerUtil.warn(LogFileEnum.COMMON_ERROR, "读取 Codex 配置文件失败: {}", path);
+                    LoggerUtil.warn(LogFileEnum.COMMON_ERROR, "读取 Codex 配置文件失败: {}", path);
                 }
             }
         }

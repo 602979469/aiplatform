@@ -2,6 +2,8 @@ package com.jakt.aiplatform.core.repository.convertor;
 
 import com.jakt.aiplatform.common.dal.dataobject.AiChatMessageDO;
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
+import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
+import com.jakt.aiplatform.core.model.enums.BaseEnum;
 
 
 /**
@@ -29,7 +31,7 @@ public final class AiChatMessageConvertor {
         target.setUserId(source.getUserId());
         target.setRole(source.getRole());
         target.setContent(source.getContent());
-        target.setStatus(source.getStatus());
+        target.setStatus(BaseEnum.fromCode(AiChatMessageStatusEnum.class, source.getStatus()));
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
         return target;
@@ -42,13 +44,16 @@ public final class AiChatMessageConvertor {
      * @return 用户AI会话消息数据对象
      */
     public static AiChatMessageDO toDO(AiChatMessage source) {
+        if (source == null) {
+            return null;
+        }
         AiChatMessageDO target = new AiChatMessageDO();
         target.setMessageId(source.getMessageId());
         target.setSessionId(source.getSessionId());
         target.setUserId(source.getUserId());
         target.setRole(source.getRole());
         target.setContent(source.getContent());
-        target.setStatus(source.getStatus());
+        target.setStatus(source.getStatus() == null ? null : source.getStatus().getCode());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
         return target;

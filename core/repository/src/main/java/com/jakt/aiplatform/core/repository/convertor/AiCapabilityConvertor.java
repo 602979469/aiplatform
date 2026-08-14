@@ -44,6 +44,9 @@ public final class AiCapabilityConvertor {
      * @return AI能力数据对象
      */
     public static AiCapabilityDO toDO(AiCapability source) {
+        if (source == null) {
+            return null;
+        }
         AiCapabilityDO target = new AiCapabilityDO();
         target.setCapabilityId(source.getCapabilityId());
         target.setSceneCode(source.getSceneCode());

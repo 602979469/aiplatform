@@ -9,8 +9,8 @@ import com.jakt.aiplatform.common.integration.xuanyuan.XuanYuanWebClient;
 import com.jakt.aiplatform.common.util.tools.MirrorFileUtil;
 import com.jakt.aiplatform.core.model.domain.MirrorImageResult;
 import com.jakt.aiplatform.core.model.domain.MirrorSearchResponse;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
+import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.util.tools.LoggerUtil;
 import com.jakt.aiplatform.core.service.AiCapabilityService;
 import com.jakt.aiplatform.core.service.AiMirrorSearchService;
 import org.springframework.stereotype.Service;
@@ -50,7 +50,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
         String resolvedOs = StrUtil.isNotBlank(os) ? os : detectOs(userAgent);
         String resolvedArch = StrUtil.isNotBlank(arch) ? arch : "amd64";
 
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】开始搜索: 输入={}, 客户端={}/{}",
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】开始搜索: 输入={}, 客户端={}/{}",
                 imageName, resolvedOs, resolvedArch);
 
         // 1. 本地解析名称与版本（如 mysql:8 -> mysql / 8）
@@ -99,7 +99,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
             results.add(result);
         }
 
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】完成: 共 {} 个结果, 总耗时={}ms",
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】完成: 共 {} 个结果, 总耗时={}ms",
                 results.size(), System.currentTimeMillis() - totalStart);
         MirrorSearchResponse response = new MirrorSearchResponse();
         response.setOs(resolvedOs);
@@ -142,13 +142,13 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
         try {
             json = xuanYuanWebClient.fetchTags(namespace, name, expectTag);
         } catch (AiIntegrationException e) {
-            AiPlatformLoggerUtil.warn(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】仓库tags查询失败, 跳过: {}, 错误={}",
+            LoggerUtil.warn(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】仓库tags查询失败, 跳过: {}, 错误={}",
                     repo, e.getMessage());
             return null;
         }
         JSONArray tags = json == null ? null : json.getJSONArray("tags");
         if (tags == null || tags.isEmpty()) {
-            AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】仓库无匹配版本: {}:{}", repo, expectTag);
+            LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】仓库无匹配版本: {}:{}", repo, expectTag);
             return null;
         }
 
@@ -176,12 +176,12 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
         for (String tag : tagNames) {
             MirrorImageResult result = buildWithTag(repo, tag, userArch, tags, namespace);
             if (result != null) {
-                AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE,
+                LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
                         "【镜像加速器】【搜索】AI 未选用，纯代码兜底: {}:{} , 架构={}", repo, tag, result.getArch());
                 return result;
             }
         }
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE,
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
                 "【镜像加速器】【搜索】仓库无匹配架构镜像: {}:{} , 客户端架构={}", repo, expectTag, userArch);
         return null;
     }
@@ -206,7 +206,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
                 return fallback;
             }
         } catch (Exception e) {
-            AiPlatformLoggerUtil.error(LogFileEnum.COMMON_ERROR,
+            LoggerUtil.error(LogFileEnum.COMMON_ERROR,
                     "【镜像加速器】【AI】版本匹配解析失败: repo={}, 期望={}", repo, expectTag);
         }
         return null;
@@ -233,7 +233,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
             result.setArch("支持 " + matchedArch);
             result.setLocalFileName(MirrorFileUtil.buildFileName(repo, tag));
             refreshLocalFile(result);
-            AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE,
+            LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
                     "【镜像加速器】【搜索】选定镜像: {}:{} , 架构={}", repo, tag, matchedArch);
             return result;
         }
@@ -408,7 +408,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
      * 阶段计时日志。
      */
     private void logPhase(String phase, long start, String detail, Object... args) {
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】阶段[{}]耗时={}ms | {}",
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】阶段[{}]耗时={}ms | {}",
                 phase, System.currentTimeMillis() - start, String.format(detail, args));
     }
 }

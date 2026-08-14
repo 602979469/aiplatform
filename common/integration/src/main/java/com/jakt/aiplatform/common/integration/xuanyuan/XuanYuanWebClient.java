@@ -5,8 +5,8 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.jakt.aiplatform.common.integration.exception.AiIntegrationErrorCode;
 import com.jakt.aiplatform.common.integration.exception.AiIntegrationException;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
+import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.util.tools.LoggerUtil;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -66,7 +66,7 @@ public class XuanYuanWebClient {
         } catch (AiIntegrationException e) {
             throw e;
         } catch (Exception e) {
-            AiPlatformLoggerUtil.warn(LogFileEnum.COMMON_ERROR, "【镜像加速器】【XUANYUAN-WEB】网页搜索失败, q={}, 错误={}",
+            LoggerUtil.warn(LogFileEnum.COMMON_ERROR, "【镜像加速器】【XUANYUAN-WEB】网页搜索失败, q={}, 错误={}",
                     query, e.getMessage());
             throw new AiIntegrationException(AiIntegrationErrorCode.XUANYUAN_API_ERROR,
                     "轩辕加速器官网搜索失败，请稍后重试", e);
@@ -91,7 +91,7 @@ public class XuanYuanWebClient {
         try {
             return JSON.parseObject(body);
         } catch (Exception e) {
-            AiPlatformLoggerUtil.warn(LogFileEnum.COMMON_ERROR, "【镜像加速器】【XUANYUAN-WEB】查询tags失败, repo={}/{}:{}, 错误={}",
+            LoggerUtil.warn(LogFileEnum.COMMON_ERROR, "【镜像加速器】【XUANYUAN-WEB】查询tags失败, repo={}/{}:{}, 错误={}",
                     namespace, name, tag, e.getMessage());
             throw new AiIntegrationException(AiIntegrationErrorCode.XUANYUAN_API_ERROR,
                     "轩辕加速器官网查询标签失败，请稍后重试", e);
@@ -131,6 +131,9 @@ public class XuanYuanWebClient {
                 "轩辕加速器官网接口请求失败: " + (lastError == null ? "unknown" : lastError.getMessage()), lastError);
     }
 
+    /**
+ * 静默休眠（忽略中断异常）。
+     */
     private void sleepQuietly(long millis) {
         try {
             Thread.sleep(millis);

@@ -1,0 +1,124 @@
+package com.jakt.aiplatform.core.service.impl;
+
+import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.digest.BCrypt;
+import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.core.model.domain.AuthUser;
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
+import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.core.model.exception.AiPlatformException;
+import com.jakt.aiplatform.core.model.param.AuthUserQueryParam;
+import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.util.result.Result;
+import com.jakt.aiplatform.common.util.template.BizTemplate;
+import com.jakt.aiplatform.common.util.template.TransactionTemplate;
+import com.jakt.aiplatform.core.repository.AuthUserRepository;
+import com.jakt.aiplatform.core.service.AuthUserAdminService;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * 用户管理领域服务实现：跨表多写统一走 BizTemplate。
+ */
+@Service
+public class AuthUserAdminServiceImpl implements AuthUserAdminService {
+
+    private final AuthUserRepository authUserRepository;
+
+    private final TransactionTemplate transactionTemplate;
+
+    public AuthUserAdminServiceImpl(AuthUserRepository authUserRepository,
+                                    TransactionTemplate transactionTemplate) {
+        this.authUserRepository = authUserRepository;
+        this.transactionTemplate = transactionTemplate;
+    }
+
+    @Override
+    public PageResult<AuthUser> pageUser(AuthUserQueryParam query) {
+        return authUserRepository.findPage(query);
+    }
+
+    @Override
+    public AuthUser getUser(Long userId) {
+        AuthUser user = authUserRepository.findById(userId);
+        AssertUtil.throwErrWhenNull(user, ErrorCodeEnum.RESOURCE_NOT_FOUND, "用户不存在");
+        return user;
+    }
+
+    @Override
+    public AuthUser createUser(AuthUser user, List<Long> roleIds) {
+        AssertUtil.throwErrWhenTrue(authUserRepository.findByUsername(user.getUsername()) != null,
+                ErrorCodeEnum.USERNAME_EXISTS);
+        user.setNickname(StrUtil.blankToDefault(user.getNickname(), user.getUsername()));
+        user.setEmail(StrUtil.nullToEmpty(user.getEmail()));
+        user.setAvatar(StrUtil.nullToEmpty(user.getAvatar()));
+        if (user.getStatus() == null) {
+            user.setStatus(EnableStatusEnum.ENABLE);
+        }
+        user.setPassword(BCrypt.hashpw(user.getPassword()));
+        Result<AuthUser> result = BizTemplate.execute(transactionTemplate, () -> {
+            authUserRepository.insert(user);
+            if (CollUtil.isNotEmpty(roleIds)) {
+                authUserRepository.replaceRoles(user.getUserId(), roleIds);
+            }
+            return user;
+        });
+        checkResult(result);
+        return result.getData();
+    }
+
+    @Override
+    public void updateUser(AuthUser user) {
+        int affected = authUserRepository.updateByCondition(user);
+        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    }
+
+    @Override
+    public void changeUserStatus(Long userId, EnableStatusEnum status) {
+        AuthUser update = new AuthUser();
+        update.setUserId(userId);
+        update.setStatus(status);
+        int affected = authUserRepository.updateByCondition(update);
+        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+        if (status == EnableStatusEnum.DISABLE) {
+            StpUtil.logout(userId);
+        }
+    }
+
+    @Override
+    public void resetPassword(Long userId, String password) {
+        AuthUser update = new AuthUser();
+        update.setUserId(userId);
+        update.setPassword(BCrypt.hashpw(password));
+        int affected = authUserRepository.updateByCondition(update);
+        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    }
+
+    @Override
+    public void assignUserRoles(Long userId, List<Long> roleIds) {
+        getUser(userId);
+        checkResult(BizTemplate.executeWithoutResult(transactionTemplate,
+                () -> authUserRepository.replaceRoles(userId, roleIds)));
+    }
+
+    @Override
+    public void deleteUser(Long userId) {
+        getUser(userId);
+        checkResult(BizTemplate.executeWithoutResult(transactionTemplate,
+                () -> {
+                    authUserRepository.clearUserRoles(userId);
+                    authUserRepository.deleteById(userId);
+                }));
+        StpUtil.logout(userId);
+    }
+
+    /** 校验事务结果，失败抛业务异常。 */
+    private void checkResult(Result<?> result) {
+        if (!result.isSuccess()) {
+            throw AiPlatformException.ofThrow(result.getErrorCode(), result.getErrorMessage());
+        }
+    }
+}

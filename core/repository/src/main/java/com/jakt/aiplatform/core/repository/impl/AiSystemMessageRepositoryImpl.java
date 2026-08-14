@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.repository.impl;
 
+import com.jakt.aiplatform.common.dal.dataobject.AiSystemMessageDO;
 import com.jakt.aiplatform.common.dal.mapper.AiSystemMessageMapper;
 import com.jakt.aiplatform.core.model.domain.AiSystemMessage;
 import com.jakt.aiplatform.core.repository.AiSystemMessageRepository;
@@ -21,7 +22,7 @@ public class AiSystemMessageRepositoryImpl implements AiSystemMessageRepository 
 
     @Override
     public AiSystemMessage insert(AiSystemMessage aiSystemMessage) {
-        var aiSystemMessageDO = AiSystemMessageConvertor.toDO(aiSystemMessage);
+        AiSystemMessageDO aiSystemMessageDO = AiSystemMessageConvertor.toDO(aiSystemMessage);
         aiSystemMessageMapper.insert(aiSystemMessageDO);
         return AiSystemMessageConvertor.toModel(aiSystemMessageDO);
     }

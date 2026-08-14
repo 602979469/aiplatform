@@ -1,28 +1,31 @@
 package com.jakt.aiplatform.common.integration.exception;
 
+import com.jakt.aiplatform.common.util.error.ErrorCode;
+
 /**
- * 外部集成错误码（common-integration 内部定义）。
- *
- * <p>取值与 core-model {@code ErrorCodeEnum.name()} 对齐时，业务模板可将对应异常解析为业务异常；
- * 未对齐的取值（如 UNKNOWN）按未知异常处理。
+ * 外部集成错误码。
  */
-public final class AiIntegrationErrorCode {
+public enum AiIntegrationErrorCode implements ErrorCode {
 
-    /** DeepSeek 接口调用失败。 */
-    public static final String DEEPSEEK_API_ERROR = "DEEPSEEK_API_ERROR";
+    DEEPSEEK_API_ERROR("DeepSeek 接口调用失败"),
+    XUANYUAN_API_ERROR("镜像加速器接口调用失败"),
+    AUTH_ERROR("外部服务认证失败"),
+    TIMEOUT("外部服务调用超时"),
+    UNKNOWN("未知外部错误");
 
-    /** 镜像加速器接口调用失败。 */
-    public static final String XUANYUAN_API_ERROR = "XUANYUAN_API_ERROR";
+    private final String message;
 
-    /** 外部服务认证失败。 */
-    public static final String AUTH_ERROR = "AUTH_ERROR";
+    AiIntegrationErrorCode(String message) {
+        this.message = message;
+    }
 
-    /** 外部服务调用超时。 */
-    public static final String TIMEOUT = "TIMEOUT";
+    @Override
+    public String getCode() {
+        return name();
+    }
 
-    /** 未知外部错误。 */
-    public static final String UNKNOWN = "UNKNOWN";
-
-    private AiIntegrationErrorCode() {
+    @Override
+    public String getMessage() {
+        return message;
     }
 }

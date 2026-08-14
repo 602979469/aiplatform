@@ -3,6 +3,7 @@ package com.jakt.aiplatform.core.model.domain;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
 
 /**
  * 用户AI会话消息领域模型。
@@ -26,6 +27,6 @@ public class AiChatMessage extends BaseModel {
     private String content;
 
     /** 消息状态（0正常 1失败）。 */
-    private String status;
+    private AiChatMessageStatusEnum status;
 
 }

@@ -4,15 +4,20 @@ import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.integration.deepseek.DeepSeekClient;
 import com.jakt.aiplatform.common.integration.deepseek.model.DeepSeekChatMessage;
 import com.jakt.aiplatform.common.util.config.AiChatProperties;
-import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.util.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
 import com.jakt.aiplatform.core.model.domain.AiChatResult;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
+import com.jakt.aiplatform.core.model.constant.AiPlatformConstant;
+import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
+import com.jakt.aiplatform.core.model.enums.AiChatSessionStatusEnum;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
-import com.jakt.aiplatform.core.model.result.Result;
-import com.jakt.aiplatform.core.model.template.AiPlatformTransactionTemplate;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
+import com.jakt.aiplatform.core.model.exception.AiPlatformException;
+import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.util.result.Result;
+import com.jakt.aiplatform.common.util.template.BizTemplate;
+import com.jakt.aiplatform.common.util.template.TransactionTemplate;
+import com.jakt.aiplatform.common.util.tools.LoggerUtil;
 import com.jakt.aiplatform.core.service.AiChatMessageService;
 import com.jakt.aiplatform.core.service.AiChatService;
 import com.jakt.aiplatform.core.service.AiChatSessionService;
@@ -44,25 +49,27 @@ public class AiChatServiceImpl implements AiChatService {
 
     private final AiChatProperties aiChatProperties;
 
-    private final AiPlatformTransactionTemplate aiPlatformTransactionTemplate;
+    private final TransactionTemplate transactionTemplate;
 
     public AiChatServiceImpl(AiChatSessionService aiChatSessionService,
                              AiChatMessageService aiChatMessageService,
                              DeepSeekClient deepSeekClient,
                              AiChatProperties aiChatProperties,
-                             AiPlatformTransactionTemplate aiPlatformTransactionTemplate) {
+                             TransactionTemplate transactionTemplate) {
         this.aiChatSessionService = aiChatSessionService;
         this.aiChatMessageService = aiChatMessageService;
         this.deepSeekClient = deepSeekClient;
         this.aiChatProperties = aiChatProperties;
-        this.aiPlatformTransactionTemplate = aiPlatformTransactionTemplate;
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Override
     public AiChatResult chat(Long sessionId, Long messageId, String content, Long userId, String userName) {
-        Result<AiChatResult> result = aiPlatformTransactionTemplate.execute(
+        Result<AiChatResult> result = BizTemplate.execute(transactionTemplate,
                 () -> doChat(sessionId, messageId, content, userId, userName));
-        AiPlatformInvoker.throwErrWhenTrue(!result.isSuccess(), result.getErrorCodeEnum(), result.getErrorMessage());
+        if (!result.isSuccess()) {
+            throw AiPlatformException.ofThrow(result.getErrorCode(), result.getErrorMessage());
+        }
         return result.getData();
     }
 
@@ -77,10 +84,10 @@ public class AiChatServiceImpl implements AiChatService {
         boolean reused = false;
         if (messageId != null) {
             userMessage = aiChatMessageService.getAiChatMessage(messageId);
-            AiPlatformInvoker.throwErrWhenTrue(userMessage == null
+            AssertUtil.throwErrWhenTrue(userMessage == null
                             || !Objects.equals(session.getSessionId(), userMessage.getSessionId())
                             || !"user".equals(userMessage.getRole()),
-                    ErrorCodeEnum.BIZ_ERROR, "待重试的消息不存在或无权访问");
+                    ErrorCodeEnum.CHAT_MESSAGE_NOT_RETRYABLE, "待重试的消息不存在或无权访问");
             reused = true;
         } else {
             userMessage = new AiChatMessage();
@@ -88,7 +95,7 @@ public class AiChatServiceImpl implements AiChatService {
             userMessage.setUserId(userId);
             userMessage.setRole("user");
             userMessage.setContent(content);
-            userMessage.setStatus("0");
+            userMessage.setStatus(AiChatMessageStatusEnum.NORMAL);
             // 返回模型回填 messageId，后续失败标记依赖它
             userMessage = aiChatMessageService.createAiChatMessage(userMessage);
         }
@@ -108,7 +115,7 @@ public class AiChatServiceImpl implements AiChatService {
             List<DeepSeekChatMessage> context = buildContext(session.getSessionId(), userMessage.getContent(), reused);
             reply = deepSeekClient.chat(context);
         } catch (Exception e) {
-            AiPlatformLoggerUtil.error(LogFileEnum.COMMON_ERROR, "对话调用失败: {}", e.getMessage());
+            LoggerUtil.error(LogFileEnum.COMMON_ERROR, "对话调用失败: {}", e.getMessage());
             return failResult(session, userMessage, "模型调用失败：" + e.getMessage());
         }
 
@@ -118,12 +125,12 @@ public class AiChatServiceImpl implements AiChatService {
         assistantMessage.setUserId(userId);
         assistantMessage.setRole("assistant");
         assistantMessage.setContent(reply);
-        assistantMessage.setStatus("0");
+        assistantMessage.setStatus(AiChatMessageStatusEnum.NORMAL);
         aiChatMessageService.createAiChatMessage(assistantMessage);
 
         // 重试成功，恢复提问状态
-        if (reused && "1".equals(userMessage.getStatus())) {
-            aiChatMessageService.updateStatus(userMessage.getMessageId(), "0");
+        if (reused && AiChatMessageStatusEnum.FAILED == userMessage.getStatus()) {
+            aiChatMessageService.updateStatus(userMessage.getMessageId(), AiChatMessageStatusEnum.NORMAL);
         }
 
         // 首次对话时用问题重命名会话
@@ -148,7 +155,7 @@ public class AiChatServiceImpl implements AiChatService {
      * 组装失败结果：标记提问为失败（保留供重试）。
      */
     private AiChatResult failResult(AiChatSession session, AiChatMessage userMessage, String error) {
-        aiChatMessageService.updateStatus(userMessage.getMessageId(), "1");
+        aiChatMessageService.updateStatus(userMessage.getMessageId(), AiChatMessageStatusEnum.FAILED);
         AiChatResult result = new AiChatResult();
         result.setSessionId(session.getSessionId());
         result.setSessionName(session.getSessionName());
@@ -165,14 +172,14 @@ public class AiChatServiceImpl implements AiChatService {
         if (sessionId == null) {
             AiChatSession session = new AiChatSession();
             session.setSessionName(DEFAULT_SESSION_NAME);
-            session.setStatus("0");
+            session.setStatus(AiChatSessionStatusEnum.NORMAL);
             session.setUserId(userId);
             session.setUserName(userName);
             return aiChatSessionService.createAiChatSession(session);
         }
         AiChatSession session = aiChatSessionService.getAiChatSession(sessionId);
-        AiPlatformInvoker.throwErrWhenTrue(session == null || !Objects.equals(userId, session.getUserId()),
-                ErrorCodeEnum.BIZ_ERROR, "会话不存在或无权访问");
+        AssertUtil.throwErrWhenTrue(session == null || !Objects.equals(userId, session.getUserId()),
+                ErrorCodeEnum.SESSION_ACCESS_DENIED, "会话不存在或无权访问");
         return session;
     }
 
@@ -181,7 +188,8 @@ public class AiChatServiceImpl implements AiChatService {
      */
     private List<DeepSeekChatMessage> buildContext(Long sessionId, String currentContent, boolean forceAppendCurrent) {
         List<AiChatMessage> history = aiChatMessageService.findBySessionAsc(sessionId).stream()
-                .filter(message -> "0".equals(message.getStatus()) && StrUtil.isNotBlank(message.getContent()))
+                .filter(message -> AiChatMessageStatusEnum.NORMAL == message.getStatus()
+                        && StrUtil.isNotBlank(message.getContent()))
                 .toList();
         List<DeepSeekChatMessage> context = new ArrayList<>();
         context.add(new DeepSeekChatMessage("system", SYSTEM_PROMPT));
@@ -202,12 +210,15 @@ public class AiChatServiceImpl implements AiChatService {
      */
     private String truncate(String text, int maxLength) {
         if (text == null) {
-            return "";
+            return AiPlatformConstant.EMPTY_STRING;
         }
         String oneLine = text.replaceAll("\\s+", " ").trim();
         return oneLine.length() <= maxLength ? oneLine : oneLine.substring(0, maxLength);
     }
 
+    /**
+ * 静默休眠（忽略中断异常）。
+     */
     private void sleepQuietly(long millis) {
         try {
             Thread.sleep(millis);

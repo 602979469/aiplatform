@@ -16,9 +16,10 @@
     <description>基础工具：TraceId、RestTemplate、条件断言（AiPlatformInvoker）、线程池等</description>
 
     <dependencies>
+        <!-- Sa-Token core：ClientInfoUtil 经 SaHolder 获取请求客户端信息 -->
         <dependency>
-            <groupId>com.jakt</groupId>
-            <artifactId>aiplatform-core-model</artifactId>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-core</artifactId>
         </dependency>
         <!-- Hutool：判空/判 blank 统一工具 -->
         <dependency>
@@ -51,6 +52,11 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

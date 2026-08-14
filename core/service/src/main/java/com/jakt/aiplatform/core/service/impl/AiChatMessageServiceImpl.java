@@ -1,6 +1,7 @@
 package com.jakt.aiplatform.core.service.impl;
 
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
+import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
 import com.jakt.aiplatform.core.repository.AiChatMessageRepository;
 import com.jakt.aiplatform.core.service.AiChatMessageService;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,7 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
     }
 
     @Override
-    public void updateStatus(Long messageId, String status) {
+    public void updateStatus(Long messageId, AiChatMessageStatusEnum status) {
         aiChatMessageRepository.updateStatus(messageId, status);
     }
 

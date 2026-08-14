@@ -18,7 +18,11 @@
     <dependencies>
         <dependency>
             <groupId>com.jakt</groupId>
-            <artifactId>aiplatform-core-model</artifactId>
+            <artifactId>aiplatform-common-util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
         </dependency>
 
         <dependency>
@@ -33,6 +37,11 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
+        </dependency>
+        <!-- Spring Data Redis：RedisConnectionFactory / StringRedisTemplate（会话与在线快照存储） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
     </dependencies>
 </project>

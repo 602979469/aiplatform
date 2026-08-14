@@ -16,6 +16,10 @@
     <description>核心领域模型：Model、查询参数、异常体系、返回体、业务模板（仅依赖 lombok/slf4j）</description>
 
     <dependencies>
+        <dependency>
+            <groupId>com.jakt</groupId>
+            <artifactId>aiplatform-common-util</artifactId>
+        </dependency>
         <!-- slf4j：AiPlatformTransactionTemplate 统一异常日志 -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -31,6 +35,11 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

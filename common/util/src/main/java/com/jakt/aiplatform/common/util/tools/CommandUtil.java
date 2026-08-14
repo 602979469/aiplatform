@@ -1,7 +1,6 @@
 package com.jakt.aiplatform.common.util.tools;
 
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
+import com.jakt.aiplatform.common.util.enums.LogFileEnum;
 import cn.hutool.core.util.StrUtil;
 
 import java.io.BufferedReader;
@@ -79,7 +78,7 @@ public final class CommandUtil {
         } catch (Exception e) {
             result.setExitCode(-1);
             result.setOutput("命令执行异常: " + e.getMessage());
-            AiPlatformLoggerUtil.error(LogFileEnum.COMMON_ERROR, "{}命令执行异常: {} , 错误: {}",
+            LoggerUtil.error(LogFileEnum.COMMON_ERROR, "{}命令执行异常: {} , 错误: {}",
                     LOG_TAG, String.join(" ", command), e.getMessage());
         } finally {
             if (process != null) {
@@ -87,10 +86,10 @@ public final class CommandUtil {
             }
         }
 
-        AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "{}执行命令: {} | 退出码: {} | 超时: {}",
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "{}执行命令: {} | 退出码: {} | 超时: {}",
                 LOG_TAG, String.join(" ", command), result.getExitCode(), result.isTimeout());
         if (StrUtil.isNotBlank(result.getOutput())) {
-            AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "{}命令输出:\n{}", LOG_TAG, result.getOutput());
+            LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "{}命令输出:\n{}", LOG_TAG, result.getOutput());
         }
         return result;
     }

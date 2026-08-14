@@ -1,7 +1,11 @@
 package com.jakt.aiplatform.core.repository.convertor;
 
 import com.jakt.aiplatform.common.dal.dataobject.AiChatSessionDO;
+import com.jakt.aiplatform.common.dal.query.AiChatSessionDalQuery;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
+import com.jakt.aiplatform.core.model.enums.AiChatSessionStatusEnum;
+import com.jakt.aiplatform.core.model.enums.BaseEnum;
+import com.jakt.aiplatform.core.model.param.AiChatSessionQueryParam;
 
 
 /**
@@ -28,7 +32,7 @@ public final class AiChatSessionConvertor {
         target.setSessionName(source.getSessionName());
         target.setUserId(source.getUserId());
         target.setUserName(source.getUserName());
-        target.setStatus(source.getStatus());
+        target.setStatus(BaseEnum.fromCode(AiChatSessionStatusEnum.class, source.getStatus()));
         target.setRemark(source.getRemark());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
@@ -42,15 +46,38 @@ public final class AiChatSessionConvertor {
      * @return 用户AI会话数据对象
      */
     public static AiChatSessionDO toDO(AiChatSession source) {
+        if (source == null) {
+            return null;
+        }
         AiChatSessionDO target = new AiChatSessionDO();
+        target.setSessionId(source.getSessionId());
+        target.setSessionName(source.getSessionName());
+        target.setUserId(source.getUserId());
+        target.setUserName(source.getUserName());
+        target.setStatus(source.getStatus() == null ? null : source.getStatus().getCode());
+        target.setRemark(source.getRemark());
+        target.setCreateTime(source.getCreateTime());
+        target.setUpdateTime(source.getUpdateTime());
+        return target;
+    }
+
+    public static AiChatSessionDalQuery toDalQuery(AiChatSessionQueryParam source) {
+        AiChatSessionDalQuery target = new AiChatSessionDalQuery();
+        if (source == null) {
+            return target;
+        }
+        target.setPageNum(source.getPageNum());
+        target.setPageSize(source.getPageSize());
         target.setSessionId(source.getSessionId());
         target.setSessionName(source.getSessionName());
         target.setUserId(source.getUserId());
         target.setUserName(source.getUserName());
         target.setStatus(source.getStatus());
         target.setRemark(source.getRemark());
-        target.setCreateTime(source.getCreateTime());
-        target.setUpdateTime(source.getUpdateTime());
+        target.setCreateTimeBegin(source.getCreateTimeBegin());
+        target.setCreateTimeEnd(source.getCreateTimeEnd());
+        target.setUpdateTimeBegin(source.getUpdateTimeBegin());
+        target.setUpdateTimeEnd(source.getUpdateTimeEnd());
         return target;
     }
 }

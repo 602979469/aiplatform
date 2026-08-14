@@ -43,6 +43,9 @@ public final class AiSystemSessionConvertor {
      * @return 系统AI会话数据对象
      */
     public static AiSystemSessionDO toDO(AiSystemSession source) {
+        if (source == null) {
+            return null;
+        }
         AiSystemSessionDO target = new AiSystemSessionDO();
         target.setSessionId(source.getSessionId());
         target.setCapabilityId(source.getCapabilityId());

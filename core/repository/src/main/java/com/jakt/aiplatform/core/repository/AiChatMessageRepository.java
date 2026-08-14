@@ -1,6 +1,7 @@
 package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
+import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
 
 import java.util.List;
 
@@ -31,14 +32,14 @@ public interface AiChatMessageRepository {
      * @param messageId 消息ID
      * @param status    目标状态
      */
-    void updateStatus(Long messageId, String status);
+    int updateStatus(Long messageId, AiChatMessageStatusEnum status);
 
     /**
      * 按会话逻辑删除全部消息（del_flag 0→2）。
      *
      * @param sessionId 会话ID
      */
-    void deleteBySessionId(Long sessionId);
+    int deleteBySessionId(Long sessionId);
 
     /**
      * 按会话查询全部消息（时间正序）。

@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.repository.impl;
 
+import com.jakt.aiplatform.common.dal.dataobject.AiCapabilityDO;
 import com.jakt.aiplatform.common.dal.mapper.AiCapabilityMapper;
 import com.jakt.aiplatform.core.model.domain.AiCapability;
 import com.jakt.aiplatform.core.repository.AiCapabilityRepository;
@@ -21,6 +22,7 @@ public class AiCapabilityRepositoryImpl implements AiCapabilityRepository {
 
     @Override
     public AiCapability getBySceneAndCode(String sceneCode, String capabilityCode) {
-        return AiCapabilityConvertor.toModel(aiCapabilityMapper.selectBySceneAndCode(sceneCode, capabilityCode));
+        AiCapabilityDO capabilityDO = aiCapabilityMapper.selectBySceneAndCode(sceneCode, capabilityCode);
+        return AiCapabilityConvertor.toModel(capabilityDO);
     }
 }

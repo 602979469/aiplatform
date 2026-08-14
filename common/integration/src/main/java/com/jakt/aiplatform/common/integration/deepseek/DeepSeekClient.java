@@ -6,8 +6,8 @@ import com.alibaba.fastjson2.JSONObject;
 import com.jakt.aiplatform.common.integration.deepseek.model.DeepSeekChatMessage;
 import com.jakt.aiplatform.common.integration.exception.AiIntegrationErrorCode;
 import com.jakt.aiplatform.common.integration.exception.AiIntegrationException;
-import com.jakt.aiplatform.core.model.enums.LogFileEnum;
-import com.jakt.aiplatform.core.model.util.AiPlatformLoggerUtil;
+import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.util.tools.LoggerUtil;
 import cn.hutool.core.util.StrUtil;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -70,11 +70,11 @@ public class DeepSeekClient {
             String response = restTemplate.postForObject(
                     url, new HttpEntity<>(body.toJSONString(), headers), String.class);
             long cost = System.currentTimeMillis() - start;
-            AiPlatformLoggerUtil.info(LogFileEnum.BIZ_SERVICE, "DeepSeek 调用成功, 模型={}, 耗时={}ms",
+            LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "DeepSeek 调用成功, 模型={}, 耗时={}ms",
                     properties.getModel(), cost);
             return parseContent(response);
         } catch (RestClientException e) {
-            AiPlatformLoggerUtil.error(LogFileEnum.COMMON_ERROR, "DeepSeek 接口调用失败: {}", e.getMessage());
+            LoggerUtil.error(LogFileEnum.COMMON_ERROR, "DeepSeek 接口调用失败: {}", e.getMessage());
             throw new AiIntegrationException(AiIntegrationErrorCode.DEEPSEEK_API_ERROR,
                     "AI 服务暂时不可用，请稍后重试", e);
         }
@@ -93,7 +93,7 @@ public class DeepSeekClient {
         JSONObject result = JSON.parseObject(response);
         JSONArray choices = result == null ? null : result.getJSONArray("choices");
         if (choices == null || choices.isEmpty()) {
-            AiPlatformLoggerUtil.error(LogFileEnum.COMMON_ERROR, "DeepSeek 响应异常: {}", response);
+            LoggerUtil.error(LogFileEnum.COMMON_ERROR, "DeepSeek 响应异常: {}", response);
             throw new AiIntegrationException(AiIntegrationErrorCode.DEEPSEEK_API_ERROR, "AI 服务返回异常，请稍后重试");
         }
         return choices.getJSONObject(0).getJSONObject("message").getString("content");

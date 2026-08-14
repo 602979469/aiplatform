@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.repository.impl;
 
+import com.jakt.aiplatform.common.dal.dataobject.AiSystemSessionDO;
 import com.jakt.aiplatform.common.dal.mapper.AiSystemSessionMapper;
 import com.jakt.aiplatform.core.model.domain.AiSystemSession;
 import com.jakt.aiplatform.core.repository.AiSystemSessionRepository;
@@ -21,7 +22,7 @@ public class AiSystemSessionRepositoryImpl implements AiSystemSessionRepository 
 
     @Override
     public AiSystemSession insert(AiSystemSession aiSystemSession) {
-        var aiSystemSessionDO = AiSystemSessionConvertor.toDO(aiSystemSession);
+        AiSystemSessionDO aiSystemSessionDO = AiSystemSessionConvertor.toDO(aiSystemSession);
         aiSystemSessionMapper.insert(aiSystemSessionDO);
         return AiSystemSessionConvertor.toModel(aiSystemSessionDO);
     }

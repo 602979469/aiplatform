@@ -1,6 +1,10 @@
 package com.jakt.aiplatform.web.controller;
 
 import com.jakt.aiplatform.biz.service.AiChatManager;
+import com.jakt.aiplatform.common.util.tools.ConvertUtil;
+import com.jakt.aiplatform.core.model.domain.AiChatResult;
+import com.jakt.aiplatform.core.model.domain.AiChatMessage;
+import com.jakt.aiplatform.core.model.domain.AiChatSession;
 import com.jakt.aiplatform.web.assembler.AiChatAssembler;
 import com.jakt.aiplatform.web.checker.AiChatParamChecker;
 import com.jakt.aiplatform.web.param.AiChatRequest;
@@ -8,8 +12,8 @@ import com.jakt.aiplatform.web.param.AiChatSessionRenameRequest;
 import com.jakt.aiplatform.web.result.AiChatMessageResponse;
 import com.jakt.aiplatform.web.result.AiChatResultResponse;
 import com.jakt.aiplatform.web.result.AiChatSessionResponse;
-import com.jakt.aiplatform.web.result.AiPlatformResult;
-import com.jakt.aiplatform.web.template.AiPlatformTemplate;
+import com.jakt.aiplatform.web.result.ApiResult;
+import com.jakt.aiplatform.web.template.ApiTemplate;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,16 +47,13 @@ public class AiChatController {
      * @return 会话列表
      */
     @GetMapping("/session/list")
-    public AiPlatformResult<List<AiChatSessionResponse>> listSessions() {
-        return AiPlatformTemplate.execute(null, new AiPlatformTemplate.Callback<Object, List<AiChatSessionResponse>>() {
-
-            @Override
-            public void beforeService(Object param) {
-            }
+    public ApiResult<List<AiChatSessionResponse>> listSessions() {
+        return ApiTemplate.execute(null, new ApiTemplate.Callback<Object, List<AiChatSessionResponse>>() {
 
             @Override
             public List<AiChatSessionResponse> execute(Object param) {
-                return AiChatAssembler.toSessionResponseList(aiChatManager.listSessions());
+                List<AiChatSession> sessions = aiChatManager.listSessions();
+                return ConvertUtil.map(sessions, AiChatAssembler::toSessionResponse);
             }
         });
     }
@@ -63,16 +64,13 @@ public class AiChatController {
      * @return 新建后的会话
      */
     @PostMapping("/session")
-    public AiPlatformResult<AiChatSessionResponse> createSession() {
-        return AiPlatformTemplate.execute(null, new AiPlatformTemplate.Callback<Object, AiChatSessionResponse>() {
-
-            @Override
-            public void beforeService(Object param) {
-            }
+    public ApiResult<AiChatSessionResponse> createSession() {
+        return ApiTemplate.execute(null, new ApiTemplate.Callback<Object, AiChatSessionResponse>() {
 
             @Override
             public AiChatSessionResponse execute(Object param) {
-                return AiChatAssembler.toSessionResponse(aiChatManager.createSession());
+                AiChatSession session = aiChatManager.createSession();
+                return AiChatAssembler.toSessionResponse(session);
             }
         });
     }
@@ -84,9 +82,9 @@ public class AiChatController {
      * @return 统一返回体
      */
     @PutMapping("/session")
-    public AiPlatformResult<Void> renameSession(@RequestBody AiChatSessionRenameRequest request) {
-        return AiPlatformTemplate.executeWithoutResult(request,
-                new AiPlatformTemplate.CallbackWithoutResult<AiChatSessionRenameRequest>() {
+    public ApiResult<Void> renameSession(@RequestBody AiChatSessionRenameRequest request) {
+        return ApiTemplate.executeWithoutResult(request,
+                new ApiTemplate.CallbackWithoutResult<AiChatSessionRenameRequest>() {
 
                     @Override
                     public void beforeService(AiChatSessionRenameRequest param) {
@@ -107,9 +105,9 @@ public class AiChatController {
      * @return 统一返回体
      */
     @DeleteMapping("/session/{sessionId}")
-    public AiPlatformResult<Void> deleteSession(@PathVariable Long sessionId) {
-        return AiPlatformTemplate.executeWithoutResult(sessionId,
-                new AiPlatformTemplate.CallbackWithoutResult<Long>() {
+    public ApiResult<Void> deleteSession(@PathVariable Long sessionId) {
+        return ApiTemplate.executeWithoutResult(sessionId,
+                new ApiTemplate.CallbackWithoutResult<Long>() {
 
                     @Override
                     public void beforeService(Long param) {
@@ -130,9 +128,9 @@ public class AiChatController {
      * @return 消息列表
      */
     @GetMapping("/message/list")
-    public AiPlatformResult<List<AiChatMessageResponse>> listMessages(@RequestParam Long sessionId) {
-        return AiPlatformTemplate.execute(sessionId,
-                new AiPlatformTemplate.Callback<Long, List<AiChatMessageResponse>>() {
+    public ApiResult<List<AiChatMessageResponse>> listMessages(@RequestParam Long sessionId) {
+        return ApiTemplate.execute(sessionId,
+                new ApiTemplate.Callback<Long, List<AiChatMessageResponse>>() {
 
                     @Override
                     public void beforeService(Long param) {
@@ -141,7 +139,8 @@ public class AiChatController {
 
                     @Override
                     public List<AiChatMessageResponse> execute(Long param) {
-                        return AiChatAssembler.toMessageResponseList(aiChatManager.listMessages(param));
+                        List<AiChatMessage> messages = aiChatManager.listMessages(param);
+                        return ConvertUtil.map(messages, AiChatAssembler::toMessageResponse);
                     }
                 });
     }
@@ -153,8 +152,8 @@ public class AiChatController {
      * @return 对话结果
      */
     @PostMapping("/message")
-    public AiPlatformResult<AiChatResultResponse> chat(@RequestBody AiChatRequest request) {
-        return AiPlatformTemplate.execute(request, new AiPlatformTemplate.Callback<AiChatRequest, AiChatResultResponse>() {
+    public ApiResult<AiChatResultResponse> chat(@RequestBody AiChatRequest request) {
+        return ApiTemplate.execute(request, new ApiTemplate.Callback<AiChatRequest, AiChatResultResponse>() {
 
             @Override
             public void beforeService(AiChatRequest param) {
@@ -163,8 +162,9 @@ public class AiChatController {
 
             @Override
             public AiChatResultResponse execute(AiChatRequest param) {
-                return AiChatAssembler.toResultResponse(
-                        aiChatManager.chat(param.getSessionId(), param.getMessageId(), param.getContent()));
+                AiChatResult result = aiChatManager.chat(
+                        param.getSessionId(), param.getMessageId(), param.getContent());
+                return AiChatAssembler.toResultResponse(result);
             }
         });
     }

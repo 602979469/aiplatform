@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.AuthRoleMapper">
+
+    <sql id="selectColumns">
+        role_id, role_name, role_key, role_sort, status, remark, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="roleId != null">
+                AND role_id = #{roleId}
+            </if>
+            <if test="roleName != null and roleName != ''">
+                AND role_name = #{roleName}
+            </if>
+            <if test="roleKey != null and roleKey != ''">
+                AND role_key = #{roleKey}
+            </if>
+            <if test="roleSort != null">
+                AND role_sort = #{roleSort}
+            </if>
+            <if test="status != null">
+                AND status = #{status.code}
+            </if>
+            <if test="remark != null and remark != ''">
+                AND remark = #{remark}
+            </if>
+            AND del_flag = '0'
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.AuthRoleDO">
+        SELECT <include refid="selectColumns"/>
+        FROM auth_role
+        WHERE role_id = #{id}
+        AND del_flag = '0'
+    </select>
+
+    <select id="selectRoleKeysByUserId" resultType="string">
+        SELECT r.role_key
+        FROM auth_role r
+        JOIN auth_user_role ur ON r.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+          AND r.del_flag = '0'
+          AND r.status = '0'
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.AuthRoleDO">
+        SELECT <include refid="selectColumns"/>
+        FROM auth_role
+        <include refid="queryConditions"/>
+        ORDER BY role_id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.AuthRoleDO">
+        SELECT <include refid="selectColumns"/>
+        FROM auth_role
+        <include refid="queryConditions"/>
+        ORDER BY role_id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM auth_role
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.AuthRoleDO"
+            useGeneratedKeys="true" keyProperty="roleId">
+        INSERT INTO auth_role (role_name, role_key, role_sort, status, remark)
+        VALUES (#{roleName}, #{roleKey}, #{roleSort}, #{status}, #{remark})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.AuthRoleDO">
+        UPDATE auth_role
+        SET role_name = #{roleName},
+            role_key = #{roleKey},
+            role_sort = #{roleSort},
+            status = #{status},
+            remark = #{remark}
+        WHERE role_id = #{roleId}
+        AND del_flag = '0'
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.AuthRoleDO">
+        <if test="roleName != null or roleKey != null or roleSort != null or status != null or remark != null">
+            UPDATE auth_role
+        <set>
+            <if test="roleName != null">
+                role_name = #{roleName},
+            </if>
+            <if test="roleKey != null">
+                role_key = #{roleKey},
+            </if>
+            <if test="roleSort != null">
+                role_sort = #{roleSort},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+        </set>
+            WHERE role_id = #{roleId}
+            AND del_flag = '0'
+        </if>
+    </update>
+
+    <update id="deleteById" parameterType="com.jakt.aiplatform.common.dal.dataobject.AuthRoleDO">
+        UPDATE auth_role
+        SET del_flag = '2'
+        WHERE role_id = #{id} AND del_flag = '0'
+    </update>
+</mapper>

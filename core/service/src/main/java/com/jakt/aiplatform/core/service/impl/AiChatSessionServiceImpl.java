@@ -1,10 +1,13 @@
 package com.jakt.aiplatform.core.service.impl;
 
-import com.jakt.aiplatform.common.util.tools.AiPlatformInvoker;
+import com.jakt.aiplatform.common.util.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
+import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.core.model.exception.AiPlatformException;
 import com.jakt.aiplatform.core.model.param.AiChatSessionQueryParam;
-import com.jakt.aiplatform.core.model.result.Result;
-import com.jakt.aiplatform.core.model.template.AiPlatformTransactionTemplate;
+import com.jakt.aiplatform.common.util.result.Result;
+import com.jakt.aiplatform.common.util.template.BizTemplate;
+import com.jakt.aiplatform.common.util.template.TransactionTemplate;
 import com.jakt.aiplatform.core.repository.AiChatSessionRepository;
 import com.jakt.aiplatform.core.service.AiChatSessionService;
 import org.springframework.stereotype.Service;
@@ -21,12 +24,12 @@ public class AiChatSessionServiceImpl implements AiChatSessionService {
     private final AiChatSessionRepository aiChatSessionRepository;
 
     /** 事务模板：删会话（连同消息）跨表多写统一走事务。 */
-    private final AiPlatformTransactionTemplate aiPlatformTransactionTemplate;
+    private final TransactionTemplate transactionTemplate;
 
     public AiChatSessionServiceImpl(AiChatSessionRepository aiChatSessionRepository,
-                                    AiPlatformTransactionTemplate aiPlatformTransactionTemplate) {
+                                    TransactionTemplate transactionTemplate) {
         this.aiChatSessionRepository = aiChatSessionRepository;
-        this.aiPlatformTransactionTemplate = aiPlatformTransactionTemplate;
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Override
@@ -36,14 +39,17 @@ public class AiChatSessionServiceImpl implements AiChatSessionService {
 
     @Override
     public void updateByCondition(AiChatSession aiChatSession) {
-        aiChatSessionRepository.updateByCondition(aiChatSession);
+        int affected = aiChatSessionRepository.updateByCondition(aiChatSession);
+        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
     }
 
     @Override
     public void deleteAiChatSession(Long id) {
-        Result<Void> result = aiPlatformTransactionTemplate.executeWithoutResult(
+        Result<Void> result = BizTemplate.executeWithoutResult(transactionTemplate,
                 () -> aiChatSessionRepository.deleteWithMessages(id));
-        AiPlatformInvoker.throwErrWhenTrue(!result.isSuccess(), result.getErrorCodeEnum(), result.getErrorMessage());
+        if (!result.isSuccess()) {
+            throw AiPlatformException.ofThrow(result.getErrorCode(), result.getErrorMessage());
+        }
     }
 
     @Override

@@ -13,42 +13,37 @@ jdbc:
 outputDir: /Users/jakt/IdeaProjects/aiplatform
 
 tables:
-  - db_table_name: ai_chat_session
-    model_name: AiChatSession
-    model_comment: 用户AI会话
+  - db_table_name: auth_user
+    model_name: AuthUser
+    model_comment: 用户表
+    generateController: false
     logicDelete:
       enable: true
       column_name: del_flag
       normal_value: 0
       delete_value: 2
 
-  - db_table_name: ai_chat_message
-    model_name: AiChatMessage
-    model_comment: 用户AI会话消息
+  - db_table_name: auth_role
+    model_name: AuthRole
+    model_comment: 角色表
+    generateController: false
     logicDelete:
       enable: true
       column_name: del_flag
       normal_value: 0
       delete_value: 2
 
-  - db_table_name: sys_ai_capability
-    model_name: AiCapability
-    model_comment: AI能力
-
-  - db_table_name: sys_ai_session
-    model_name: AiSystemSession
-    model_comment: 系统AI会话
+  - db_table_name: auth_menu
+    model_name: AuthMenu
+    model_comment: 菜单权限表
+    generateController: false
     logicDelete:
       enable: true
       column_name: del_flag
       normal_value: 0
       delete_value: 2
 
-  - db_table_name: sys_ai_message
-    model_name: AiSystemMessage
-    model_comment: 系统AI会话消息
-    logicDelete:
-      enable: true
-      column_name: del_flag
-      normal_value: 0
-      delete_value: 2
+  - db_table_name: auth_login_log
+    model_name: AuthLoginLog
+    model_comment: 登录记录表
+    generateController: false

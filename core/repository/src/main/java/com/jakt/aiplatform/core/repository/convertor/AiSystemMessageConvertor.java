@@ -41,6 +41,9 @@ public final class AiSystemMessageConvertor {
      * @return 系统AI会话消息数据对象
      */
     public static AiSystemMessageDO toDO(AiSystemMessage source) {
+        if (source == null) {
+            return null;
+        }
         AiSystemMessageDO target = new AiSystemMessageDO();
         target.setMessageId(source.getMessageId());
         target.setSessionId(source.getSessionId());

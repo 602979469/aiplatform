@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.web.assembler;
 
+import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
 import com.jakt.aiplatform.core.model.domain.AiChatResult;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
@@ -40,16 +41,6 @@ public final class AiChatAssembler {
     }
 
     /**
-     * 会话列表 Model → 响应列表。
-     *
-     * @param list 会话模型列表
-     * @return 会话响应列表
-     */
-    public static List<AiChatSessionResponse> toSessionResponseList(List<AiChatSession> list) {
-        return list.stream().map(AiChatAssembler::toSessionResponse).toList();
-    }
-
-    /**
      * 消息 Model → 消息响应。
      *
      * @param source 消息模型
@@ -72,16 +63,6 @@ public final class AiChatAssembler {
     }
 
     /**
-     * 消息列表 Model → 响应列表。
-     *
-     * @param list 消息模型列表
-     * @return 消息响应列表
-     */
-    public static List<AiChatMessageResponse> toMessageResponseList(List<AiChatMessage> list) {
-        return list.stream().map(AiChatAssembler::toMessageResponse).toList();
-    }
-
-    /**
      * 对话结果 Model → 响应。
      *
      * @param source 对话结果模型
@@ -91,13 +72,13 @@ public final class AiChatAssembler {
         if (source == null) {
             return null;
         }
-        return AiChatResultResponse.builder()
-                .sessionId(source.getSessionId())
-                .sessionName(source.getSessionName())
-                .userMessageId(source.getUserMessageId())
-                .reply(source.getReply())
-                .failed(source.getFailed())
-                .error(source.getError())
-                .build();
+        AiChatResultResponse response = new AiChatResultResponse();
+        response.setSessionId(source.getSessionId());
+        response.setSessionName(source.getSessionName());
+        response.setUserMessageId(source.getUserMessageId());
+        response.setReply(source.getReply());
+        response.setFailed(source.getFailed());
+        response.setError(source.getError());
+        return response;
     }
 }
