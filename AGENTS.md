@@ -230,7 +230,8 @@ BizTemplate.execute(transactionTemplate, callback);
 - 负责 `DO/DalResult → Model`；
 - 转换代码必须写在 `XxxConvertor`；
 - Convertor 之间允许互相调用。
-- Repository 之间禁止互相调用；跨表多写由 core-service 在 BizTemplate 事务内编排。
+- Repository 之间禁止互相调用；仓储与表一一对应，禁止跨表组装；
+- 主副表聚合（主表 Model 含副表 `List<Model>`）由 core-service 编排多个仓储组装，主表校验通过后才查副表；跨表多写由 core-service 在 BizTemplate 事务内编排。
 
 仓储返回值：
 

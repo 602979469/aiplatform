@@ -1,27 +1,29 @@
 package com.jakt.aiplatform.core.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.integration.deepseek.DeepSeekClient;
 import com.jakt.aiplatform.common.integration.deepseek.model.DeepSeekChatMessage;
+import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.util.result.Result;
+import com.jakt.aiplatform.common.util.template.BizTemplate;
+import com.jakt.aiplatform.common.util.template.TransactionTemplate;
 import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.util.tools.LoggerUtil;
+import com.jakt.aiplatform.core.model.constant.AiPlatformConstant;
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
 import com.jakt.aiplatform.core.model.domain.AiChatResult;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
-import com.jakt.aiplatform.core.model.constant.AiPlatformConstant;
 import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
 import com.jakt.aiplatform.core.model.enums.ChatRoleEnum;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.core.model.exception.AiPlatformException;
-import com.jakt.aiplatform.common.util.enums.LogFileEnum;
-import com.jakt.aiplatform.common.util.result.Result;
-import com.jakt.aiplatform.common.util.template.BizTemplate;
-import com.jakt.aiplatform.common.util.template.TransactionTemplate;
-import com.jakt.aiplatform.common.util.tools.LoggerUtil;
-import com.jakt.aiplatform.core.service.AiChatMessageService;
+import com.jakt.aiplatform.core.model.param.AiChatSessionQueryParam;
+import com.jakt.aiplatform.core.repository.AiChatMessageRepository;
+import com.jakt.aiplatform.core.repository.AiChatSessionRepository;
 import com.jakt.aiplatform.core.service.AiChatService;
-import com.jakt.aiplatform.core.service.AiChatSessionService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -29,7 +31,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * AI 对话领域服务实现：会话解析、上下文组装、模型调用、失败重试标记。
+ * AI 对话领域服务实现：承载 AI 会话聚合根（会话 + 消息）的全部能力与对话用例。
+ *
+ * <p>会话与消息由本服务编排两个仓储组装（聚合根 Model 含副表 {@code List<AiChatMessage>}）；
  * 多写流程（用户消息 + 回答 + 会话更新）统一走事务模板。
  */
 @Service
@@ -40,23 +44,84 @@ public class AiChatServiceImpl implements AiChatService {
     /** 最多携带的上下文消息条数（超出后只携带最近的消息）。 */
     private static final int MAX_CONTEXT_MESSAGES = 30;
 
-    private final AiChatSessionService aiChatSessionService;
+    /** AI会话表仓储。 */
+    private final AiChatSessionRepository aiChatSessionRepository;
 
-    private final AiChatMessageService aiChatMessageService;
+    /** AI会话消息表仓储。 */
+    private final AiChatMessageRepository aiChatMessageRepository;
 
     private final DeepSeekClient deepSeekClient;
 
     private final TransactionTemplate transactionTemplate;
 
-    public AiChatServiceImpl(AiChatSessionService aiChatSessionService,
-                             AiChatMessageService aiChatMessageService,
+    public AiChatServiceImpl(AiChatSessionRepository aiChatSessionRepository,
+                             AiChatMessageRepository aiChatMessageRepository,
                              DeepSeekClient deepSeekClient,
                              TransactionTemplate transactionTemplate) {
-        this.aiChatSessionService = aiChatSessionService;
-        this.aiChatMessageService = aiChatMessageService;
+        this.aiChatSessionRepository = aiChatSessionRepository;
+        this.aiChatMessageRepository = aiChatMessageRepository;
         this.deepSeekClient = deepSeekClient;
         this.transactionTemplate = transactionTemplate;
     }
+
+    // ==================== 会话管理 ====================
+
+    @Override
+    public List<AiChatSession> findList(AiChatSessionQueryParam query) {
+        return aiChatSessionRepository.findList(query);
+    }
+
+    @Override
+    public AiChatSession createAiChatSession(AiChatSession aiChatSession) {
+        return aiChatSessionRepository.insert(aiChatSession);
+    }
+
+    @Override
+    public void updateByCondition(AiChatSession aiChatSession) {
+        int affected = aiChatSessionRepository.updateByCondition(aiChatSession);
+        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    }
+
+    @Override
+    public void deleteAiChatSession(Long id) {
+        Result<Void> result = BizTemplate.executeWithoutResult(transactionTemplate,
+                () -> {
+                    aiChatMessageRepository.deleteBySessionId(id);
+                    aiChatSessionRepository.deleteById(id);
+                });
+        if (!result.isSuccess()) {
+            throw AiPlatformException.ofThrow(result.getErrorCode(), result.getErrorMessage());
+        }
+    }
+
+    @Override
+    public AiChatSession getAiChatSession(Long id) {
+        return aiChatSessionRepository.findById(id);
+    }
+
+    // ==================== 消息管理 ====================
+
+    @Override
+    public AiChatMessage getAiChatMessage(Long id) {
+        return aiChatMessageRepository.findById(id);
+    }
+
+    @Override
+    public AiChatMessage createAiChatMessage(AiChatMessage aiChatMessage) {
+        return aiChatMessageRepository.insert(aiChatMessage);
+    }
+
+    @Override
+    public void updateMessageStatus(Long messageId, AiChatMessageStatusEnum status) {
+        aiChatMessageRepository.updateStatus(messageId, status);
+    }
+
+    @Override
+    public List<AiChatMessage> findMessagesBySessionAsc(Long sessionId) {
+        return aiChatMessageRepository.findBySessionAsc(sessionId);
+    }
+
+    // ==================== 对话用例 ====================
 
     @Override
     public AiChatResult chat(Long sessionId, Long messageId, String content, Long userId, String userName) {
@@ -78,7 +143,7 @@ public class AiChatServiceImpl implements AiChatService {
         AiChatMessage userMessage;
         boolean reused = false;
         if (ObjectUtil.isNotNull(messageId)) {
-            userMessage = aiChatMessageService.getAiChatMessage(messageId);
+            userMessage = aiChatMessageRepository.findById(messageId);
             AssertUtil.throwErrWhenTrue(ObjectUtil.isNull(userMessage)
                             || !Objects.equals(session.getSessionId(), userMessage.getSessionId())
                             || userMessage.getRole() != ChatRoleEnum.USER,
@@ -92,12 +157,12 @@ public class AiChatServiceImpl implements AiChatService {
             userMessage.setContent(content);
             userMessage.setStatus(AiChatMessageStatusEnum.NORMAL);
             // 返回模型回填 messageId，后续失败标记依赖它
-            userMessage = aiChatMessageService.createAiChatMessage(userMessage);
+            userMessage = aiChatMessageRepository.insert(userMessage);
         }
 
         String reply;
         try {
-            List<DeepSeekChatMessage> context = buildContext(session.getSessionId(), userMessage.getContent(), reused);
+            List<DeepSeekChatMessage> context = buildContext(session, userMessage.getContent(), reused);
             reply = deepSeekClient.chat(context);
         } catch (Exception e) {
             LoggerUtil.error(LogFileEnum.COMMON_ERROR, "对话调用失败: {}", e.getMessage());
@@ -111,11 +176,11 @@ public class AiChatServiceImpl implements AiChatService {
         assistantMessage.setRole(ChatRoleEnum.ASSISTANT);
         assistantMessage.setContent(reply);
         assistantMessage.setStatus(AiChatMessageStatusEnum.NORMAL);
-        aiChatMessageService.createAiChatMessage(assistantMessage);
+        aiChatMessageRepository.insert(assistantMessage);
 
         // 重试成功，恢复提问状态
         if (reused && AiChatMessageStatusEnum.FAILED == userMessage.getStatus()) {
-            aiChatMessageService.updateStatus(userMessage.getMessageId(), AiChatMessageStatusEnum.NORMAL);
+            aiChatMessageRepository.updateStatus(userMessage.getMessageId(), AiChatMessageStatusEnum.NORMAL);
         }
 
         // 首次对话时用问题重命名会话
@@ -125,7 +190,7 @@ public class AiChatServiceImpl implements AiChatService {
             AiChatSession update = new AiChatSession();
             update.setSessionId(session.getSessionId());
             update.setSessionName(sessionName);
-            aiChatSessionService.updateByCondition(update);
+            aiChatSessionRepository.updateByCondition(update);
         }
 
         AiChatResult result = new AiChatResult();
@@ -140,7 +205,7 @@ public class AiChatServiceImpl implements AiChatService {
      * 组装失败结果：标记提问为失败（保留供重试）。
      */
     private AiChatResult failResult(AiChatSession session, AiChatMessage userMessage, String error) {
-        aiChatMessageService.updateStatus(userMessage.getMessageId(), AiChatMessageStatusEnum.FAILED);
+        aiChatMessageRepository.updateStatus(userMessage.getMessageId(), AiChatMessageStatusEnum.FAILED);
         AiChatResult result = new AiChatResult();
         result.setSessionId(session.getSessionId());
         result.setSessionName(session.getSessionName());
@@ -151,7 +216,7 @@ public class AiChatServiceImpl implements AiChatService {
     }
 
     /**
-     * 校验会话归属，不存在时自动新建。
+     * 校验会话归属，不存在时自动新建；存在时组装会话与消息（主表校验通过后才查副表）。
      */
     private AiChatSession resolveSession(Long sessionId, Long userId, String userName) {
         if (ObjectUtil.isNull(sessionId)) {
@@ -160,22 +225,34 @@ public class AiChatServiceImpl implements AiChatService {
             session.setStatus(EnableStatusEnum.ENABLE);
             session.setUserId(userId);
             session.setUserName(userName);
-            return aiChatSessionService.createAiChatSession(session);
+            return aiChatSessionRepository.insert(session);
         }
-        AiChatSession session = aiChatSessionService.getAiChatSession(sessionId);
+        AiChatSession session = aiChatSessionRepository.findById(sessionId);
         AssertUtil.throwErrWhenTrue(ObjectUtil.isNull(session) || !Objects.equals(userId, session.getUserId()),
                 ErrorCodeEnum.SESSION_ACCESS_DENIED, "会话不存在或无权访问");
+        session.setMessages(aiChatMessageRepository.findBySessionAsc(sessionId));
         return session;
     }
 
     /**
      * 组装发送给模型的上下文（系统提示 + 最近若干条历史消息）。
+     *
+     * <p>会话快照在本次提问插入前加载：非重试时需把当前提问补进历史末尾，
+     * 以还原「最新 N 条包含当前提问」的截断语义；重试时失败提问已被状态过滤，显式追加一次。
      */
-    private List<DeepSeekChatMessage> buildContext(Long sessionId, String currentContent, boolean forceAppendCurrent) {
-        List<AiChatMessage> history = aiChatMessageService.findBySessionAsc(sessionId).stream()
+    private List<DeepSeekChatMessage> buildContext(AiChatSession session, String currentContent,
+                                                   boolean forceAppendCurrent) {
+        List<AiChatMessage> history = new ArrayList<>(CollUtil.emptyIfNull(session.getMessages()).stream()
                 .filter(message -> AiChatMessageStatusEnum.NORMAL == message.getStatus()
                         && StrUtil.isNotBlank(message.getContent()))
-                .toList();
+                .toList());
+        if (!forceAppendCurrent) {
+            AiChatMessage currentMessage = new AiChatMessage();
+            currentMessage.setRole(ChatRoleEnum.USER);
+            currentMessage.setContent(currentContent);
+            currentMessage.setStatus(AiChatMessageStatusEnum.NORMAL);
+            history.add(currentMessage);
+        }
         List<DeepSeekChatMessage> context = new ArrayList<>();
         context.add(new DeepSeekChatMessage(ChatRoleEnum.SYSTEM.getCode(), SYSTEM_PROMPT));
         int start = Math.max(0, history.size() - MAX_CONTEXT_MESSAGES);
@@ -183,7 +260,7 @@ public class AiChatServiceImpl implements AiChatService {
             AiChatMessage message = history.get(i);
             context.add(new DeepSeekChatMessage(message.getRole().getCode(), message.getContent()));
         }
-        // 重试场景下提问已是失败状态被过滤，需显式携带；新提问已包含在历史中
+        // 重试场景下提问已是失败状态被过滤，需显式携带
         if (forceAppendCurrent) {
             context.add(new DeepSeekChatMessage(ChatRoleEnum.USER.getCode(), currentContent));
         }

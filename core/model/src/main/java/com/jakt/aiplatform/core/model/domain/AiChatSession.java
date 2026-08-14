@@ -5,8 +5,10 @@ import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
+
 /**
- * 用户AI会话领域模型。
+ * 用户AI会话领域模型（聚合根：含会话消息列表，由仓储多 Mapper 一次性组装）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -28,5 +30,8 @@ public class AiChatSession extends BaseModel {
 
     /** 备注。 */
     private String remark;
+
+    /** 会话消息列表（时间正序，由仓储组装，主表为空时不查副表）。 */
+    private List<AiChatMessage> messages;
 
 }
