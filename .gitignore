@@ -7,7 +7,7 @@ logs/
 
 # 个人音频资源（非项目代码）
 music/
-
+docs/
 # 运行时上传目录
 upload/
 uploads/
