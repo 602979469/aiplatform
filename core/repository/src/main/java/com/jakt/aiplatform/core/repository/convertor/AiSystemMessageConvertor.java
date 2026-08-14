@@ -2,6 +2,9 @@ package com.jakt.aiplatform.core.repository.convertor;
 
 import com.jakt.aiplatform.common.dal.dataobject.AiSystemMessageDO;
 import com.jakt.aiplatform.core.model.domain.AiSystemMessage;
+import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
+import com.jakt.aiplatform.core.model.enums.BaseEnum;
+import com.jakt.aiplatform.core.model.enums.ChatRoleEnum;
 
 
 /**
@@ -26,9 +29,9 @@ public final class AiSystemMessageConvertor {
         AiSystemMessage target = new AiSystemMessage();
         target.setMessageId(source.getMessageId());
         target.setSessionId(source.getSessionId());
-        target.setRole(source.getRole());
+        target.setRole(BaseEnum.fromCode(ChatRoleEnum.class, source.getRole()));
         target.setContent(source.getContent());
-        target.setStatus(source.getStatus());
+        target.setStatus(BaseEnum.fromCode(AiChatMessageStatusEnum.class, source.getStatus()));
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
         return target;
@@ -47,9 +50,9 @@ public final class AiSystemMessageConvertor {
         AiSystemMessageDO target = new AiSystemMessageDO();
         target.setMessageId(source.getMessageId());
         target.setSessionId(source.getSessionId());
-        target.setRole(source.getRole());
+        target.setRole(source.getRole() == null ? null : source.getRole().getCode());
         target.setContent(source.getContent());
-        target.setStatus(source.getStatus());
+        target.setStatus(source.getStatus() == null ? null : source.getStatus().getCode());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
         return target;

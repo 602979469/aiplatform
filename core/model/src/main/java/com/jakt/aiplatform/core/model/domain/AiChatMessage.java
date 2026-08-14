@@ -1,6 +1,7 @@
 package com.jakt.aiplatform.core.model.domain;
 
 
+import com.jakt.aiplatform.core.model.enums.ChatRoleEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
@@ -21,7 +22,7 @@ public class AiChatMessage extends BaseModel {
     private Long userId;
 
     /** 角色（user用户 assistant助手）。 */
-    private String role;
+    private ChatRoleEnum role;
 
     /** 消息内容。 */
     private String content;

@@ -3,7 +3,7 @@ package com.jakt.aiplatform.core.repository.convertor;
 import com.jakt.aiplatform.common.dal.dataobject.AiChatSessionDO;
 import com.jakt.aiplatform.common.dal.query.AiChatSessionDalQuery;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
-import com.jakt.aiplatform.core.model.enums.AiChatSessionStatusEnum;
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.enums.BaseEnum;
 import com.jakt.aiplatform.core.model.param.AiChatSessionQueryParam;
 
@@ -32,7 +32,7 @@ public final class AiChatSessionConvertor {
         target.setSessionName(source.getSessionName());
         target.setUserId(source.getUserId());
         target.setUserName(source.getUserName());
-        target.setStatus(BaseEnum.fromCode(AiChatSessionStatusEnum.class, source.getStatus()));
+        target.setStatus(BaseEnum.fromCode(EnableStatusEnum.class, source.getStatus()));
         target.setRemark(source.getRemark());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
@@ -72,7 +72,7 @@ public final class AiChatSessionConvertor {
         target.setSessionName(source.getSessionName());
         target.setUserId(source.getUserId());
         target.setUserName(source.getUserName());
-        target.setStatus(source.getStatus());
+        target.setStatus(source.getStatus() == null ? null : source.getStatus().getCode());
         target.setRemark(source.getRemark());
         target.setCreateTimeBegin(source.getCreateTimeBegin());
         target.setCreateTimeEnd(source.getCreateTimeEnd());

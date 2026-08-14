@@ -2,11 +2,13 @@ package com.jakt.aiplatform.core.service.impl;
 
 import com.jakt.aiplatform.common.integration.deepseek.DeepSeekClient;
 import com.jakt.aiplatform.common.integration.deepseek.model.DeepSeekChatMessage;
-import com.jakt.aiplatform.common.integration.deepseek.model.DeepSeekRoleEnum;
 import com.jakt.aiplatform.common.util.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AiCapability;
 import com.jakt.aiplatform.core.model.domain.AiSystemMessage;
 import com.jakt.aiplatform.core.model.domain.AiSystemSession;
+import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
+import com.jakt.aiplatform.core.model.enums.ChatRoleEnum;
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.core.repository.AiCapabilityRepository;
 import com.jakt.aiplatform.core.service.AiCapabilityService;
@@ -58,29 +60,29 @@ public class AiCapabilityServiceImpl implements AiCapabilityService {
         session.setSceneCode(sceneCode);
         session.setCapabilityCode(capabilityCode);
         session.setSessionName(capability.getCapabilityName());
-        session.setStatus("0");
+        session.setStatus(EnableStatusEnum.ENABLE);
         aiSystemSessionService.createAiSystemSession(session);
 
-        insertMessage(session.getSessionId(), DeepSeekRoleEnum.SYSTEM, capability.getSkillRules());
-        insertMessage(session.getSessionId(), DeepSeekRoleEnum.USER, input);
+        insertMessage(session.getSessionId(), ChatRoleEnum.SYSTEM, capability.getSkillRules());
+        insertMessage(session.getSessionId(), ChatRoleEnum.USER, input);
 
         List<DeepSeekChatMessage> messages = List.of(
-                new DeepSeekChatMessage(DeepSeekRoleEnum.SYSTEM.getCode(), capability.getSkillRules()),
-                new DeepSeekChatMessage(DeepSeekRoleEnum.USER.getCode(), input));
+                new DeepSeekChatMessage(ChatRoleEnum.SYSTEM.getCode(), capability.getSkillRules()),
+                new DeepSeekChatMessage(ChatRoleEnum.USER.getCode(), input));
         String reply = deepSeekClient.chat(messages);
-        insertMessage(session.getSessionId(), DeepSeekRoleEnum.ASSISTANT, reply);
+        insertMessage(session.getSessionId(), ChatRoleEnum.ASSISTANT, reply);
         return reply;
     }
 
     /**
  * 插入一条会话消息。
      */
-    private void insertMessage(Long sessionId, DeepSeekRoleEnum role, String content) {
+    private void insertMessage(Long sessionId, ChatRoleEnum role, String content) {
         AiSystemMessage message = new AiSystemMessage();
         message.setSessionId(sessionId);
-        message.setRole(role.getCode());
+        message.setRole(role);
         message.setContent(content);
-        message.setStatus("0");
+        message.setStatus(AiChatMessageStatusEnum.NORMAL);
         aiSystemMessageService.createAiSystemMessage(message);
     }
 }

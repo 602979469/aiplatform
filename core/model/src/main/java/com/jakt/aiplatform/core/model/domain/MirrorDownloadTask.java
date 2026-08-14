@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.model.domain;
 
+import com.jakt.aiplatform.core.model.enums.MirrorDownloadStatusEnum;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -23,7 +24,7 @@ public class MirrorDownloadTask {
     private String fileName;
 
     /** 状态：generating 生成中 / ready 已完成 / failed 失败。 */
-    private String status;
+    private MirrorDownloadStatusEnum status;
 
     /** 进度 0~100。 */
     private int progress;

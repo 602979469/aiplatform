@@ -2,6 +2,8 @@ package com.jakt.aiplatform.core.repository.convertor;
 
 import com.jakt.aiplatform.common.dal.dataobject.AiCapabilityDO;
 import com.jakt.aiplatform.core.model.domain.AiCapability;
+import com.jakt.aiplatform.core.model.enums.BaseEnum;
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 
 
 /**
@@ -30,7 +32,7 @@ public final class AiCapabilityConvertor {
         target.setCapabilityName(source.getCapabilityName());
         target.setDescription(source.getDescription());
         target.setSkillRules(source.getSkillRules());
-        target.setStatus(source.getStatus());
+        target.setStatus(BaseEnum.fromCode(EnableStatusEnum.class, source.getStatus()));
         target.setRemark(source.getRemark());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
@@ -54,7 +56,7 @@ public final class AiCapabilityConvertor {
         target.setCapabilityName(source.getCapabilityName());
         target.setDescription(source.getDescription());
         target.setSkillRules(source.getSkillRules());
-        target.setStatus(source.getStatus());
+        target.setStatus(source.getStatus() == null ? null : source.getStatus().getCode());
         target.setRemark(source.getRemark());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());

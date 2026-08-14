@@ -2,6 +2,8 @@ package com.jakt.aiplatform.core.repository.convertor;
 
 import com.jakt.aiplatform.common.dal.dataobject.AiSystemSessionDO;
 import com.jakt.aiplatform.core.model.domain.AiSystemSession;
+import com.jakt.aiplatform.core.model.enums.BaseEnum;
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 
 
 /**
@@ -29,7 +31,7 @@ public final class AiSystemSessionConvertor {
         target.setSceneCode(source.getSceneCode());
         target.setCapabilityCode(source.getCapabilityCode());
         target.setSessionName(source.getSessionName());
-        target.setStatus(source.getStatus());
+        target.setStatus(BaseEnum.fromCode(EnableStatusEnum.class, source.getStatus()));
         target.setRemark(source.getRemark());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
@@ -52,7 +54,7 @@ public final class AiSystemSessionConvertor {
         target.setSceneCode(source.getSceneCode());
         target.setCapabilityCode(source.getCapabilityCode());
         target.setSessionName(source.getSessionName());
-        target.setStatus(source.getStatus());
+        target.setStatus(source.getStatus() == null ? null : source.getStatus().getCode());
         target.setRemark(source.getRemark());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());

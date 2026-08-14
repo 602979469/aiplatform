@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.model.param;
 
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import java.time.LocalDateTime;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,7 +25,7 @@ public class AiChatSessionQueryParam extends PageParam {
     private String userName;
 
     /** 会话状态（0正常 1停用）。 */
-    private String status;
+    private EnableStatusEnum status;
 
     /** 备注。 */
     private String remark;

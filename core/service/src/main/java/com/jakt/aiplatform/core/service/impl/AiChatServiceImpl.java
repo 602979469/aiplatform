@@ -10,7 +10,8 @@ import com.jakt.aiplatform.core.model.domain.AiChatResult;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
 import com.jakt.aiplatform.core.model.constant.AiPlatformConstant;
 import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
-import com.jakt.aiplatform.core.model.enums.AiChatSessionStatusEnum;
+import com.jakt.aiplatform.core.model.enums.ChatRoleEnum;
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.core.model.exception.AiPlatformException;
 import com.jakt.aiplatform.common.util.enums.LogFileEnum;
@@ -86,14 +87,14 @@ public class AiChatServiceImpl implements AiChatService {
             userMessage = aiChatMessageService.getAiChatMessage(messageId);
             AssertUtil.throwErrWhenTrue(userMessage == null
                             || !Objects.equals(session.getSessionId(), userMessage.getSessionId())
-                            || !"user".equals(userMessage.getRole()),
+                            || userMessage.getRole() != ChatRoleEnum.USER,
                     ErrorCodeEnum.CHAT_MESSAGE_NOT_RETRYABLE, "待重试的消息不存在或无权访问");
             reused = true;
         } else {
             userMessage = new AiChatMessage();
             userMessage.setSessionId(session.getSessionId());
             userMessage.setUserId(userId);
-            userMessage.setRole("user");
+            userMessage.setRole(ChatRoleEnum.USER);
             userMessage.setContent(content);
             userMessage.setStatus(AiChatMessageStatusEnum.NORMAL);
             // 返回模型回填 messageId，后续失败标记依赖它
@@ -123,7 +124,7 @@ public class AiChatServiceImpl implements AiChatService {
         AiChatMessage assistantMessage = new AiChatMessage();
         assistantMessage.setSessionId(session.getSessionId());
         assistantMessage.setUserId(userId);
-        assistantMessage.setRole("assistant");
+        assistantMessage.setRole(ChatRoleEnum.ASSISTANT);
         assistantMessage.setContent(reply);
         assistantMessage.setStatus(AiChatMessageStatusEnum.NORMAL);
         aiChatMessageService.createAiChatMessage(assistantMessage);
@@ -172,7 +173,7 @@ public class AiChatServiceImpl implements AiChatService {
         if (sessionId == null) {
             AiChatSession session = new AiChatSession();
             session.setSessionName(DEFAULT_SESSION_NAME);
-            session.setStatus(AiChatSessionStatusEnum.NORMAL);
+            session.setStatus(EnableStatusEnum.ENABLE);
             session.setUserId(userId);
             session.setUserName(userName);
             return aiChatSessionService.createAiChatSession(session);
@@ -192,15 +193,15 @@ public class AiChatServiceImpl implements AiChatService {
                         && StrUtil.isNotBlank(message.getContent()))
                 .toList();
         List<DeepSeekChatMessage> context = new ArrayList<>();
-        context.add(new DeepSeekChatMessage("system", SYSTEM_PROMPT));
+        context.add(new DeepSeekChatMessage(ChatRoleEnum.SYSTEM.getCode(), SYSTEM_PROMPT));
         int start = Math.max(0, history.size() - MAX_CONTEXT_MESSAGES);
         for (int i = start; i < history.size(); i++) {
             AiChatMessage message = history.get(i);
-            context.add(new DeepSeekChatMessage(message.getRole(), message.getContent()));
+            context.add(new DeepSeekChatMessage(message.getRole().getCode(), message.getContent()));
         }
         // 重试场景下提问已是失败状态被过滤，需显式携带；新提问已包含在历史中
         if (forceAppendCurrent) {
-            context.add(new DeepSeekChatMessage("user", currentContent));
+            context.add(new DeepSeekChatMessage(ChatRoleEnum.USER.getCode(), currentContent));
         }
         return context;
     }

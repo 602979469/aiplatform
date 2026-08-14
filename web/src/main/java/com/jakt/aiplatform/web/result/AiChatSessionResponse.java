@@ -3,7 +3,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import com.jakt.aiplatform.core.model.enums.AiChatSessionStatusEnum;
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 /**
  * 用户AI会话响应 DTO。
  */
@@ -21,7 +21,7 @@ public class AiChatSessionResponse extends BaseResult {
     /** 用户名。 */
     private String userName;
     /** 会话状态（0正常 1停用）。 */
-    private AiChatSessionStatusEnum status;
+    private EnableStatusEnum status;
     /** 备注。 */
     private String remark;
 }

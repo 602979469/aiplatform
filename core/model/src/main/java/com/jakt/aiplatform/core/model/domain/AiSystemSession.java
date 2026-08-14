@@ -1,6 +1,7 @@
 package com.jakt.aiplatform.core.model.domain;
 
 
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -26,7 +27,7 @@ public class AiSystemSession extends BaseModel {
     private String sessionName;
 
     /** 会话状态（0正常 1停用）。 */
-    private String status;
+    private EnableStatusEnum status;
 
     /** 备注。 */
     private String remark;

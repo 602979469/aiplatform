@@ -4,6 +4,7 @@ import com.jakt.aiplatform.common.dal.dataobject.AiChatMessageDO;
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
 import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
 import com.jakt.aiplatform.core.model.enums.BaseEnum;
+import com.jakt.aiplatform.core.model.enums.ChatRoleEnum;
 
 
 /**
@@ -29,7 +30,7 @@ public final class AiChatMessageConvertor {
         target.setMessageId(source.getMessageId());
         target.setSessionId(source.getSessionId());
         target.setUserId(source.getUserId());
-        target.setRole(source.getRole());
+        target.setRole(BaseEnum.fromCode(ChatRoleEnum.class, source.getRole()));
         target.setContent(source.getContent());
         target.setStatus(BaseEnum.fromCode(AiChatMessageStatusEnum.class, source.getStatus()));
         target.setCreateTime(source.getCreateTime());
@@ -51,7 +52,7 @@ public final class AiChatMessageConvertor {
         target.setMessageId(source.getMessageId());
         target.setSessionId(source.getSessionId());
         target.setUserId(source.getUserId());
-        target.setRole(source.getRole());
+        target.setRole(source.getRole() == null ? null : source.getRole().getCode());
         target.setContent(source.getContent());
         target.setStatus(source.getStatus() == null ? null : source.getStatus().getCode());
         target.setCreateTime(source.getCreateTime());

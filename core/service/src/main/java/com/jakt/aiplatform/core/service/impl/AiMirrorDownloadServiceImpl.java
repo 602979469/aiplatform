@@ -9,6 +9,7 @@ import com.jakt.aiplatform.common.util.tools.MirrorFileUtil;
 import com.jakt.aiplatform.common.util.tools.ThreadPoolUtil;
 import com.jakt.aiplatform.core.model.domain.MirrorDownloadTask;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.core.model.enums.MirrorDownloadStatusEnum;
 import com.jakt.aiplatform.core.model.exception.AiPlatformException;
 import com.jakt.aiplatform.common.util.enums.LogFileEnum;
 import com.jakt.aiplatform.common.util.tools.LoggerUtil;
@@ -62,7 +63,7 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
             existed.setRepo(repo);
             existed.setTag(tag);
             existed.setFileName(fileName);
-            existed.setStatus("ready");
+            existed.setStatus(MirrorDownloadStatusEnum.READY);
             existed.setProgress(100);
             existed.setProgressMsg("本地已存在，可直接下载");
             existed.setCreateTime(LocalDateTime.now());
@@ -76,7 +77,7 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
         task.setRepo(repo);
         task.setTag(tag);
         task.setFileName(fileName);
-        task.setStatus("generating");
+        task.setStatus(MirrorDownloadStatusEnum.GENERATING);
         task.setProgress(5);
         task.setProgressMsg("任务已创建");
         task.setCreateTime(LocalDateTime.now());
@@ -115,10 +116,10 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
         String remoteImage = registryHost + "/" + repo + ":" + tag;
         Path targetFile = Paths.get(MirrorFileUtil.IMAGE_DIR, task.getFileName());
         try {
-            update(task, "generating", 10, "开始拉取镜像 " + remoteImage);
+            update(task, MirrorDownloadStatusEnum.GENERATING, 10, "开始拉取镜像 " + remoteImage);
             CommandUtil.CommandResult pull = null;
             for (int attempt = 1; attempt <= PULL_MAX_RETRY; attempt++) {
-                update(task, "generating", 10 + attempt * 5, "拉取镜像中（第 " + attempt + "/" + PULL_MAX_RETRY + " 次）");
+                update(task, MirrorDownloadStatusEnum.GENERATING, 10 + attempt * 5, "拉取镜像中（第 " + attempt + "/" + PULL_MAX_RETRY + " 次）");
                 pull = CommandUtil.execute(Arrays.asList("docker", "pull", remoteImage), DOCKER_TIMEOUT_SECONDS);
                 if (pull.isSuccess()) {
                     break;
@@ -135,7 +136,7 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
                 return;
             }
 
-            update(task, "generating", 60, "拉取完成，开始打包 tar");
+            update(task, MirrorDownloadStatusEnum.GENERATING, 60, "拉取完成，开始打包 tar");
             CommandUtil.CommandResult save = CommandUtil.execute(
                     Arrays.asList("docker", "save", "-o", targetFile.toString(), remoteImage), DOCKER_TIMEOUT_SECONDS);
             if (!save.isSuccess()) {
@@ -143,14 +144,14 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
                 return;
             }
 
-            update(task, "ready", 100, "打包完成，可下载");
+            update(task, MirrorDownloadStatusEnum.READY, 100, "打包完成，可下载");
             task.setFinishTime(LocalDateTime.now());
             LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
                     "【镜像加速器】【DOCKER】下载生成完成: {} -> {}", remoteImage, targetFile);
         } catch (Exception e) {
             LoggerUtil.error(LogFileEnum.COMMON_ERROR,
                     "【镜像加速器】【DOCKER】下载生成异常: repo={}, tag={}, 错误={}", repo, tag, e.getMessage());
-            update(task, "failed", 0, "生成失败");
+            update(task, MirrorDownloadStatusEnum.FAILED, 0, "生成失败");
             task.setErrorCode("UNKNOWN");
             task.setErrorMsg(e.getMessage());
             task.setFinishTime(LocalDateTime.now());
@@ -166,7 +167,7 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
         LoggerUtil.error(LogFileEnum.COMMON_ERROR,
                 "【镜像加速器】【DOCKER】{}失败: repo={}, tag={}, 退出码={}, 超时={}, 输出={}",
                 phase, task.getRepo(), task.getTag(), result.getExitCode(), result.isTimeout(), result.getOutput());
-        update(task, "failed", 0, "生成失败");
+        update(task, MirrorDownloadStatusEnum.FAILED, 0, "生成失败");
         task.setErrorCode(errorCode);
         task.setErrorMsg(errorMsg);
         task.setFinishTime(LocalDateTime.now());
@@ -193,7 +194,7 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
     /**
  * 更新任务进度。
      */
-    private void update(MirrorDownloadTask task, String status, int progress, String progressMsg) {
+    private void update(MirrorDownloadTask task, MirrorDownloadStatusEnum status, int progress, String progressMsg) {
         task.setStatus(status);
         task.setProgress(progress);
         task.setProgressMsg(progressMsg);

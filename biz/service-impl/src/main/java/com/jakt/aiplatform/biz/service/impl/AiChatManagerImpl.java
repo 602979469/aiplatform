@@ -7,7 +7,7 @@ import com.jakt.aiplatform.core.model.context.UserContext;
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
 import com.jakt.aiplatform.core.model.domain.AiChatResult;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
-import com.jakt.aiplatform.core.model.enums.AiChatSessionStatusEnum;
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.common.util.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.AiChatSessionQueryParam;
@@ -54,7 +54,7 @@ public class AiChatManagerImpl implements AiChatManager {
     public AiChatSession createSession() {
         AiChatSession session = new AiChatSession();
         session.setSessionName(DEFAULT_SESSION_NAME);
-        session.setStatus(AiChatSessionStatusEnum.NORMAL);
+        session.setStatus(EnableStatusEnum.ENABLE);
         session.setUserId(UserContext.getUserId());
         session.setUserName(UserContext.getUserName());
         AiChatSession created = aiChatSessionService.createAiChatSession(session);

@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
+import com.jakt.aiplatform.core.model.enums.ChatRoleEnum;
 /**
  * 用户AI会话消息响应 DTO。
  */
@@ -19,7 +20,7 @@ public class AiChatMessageResponse extends BaseResult {
     /** 用户ID。 */
     private Long userId;
     /** 角色（user用户 assistant助手）。 */
-    private String role;
+    private ChatRoleEnum role;
     /** 消息内容。 */
     private String content;
     /** 消息状态（0正常 1失败）。 */
