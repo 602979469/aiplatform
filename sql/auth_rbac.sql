@@ -108,11 +108,18 @@ values (1, '超级管理员', 'admin',  1, '0', '0', '内置超级管理员'),
 
 insert into auth_user_role (user_id, role_id) values (1, 1);
 
--- AI 菜单（系统管理菜单待 M3 管理页上线后补充）
+-- 菜单（AI 应用 + 系统管理 + 系统监控）
 insert into auth_menu (menu_id, menu_name, parent_id, order_num, path, component, menu_type, visible, status, perms, icon, remark)
-values (1,   'AI 应用',   0, 1, '/ai',    '',                 'M', '0', '0', null,          'ai',     'AI 应用目录'),
-       (100, 'AI 对话',   1, 1, 'chat',   'ai/chat/index',    'C', '0', '0', 'ai:chat:query',  'chat',   'AI 对话菜单'),
-       (101, '镜像加速器', 1, 2, 'mirror', 'ai/mirror/index', 'C', '0', '0', 'ai:mirror:query', 'mirror', '镜像加速器菜单');
+values (1,   'AI 应用',   0, 1, '/ai',    '',                 'M', '0', '0', null,          'el-icon-menu',          'AI 应用目录'),
+       (100, 'AI 对话',   1, 1, 'chat',   'ai/chat/index',    'C', '0', '0', 'ai:chat:query',  'el-icon-chat-dot-round', 'AI 对话菜单'),
+       (101, '镜像加速器', 1, 2, 'mirror', 'ai/mirror/index', 'C', '0', '0', 'ai:mirror:query', 'el-icon-connection',    '镜像加速器菜单'),
+       (200, '系统管理',   0, 2, '/system', '',                'M', '0', '0', null,             'el-icon-setting',       '系统管理目录'),
+       (201, '菜单管理',   200, 1, 'menu', 'system/menu/index', 'C', '0', '0', 'auth:menu:list', 'el-icon-menu',          '菜单管理菜单'),
+       (202, '用户管理',   200, 2, 'user', 'system/user/index', 'C', '0', '0', 'auth:user:list', 'el-icon-user',          '用户管理菜单'),
+       (203, '角色管理',   200, 3, 'role', 'system/role/index', 'C', '0', '0', 'auth:role:list', 'el-icon-user-solid',    '角色管理菜单'),
+       (300, '系统监控',   0, 3, '/monitor', '',                'M', '0', '0', null,             'el-icon-monitor',       '系统监控目录'),
+       (301, '在线用户',   300, 1, 'online', 'monitor/online/index', 'C', '0', '0', 'auth:online:list', 'el-icon-view',    '在线用户菜单'),
+       (302, '登录日志',   300, 2, 'logininfor', 'monitor/logininfor/index', 'C', '0', '0', 'auth:loginlog:list', 'el-icon-document', '登录日志菜单');
 
 insert into auth_role_menu (role_id, menu_id)
 select 1, menu_id from auth_menu where status = '0';

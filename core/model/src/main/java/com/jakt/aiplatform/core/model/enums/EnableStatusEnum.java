@@ -1,14 +1,13 @@
 package com.jakt.aiplatform.core.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 /**
  * 启用状态枚举：用于用户/角色/菜单的 status 列。
  */
 @Getter
-@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum EnableStatusEnum implements BaseEnum<String> {
 
     /** 启用。 */
@@ -30,6 +29,7 @@ public enum EnableStatusEnum implements BaseEnum<String> {
     }
 
     @Override
+    @JsonValue
     public String getCode() {
         return code;
     }

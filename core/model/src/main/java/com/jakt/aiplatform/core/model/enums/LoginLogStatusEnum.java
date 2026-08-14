@@ -1,14 +1,13 @@
 package com.jakt.aiplatform.core.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 /**
  * 登录记录结果枚举。
  */
 @Getter
-@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum LoginLogStatusEnum implements BaseEnum<String> {
 
     /** 成功。 */
@@ -39,6 +38,7 @@ public enum LoginLogStatusEnum implements BaseEnum<String> {
     }
 
     @Override
+    @JsonValue
     public String getCode() {
         return code;
     }

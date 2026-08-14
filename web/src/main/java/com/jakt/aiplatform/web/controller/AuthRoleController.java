@@ -11,6 +11,7 @@ import com.jakt.aiplatform.web.checker.AuthRoleParamChecker;
 import com.jakt.aiplatform.web.param.AuthRoleQueryRequest;
 import com.jakt.aiplatform.web.param.AuthRoleCreateRequest;
 import com.jakt.aiplatform.web.param.AuthRoleMenuRequest;
+import com.jakt.aiplatform.web.param.AuthRoleStatusRequest;
 import com.jakt.aiplatform.web.param.AuthRoleUpdateRequest;
 import com.jakt.aiplatform.web.result.ApiResult;
 import com.jakt.aiplatform.web.result.AuthRoleResponse;
@@ -135,6 +136,31 @@ public class AuthRoleController {
                     public void execute(AuthRoleUpdateRequest param) {
                         AuthRole role = AuthRoleAssembler.toRole(param);
                         authRoleManager.updateRole(role);
+                    }
+                });
+    }
+
+    /**
+     * 修改角色状态。
+     *
+     * @param roleId  角色ID
+     * @param request 启停请求
+     * @return 统一返回体
+     */
+    @PutMapping("/{roleId}/status")
+    @SaCheckPermission("auth:role:edit")
+    public ApiResult<Void> changeRoleStatus(@PathVariable Long roleId, @RequestBody AuthRoleStatusRequest request) {
+        return ApiTemplate.executeWithoutResult(request,
+                new ApiTemplate.CallbackWithoutResult<AuthRoleStatusRequest>() {
+
+                    @Override
+                    public void beforeService(AuthRoleStatusRequest param) {
+                        AuthRoleParamChecker.checkRoleStatus(param);
+                    }
+
+                    @Override
+                    public void execute(AuthRoleStatusRequest param) {
+                        authRoleManager.changeRoleStatus(roleId, param.getStatus());
                     }
                 });
     }

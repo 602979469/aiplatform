@@ -3,6 +3,7 @@ package com.jakt.aiplatform.common.dal.config;
 import com.jakt.aiplatform.common.util.template.TransactionTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
@@ -12,7 +13,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 public class DalTransactionConfig {
 
     @Bean
-    public TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
+    @Primary
+    public TransactionTemplate dalTransactionTemplate(PlatformTransactionManager transactionManager) {
         return new SpringTransactionTemplate(transactionManager);
     }
 }

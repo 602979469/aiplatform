@@ -90,6 +90,14 @@ public interface AuthUserRepository {
     void replaceRoles(Long userId, List<Long> roleIds);
 
     /**
+     * 查询用户角色ID列表。
+     *
+     * @param userId 用户ID
+     * @return 角色ID列表
+     */
+    List<Long> findRoleIdsByUserId(Long userId);
+
+    /**
      * 清空用户角色绑定（用户删除时调用）。
      *
      * @param userId 用户ID

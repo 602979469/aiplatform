@@ -11,7 +11,9 @@ import com.jakt.aiplatform.core.model.enums.VisibleEnum;
 import com.jakt.aiplatform.web.interceptor.UserContextInterceptor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.format.FormatterRegistry;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
@@ -23,13 +25,18 @@ public class SaTokenConfigure implements WebMvcConfigurer {
     /** 用户上下文回填拦截器（注册在 SaInterceptor 之后）。 */
     private final UserContextInterceptor userContextInterceptor;
 
-    public SaTokenConfigure(UserContextInterceptor userContextInterceptor) {
+    /** 头像上传目录（与 core-service 保持一致，静态映射同源）。 */
+    private final String avatarDir;
+
+    public SaTokenConfigure(UserContextInterceptor userContextInterceptor,
+                            @Value("${aiplatform.upload.avatar-dir:./uploads/avatar}") String avatarDir) {
         this.userContextInterceptor = userContextInterceptor;
+        this.avatarDir = avatarDir;
     }
 
     /** 匿名端点白名单。 */
     private static final String[] ANON_URLS = {
-            "/auth/login", "/auth/register", "/error",
+            "/auth/login", "/auth/register", "/uploads/**", "/error",
             "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
@@ -41,6 +48,13 @@ public class SaTokenConfigure implements WebMvcConfigurer {
                         .check(r -> StpUtil.checkLogin())))
                 .addPathPatterns("/**");
         registry.addInterceptor(userContextInterceptor).addPathPatterns("/**");
+    }
+
+    /** 上传文件静态映射：/uploads/** → ./uploads/ 目录。 */
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:" + avatarDir + "/");
     }
 
     /** 注册枚举 code 转换：查询参数（status=0 等）自动转为对应枚举。 */

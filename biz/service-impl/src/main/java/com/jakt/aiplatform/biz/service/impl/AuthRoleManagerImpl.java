@@ -2,6 +2,7 @@ package com.jakt.aiplatform.biz.service.impl;
 
 import com.jakt.aiplatform.biz.service.AuthRoleManager;
 import com.jakt.aiplatform.core.model.domain.AuthRole;
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.param.AuthRoleQueryParam;
 import com.jakt.aiplatform.common.util.result.PageResult;
 import com.jakt.aiplatform.core.service.AuthRoleAdminService;
@@ -37,6 +38,11 @@ public class AuthRoleManagerImpl implements AuthRoleManager {
     @Override
     public void updateRole(AuthRole role) {
         authRoleAdminService.updateRole(role);
+    }
+
+    @Override
+    public void changeRoleStatus(Long roleId, EnableStatusEnum status) {
+        authRoleAdminService.changeRoleStatus(roleId, status);
     }
 
     @Override

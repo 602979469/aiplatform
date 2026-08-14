@@ -2,6 +2,8 @@ package com.jakt.aiplatform.core.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.file.FileNameUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.jakt.aiplatform.common.util.tools.AssertUtil;
@@ -17,8 +19,10 @@ import com.jakt.aiplatform.common.util.template.TransactionTemplate;
 import com.jakt.aiplatform.core.repository.AuthUserRepository;
 import com.jakt.aiplatform.core.service.AuthUserAdminService;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 用户管理领域服务实现：跨表多写统一走 BizTemplate。
@@ -26,14 +30,22 @@ import java.util.List;
 @Service
 public class AuthUserAdminServiceImpl implements AuthUserAdminService {
 
+    /** 允许的头像图片扩展名。 */
+    private static final Set<String> AVATAR_EXTS = Set.of("png", "jpg", "jpeg", "gif", "webp");
+
     private final AuthUserRepository authUserRepository;
 
     private final TransactionTemplate transactionTemplate;
 
+    /** 头像存储目录。 */
+    private final String avatarDir;
+
     public AuthUserAdminServiceImpl(AuthUserRepository authUserRepository,
-                                    TransactionTemplate transactionTemplate) {
+                                    TransactionTemplate transactionTemplate,
+                                    @Value("${aiplatform.upload.avatar-dir:./uploads/avatar}") String avatarDir) {
         this.authUserRepository = authUserRepository;
         this.transactionTemplate = transactionTemplate;
+        this.avatarDir = avatarDir;
     }
 
     @Override
@@ -98,10 +110,57 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
     }
 
     @Override
+    public void updatePassword(Long userId, String oldPassword, String newPassword) {
+        AuthUser user = authUserRepository.findById(userId);
+        AssertUtil.throwErrWhenNull(user, ErrorCodeEnum.RESOURCE_NOT_FOUND, "用户不存在");
+        AssertUtil.throwErrWhenFalse(BCrypt.checkpw(oldPassword, user.getPassword()),
+                ErrorCodeEnum.OLD_PASSWORD_ERROR);
+        AuthUser update = new AuthUser();
+        update.setUserId(userId);
+        update.setPassword(BCrypt.hashpw(newPassword));
+        int affected = authUserRepository.updateByCondition(update);
+        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    }
+
+    @Override
+    public String updateAvatar(Long userId, byte[] imageBytes, String originalFilename) {
+        AuthUser user = authUserRepository.findById(userId);
+        AssertUtil.throwErrWhenNull(user, ErrorCodeEnum.RESOURCE_NOT_FOUND, "用户不存在");
+        String ext = FileNameUtil.extName(originalFilename);
+        AssertUtil.throwErrWhenFalse(StrUtil.isNotBlank(ext) && AVATAR_EXTS.contains(ext.toLowerCase()),
+                ErrorCodeEnum.PARAM_INVALID, "头像仅支持 png/jpg/jpeg/gif/webp");
+        String fileName = userId + "_" + System.currentTimeMillis() + "." + ext.toLowerCase();
+        FileUtil.writeBytes(imageBytes, avatarDir + "/" + fileName);
+        String avatarUrl = "/uploads/avatar/" + fileName;
+        AuthUser update = new AuthUser();
+        update.setUserId(userId);
+        update.setAvatar(avatarUrl);
+        int affected = authUserRepository.updateByCondition(update);
+        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+        return avatarUrl;
+    }
+
+    @Override
+    public void updateProfile(Long userId, String nickname, String email) {
+        AuthUser update = new AuthUser();
+        update.setUserId(userId);
+        update.setNickname(nickname);
+        update.setEmail(email);
+        int affected = authUserRepository.updateByCondition(update);
+        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    }
+
+    @Override
     public void assignUserRoles(Long userId, List<Long> roleIds) {
         getUser(userId);
         checkResult(BizTemplate.executeWithoutResult(transactionTemplate,
                 () -> authUserRepository.replaceRoles(userId, roleIds)));
+    }
+
+    @Override
+    public List<Long> getUserRoleIds(Long userId) {
+        getUser(userId);
+        return authUserRepository.findRoleIdsByUserId(userId);
     }
 
     @Override

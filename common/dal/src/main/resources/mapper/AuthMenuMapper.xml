@@ -56,6 +56,7 @@
             <if test="updateTimeEnd != null">
                 AND update_time &lt;= #{updateTimeEnd}
             </if>
+            AND del_flag = '0'
         </where>
     </sql>
 

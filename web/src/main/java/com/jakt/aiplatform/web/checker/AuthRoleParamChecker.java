@@ -6,6 +6,7 @@ import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.web.param.AuthRoleCreateRequest;
 import com.jakt.aiplatform.web.param.AuthRoleMenuRequest;
 import com.jakt.aiplatform.web.param.AuthRoleQueryRequest;
+import com.jakt.aiplatform.web.param.AuthRoleStatusRequest;
 import com.jakt.aiplatform.web.param.AuthRoleUpdateRequest;
 
 /**
@@ -39,6 +40,12 @@ public final class AuthRoleParamChecker {
     /** 检查分配菜单参数。 */
     public static void checkRoleMenu(AuthRoleMenuRequest request) {
         AssertUtil.throwErrWhenNull(request, ErrorCodeEnum.PARAM_INVALID, "分配菜单参数不能为空");
+        ParamValidator.validate(request);
+    }
+
+    /** 检查角色启停参数。 */
+    public static void checkRoleStatus(AuthRoleStatusRequest request) {
+        AssertUtil.throwErrWhenNull(request, ErrorCodeEnum.PARAM_INVALID, "启停参数不能为空");
         ParamValidator.validate(request);
     }
 

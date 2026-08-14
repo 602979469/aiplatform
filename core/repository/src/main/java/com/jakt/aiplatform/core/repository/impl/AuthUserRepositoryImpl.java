@@ -106,6 +106,11 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
     }
 
     @Override
+    public List<Long> findRoleIdsByUserId(Long userId) {
+        return authUserRoleMapper.selectRoleIdsByUserId(userId);
+    }
+
+    @Override
     public void clearUserRoles(Long userId) {
         authUserRoleMapper.deleteByUserId(userId);
     }

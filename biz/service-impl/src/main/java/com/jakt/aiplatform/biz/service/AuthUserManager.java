@@ -61,12 +61,48 @@ public interface AuthUserManager {
     void resetPassword(Long userId, String password);
 
     /**
+     * 修改当前用户密码（校验原密码）。
+     *
+     * @param userId      用户ID
+     * @param oldPassword 原密码明文
+     * @param newPassword 新密码明文
+     */
+    void updatePassword(Long userId, String oldPassword, String newPassword);
+
+    /**
+     * 更新当前用户头像。
+     *
+     * @param userId           用户ID
+     * @param imageBytes       图片字节
+     * @param originalFilename 原始文件名（用于取扩展名）
+     * @return 头像访问路径
+     */
+    String updateAvatar(Long userId, byte[] imageBytes, String originalFilename);
+
+    /**
+     * 修改当前用户个人资料（昵称/邮箱，仅更新非空字段）。
+     *
+     * @param userId   用户ID
+     * @param nickname 昵称
+     * @param email    邮箱
+     */
+    void updateProfile(Long userId, String nickname, String email);
+
+    /**
      * 分配用户角色。
      *
      * @param userId  用户ID
      * @param roleIds 角色ID列表
      */
     void assignUserRoles(Long userId, List<Long> roleIds);
+
+    /**
+     * 查询用户已分配角色ID（编辑回显）。
+     *
+     * @param userId 用户ID
+     * @return 角色ID列表
+     */
+    List<Long> getUserRoleIds(Long userId);
 
     /**
      * 删除用户。

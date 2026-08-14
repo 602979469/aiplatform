@@ -26,6 +26,11 @@ public class AuthMenuManagerImpl implements AuthMenuManager {
     }
 
     @Override
+    public AuthMenu getMenu(Long menuId) {
+        return authMenuAdminService.getMenu(menuId);
+    }
+
+    @Override
     public List<AuthMenu> getRouters() {
         Long userId = UserContext.getUserId();
         return authMenuService.getRouters(userId);

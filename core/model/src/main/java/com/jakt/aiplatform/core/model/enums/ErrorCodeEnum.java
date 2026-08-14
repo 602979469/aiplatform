@@ -56,6 +56,9 @@ public enum ErrorCodeEnum implements ErrorCode {
     /** 用户名或密码错误（不区分具体哪项错误，防枚举）。 */
     LOGIN_FAILED("用户名或密码错误"),
 
+    /** 原密码错误。 */
+    OLD_PASSWORD_ERROR("原密码错误"),
+
     /** 账号已被停用。 */
     USER_DISABLED("账号已被停用"),
 

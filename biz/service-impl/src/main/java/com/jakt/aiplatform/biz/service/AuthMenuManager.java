@@ -11,6 +11,14 @@ import java.util.List;
 public interface AuthMenuManager {
 
     /**
+     * 查询菜单详情。
+     *
+     * @param menuId 菜单ID
+     * @return 菜单
+     */
+    AuthMenu getMenu(Long menuId);
+
+    /**
      * 当前用户菜单路由树。
      *
      * @return 路由树

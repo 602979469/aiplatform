@@ -40,6 +40,30 @@ public class AuthMenuController {
     }
 
     /**
+     * 查询菜单详情。
+     *
+     * @param menuId 菜单ID
+     * @return 菜单详情
+     */
+    @GetMapping("/{menuId}")
+    @SaCheckPermission("auth:menu:query")
+    public ApiResult<AuthMenuResponse> getMenu(@PathVariable Long menuId) {
+        return ApiTemplate.execute(menuId, new ApiTemplate.Callback<Long, AuthMenuResponse>() {
+
+            @Override
+            public void beforeService(Long param) {
+                AuthMenuParamChecker.checkMenuId(param);
+            }
+
+            @Override
+            public AuthMenuResponse execute(Long param) {
+                AuthMenu menu = authMenuManager.getMenu(param);
+                return AuthMenuAssembler.toMenuResponse(menu);
+            }
+        });
+    }
+
+    /**
      * 当前用户菜单路由树。
      *
      * @return 路由树

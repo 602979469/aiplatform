@@ -51,8 +51,28 @@ public class AuthUserManagerImpl implements AuthUserManager {
     }
 
     @Override
+    public void updatePassword(Long userId, String oldPassword, String newPassword) {
+        authUserAdminService.updatePassword(userId, oldPassword, newPassword);
+    }
+
+    @Override
+    public String updateAvatar(Long userId, byte[] imageBytes, String originalFilename) {
+        return authUserAdminService.updateAvatar(userId, imageBytes, originalFilename);
+    }
+
+    @Override
+    public void updateProfile(Long userId, String nickname, String email) {
+        authUserAdminService.updateProfile(userId, nickname, email);
+    }
+
+    @Override
     public void assignUserRoles(Long userId, List<Long> roleIds) {
         authUserAdminService.assignUserRoles(userId, roleIds);
+    }
+
+    @Override
+    public List<Long> getUserRoleIds(Long userId) {
+        return authUserAdminService.getUserRoleIds(userId);
     }
 
     @Override

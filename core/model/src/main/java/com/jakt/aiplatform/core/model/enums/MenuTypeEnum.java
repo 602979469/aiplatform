@@ -1,14 +1,13 @@
 package com.jakt.aiplatform.core.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 /**
  * 菜单类型枚举：M目录 / C菜单 / F按钮。
  */
 @Getter
-@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum MenuTypeEnum implements BaseEnum<String> {
 
     /** 目录。 */
@@ -33,6 +32,7 @@ public enum MenuTypeEnum implements BaseEnum<String> {
     }
 
     @Override
+    @JsonValue
     public String getCode() {
         return code;
     }

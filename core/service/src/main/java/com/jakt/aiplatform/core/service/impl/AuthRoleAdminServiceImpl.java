@@ -65,6 +65,15 @@ public class AuthRoleAdminServiceImpl implements AuthRoleAdminService {
     }
 
     @Override
+    public void changeRoleStatus(Long roleId, EnableStatusEnum status) {
+        AuthRole update = new AuthRole();
+        update.setRoleId(roleId);
+        update.setStatus(status);
+        int affected = authRoleRepository.updateByCondition(update);
+        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+    }
+
+    @Override
     public void assignRoleMenus(Long roleId, List<Long> menuIds) {
         getRole(roleId);
         checkResult(BizTemplate.executeWithoutResult(transactionTemplate,

@@ -1,14 +1,18 @@
 package com.jakt.aiplatform.web.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.stp.StpUtil;
 import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.biz.service.AuthUserManager;
 import com.jakt.aiplatform.core.model.domain.AuthUser;
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.param.AuthUserQueryParam;
 import com.jakt.aiplatform.common.util.result.PageResult;
 import com.jakt.aiplatform.web.assembler.AuthUserAssembler;
 import com.jakt.aiplatform.web.checker.AuthUserParamChecker;
 import com.jakt.aiplatform.web.param.AuthUserQueryRequest;
+import com.jakt.aiplatform.web.param.AuthPasswordRequest;
+import com.jakt.aiplatform.web.param.AuthProfileRequest;
 import com.jakt.aiplatform.web.param.AuthResetPasswordRequest;
 import com.jakt.aiplatform.web.param.AuthUserCreateRequest;
 import com.jakt.aiplatform.web.param.AuthUserRoleRequest;
@@ -17,6 +21,7 @@ import com.jakt.aiplatform.web.param.AuthUserUpdateRequest;
 import com.jakt.aiplatform.web.result.ApiResult;
 import com.jakt.aiplatform.web.result.AuthUserResponse;
 import com.jakt.aiplatform.web.template.ApiTemplate;
+import com.jakt.aiplatform.web.util.MultipartFileUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,7 +30,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * 用户管理接口。
@@ -85,6 +94,29 @@ public class AuthUserController {
             public AuthUserResponse execute(Long param) {
                 AuthUser user = authUserManager.getUser(param);
                 return AuthUserAssembler.toUserResponse(user);
+            }
+        });
+    }
+
+    /**
+     * 查询用户已分配角色ID（编辑回显）。
+     *
+     * @param userId 用户ID
+     * @return 角色ID列表
+     */
+    @GetMapping("/{userId}/role")
+    @SaCheckPermission("auth:user:query")
+    public ApiResult<List<Long>> getUserRoleIds(@PathVariable Long userId) {
+        return ApiTemplate.execute(userId, new ApiTemplate.Callback<Long, List<Long>>() {
+
+            @Override
+            public void beforeService(Long param) {
+                AuthUserParamChecker.checkUserId(param);
+            }
+
+            @Override
+            public List<Long> execute(Long param) {
+                return authUserManager.getUserRoleIds(param);
             }
         });
     }
@@ -236,5 +268,96 @@ public class AuthUserController {
                         authUserManager.deleteUser(param);
                     }
                 });
+    }
+
+    // ============ 个人中心（当前登录用户） ============
+
+    /**
+     * 查询当前用户个人信息。
+     *
+     * @return 当前用户信息
+     */
+    @GetMapping("/profile")
+    public ApiResult<AuthUserResponse> getProfile() {
+        return ApiTemplate.execute(null, new ApiTemplate.Callback<Object, AuthUserResponse>() {
+
+            @Override
+            public AuthUserResponse execute(Object param) {
+                return AuthUserAssembler.toUserResponse(
+                        authUserManager.getUser(StpUtil.getLoginIdAsLong()));
+            }
+        });
+    }
+
+    /**
+     * 修改当前用户个人信息。
+     *
+     * @param request 资料修改请求
+     * @return 统一返回体
+     */
+    @PutMapping("/profile")
+    public ApiResult<Void> updateProfile(@RequestBody AuthProfileRequest request) {
+        return ApiTemplate.executeWithoutResult(request,
+                new ApiTemplate.CallbackWithoutResult<AuthProfileRequest>() {
+
+                    @Override
+                    public void beforeService(AuthProfileRequest param) {
+                        AuthUserParamChecker.checkProfile(param);
+                    }
+
+                    @Override
+                    public void execute(AuthProfileRequest param) {
+                        authUserManager.updateProfile(StpUtil.getLoginIdAsLong(),
+                                param.getNickname(), param.getEmail());
+                    }
+                });
+    }
+
+    /**
+     * 修改当前用户密码。
+     *
+     * @param request 修改密码请求
+     * @return 统一返回体
+     */
+    @PutMapping("/profile/password")
+    public ApiResult<Void> updatePassword(@RequestBody AuthPasswordRequest request) {
+        return ApiTemplate.executeWithoutResult(request,
+                new ApiTemplate.CallbackWithoutResult<AuthPasswordRequest>() {
+
+                    @Override
+                    public void beforeService(AuthPasswordRequest param) {
+                        AuthUserParamChecker.checkPassword(param);
+                    }
+
+                    @Override
+                    public void execute(AuthPasswordRequest param) {
+                        authUserManager.updatePassword(StpUtil.getLoginIdAsLong(),
+                                param.getOldPassword(), param.getNewPassword());
+                    }
+                });
+    }
+
+    /**
+     * 修改当前用户头像。
+     *
+     * @param avatarfile 头像文件
+     * @return 统一返回体
+     */
+    @PutMapping("/profile/avatar")
+    public ApiResult<String> updateAvatar(@RequestParam("avatarfile") MultipartFile avatarfile) {
+        return ApiTemplate.execute(avatarfile, new ApiTemplate.Callback<MultipartFile, String>() {
+
+            @Override
+            public void beforeService(MultipartFile param) {
+                AuthUserParamChecker.checkAvatar(param);
+            }
+
+            @Override
+            public String execute(MultipartFile param) {
+                byte[] imageBytes = MultipartFileUtil.readBytes(param);
+                return authUserManager.updateAvatar(StpUtil.getLoginIdAsLong(),
+                        imageBytes, param.getOriginalFilename());
+            }
+        });
     }
 }

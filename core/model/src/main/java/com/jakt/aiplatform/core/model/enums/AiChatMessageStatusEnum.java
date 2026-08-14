@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.model.enums;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 /**
@@ -22,6 +23,7 @@ public enum AiChatMessageStatusEnum implements BaseEnum<String> {
     }
 
     @Override
+    @JsonValue
     public String getCode() {
         return code;
     }

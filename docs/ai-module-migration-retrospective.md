@@ -86,7 +86,7 @@
 - **common 包独立可复制**：common-integration 的客户端 + DTO + 异常自成一体（fastjson2 依赖仅在该模块）。
 - **DeepSeek Key 来源**：application.yml > 环境变量 `DEEPSEEK_API_KEY` > `~/.codex/config.toml`（`[model_providers.deepseek]` 的 `experimental_bearer_token`），密钥不进仓库。
 - **镜像"非成功即异常"**：按用户原则，外部调用非成功一律抛集成异常；搜索时单个仓库 tags 查询失败仍跳过该仓库，不影响整体结果。
-- **前端**：整个 ruoyi-ui 复制到 `ui/`；另建 `ui-standalone` 独立壳（Vue2 + Element UI，无登录/菜单），原两个页面原样复用，`/ai` 代理到 8080，`v-hasPermi` 恒放行、最小 vuex 提供 avatar、svg-icon 映射为 Element 图标。
+- **前端**：整个 ruoyi-ui 复制到 `ui/`；另建 `ui` 独立壳（Vue2 + Element UI，无登录/菜单），原两个页面原样复用，`/ai` 代理到 8080，`v-hasPermi` 恒放行、最小 vuex 提供 avatar、svg-icon 映射为 Element 图标。
 
 ---
 
@@ -101,7 +101,7 @@
 | 用户体系 | 网关透传 + `SecurityUtils` + `@RequiresPermissions` | `UserContext`（请求头，缺省 1/admin），无权限，接真登录只改 Filter |
 | 配置 | Nacos（ruoyi-ai-dev.yml + 网关路由 + XSS 白名单） | `application.yml` 三段配置，无网关 |
 | 数据库 | ry-cloud 库 5 张表 + sys_menu/角色授权 | aiplatform 库 5 张表 + 3 条能力种子数据（无菜单体系） |
-| 前端 | ruoyi-ui 全量 SPA（登录/动态菜单/权限） | `ui-standalone` 独立双页面（无登录/菜单），直连后端 |
+| 前端 | ruoyi-ui 全量 SPA（登录/动态菜单/权限） | `ui` 独立双页面（无登录/菜单），直连后端 |
 | 聊天功能 | 会话 CRUD / 30 条上下文 / 失败重试标记 / 首次提问改名 / 模拟模式 | 全部等价保留 ✓ |
 | 镜像功能 | 搜索 + AI 版本匹配 + 下载任务 + 文件下载 | 全部等价保留 ✓（外网依赖相同） |
 | 能力机制 | `sys_ai_capability`/`sys_ai_session`/`sys_ai_message` + invoke | 等价保留 ✓ |

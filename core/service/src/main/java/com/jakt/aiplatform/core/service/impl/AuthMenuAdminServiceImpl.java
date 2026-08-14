@@ -39,6 +39,13 @@ public class AuthMenuAdminServiceImpl implements AuthMenuAdminService {
     }
 
     @Override
+    public AuthMenu getMenu(Long menuId) {
+        AuthMenu menu = authMenuRepository.findById(menuId);
+        AssertUtil.throwErrWhenNull(menu, ErrorCodeEnum.RESOURCE_NOT_FOUND, "菜单不存在");
+        return menu;
+    }
+
+    @Override
     public List<AuthMenu> menuTree() {
         return buildTree(authMenuRepository.findList(new AuthMenuQueryParam()));
     }

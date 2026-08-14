@@ -1,6 +1,7 @@
 package com.jakt.aiplatform.core.service;
 
 import com.jakt.aiplatform.core.model.domain.AuthRole;
+import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.param.AuthRoleQueryParam;
 import com.jakt.aiplatform.common.util.result.PageResult;
 
@@ -41,6 +42,14 @@ public interface AuthRoleAdminService {
      * @param role 角色（含 roleId）
      */
     void updateRole(AuthRole role);
+
+    /**
+     * 修改角色状态。
+     *
+     * @param roleId 角色ID
+     * @param status 新状态
+     */
+    void changeRoleStatus(Long roleId, EnableStatusEnum status);
 
     /**
      * 分配角色菜单。

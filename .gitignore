@@ -10,7 +10,11 @@ music/
 
 # 运行时上传目录
 upload/
+uploads/
+
+# 本机沙箱偶发产生的 jar 内层挂载目录（环境产物）
+nested:/
 
 # 独立前端：依赖软链与构建产物（源码需要提交）
-ui-standalone/node_modules
-ui-standalone/dist/
+ui/node_modules
+ui/dist/
