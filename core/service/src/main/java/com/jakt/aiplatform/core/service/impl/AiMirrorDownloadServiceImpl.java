@@ -131,7 +131,7 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
                     sleepQuietly(3000L * attempt);
                 }
             }
-            if (pull == null || !pull.isSuccess()) {
+            if (!pull.isSuccess()) {
                 fail(task, "docker pull 失败（已重试 " + PULL_MAX_RETRY + " 次）", pull);
                 return;
             }

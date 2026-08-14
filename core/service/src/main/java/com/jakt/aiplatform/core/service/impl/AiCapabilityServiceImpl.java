@@ -61,7 +61,8 @@ public class AiCapabilityServiceImpl implements AiCapabilityService {
         session.setCapabilityCode(capabilityCode);
         session.setSessionName(capability.getCapabilityName());
         session.setStatus(EnableStatusEnum.ENABLE);
-        aiSystemSessionService.createAiSystemSession(session);
+        // 仓储 insert 返回回填主键后的新对象，必须接收返回值，否则 sessionId 为 null
+        session = aiSystemSessionService.createAiSystemSession(session);
 
         insertMessage(session.getSessionId(), ChatRoleEnum.SYSTEM, capability.getSkillRules());
         insertMessage(session.getSessionId(), ChatRoleEnum.USER, input);

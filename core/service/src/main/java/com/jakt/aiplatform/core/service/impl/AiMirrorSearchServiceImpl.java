@@ -6,7 +6,9 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.jakt.aiplatform.common.integration.exception.AiIntegrationException;
 import com.jakt.aiplatform.common.integration.xuanyuan.XuanYuanWebClient;
+import com.jakt.aiplatform.common.util.enums.ThreadPoolEnum;
 import com.jakt.aiplatform.common.util.tools.MirrorFileUtil;
+import com.jakt.aiplatform.common.util.tools.ThreadPoolUtil;
 import com.jakt.aiplatform.core.model.domain.MirrorImageResult;
 import com.jakt.aiplatform.core.model.domain.MirrorSearchResponse;
 import com.jakt.aiplatform.common.util.enums.LogFileEnum;
@@ -16,9 +18,15 @@ import com.jakt.aiplatform.core.service.AiMirrorSearchService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * 镜像搜索领域服务实现。
@@ -32,16 +40,35 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
     /** 目标结果数量（候选厂商数，每厂商 1 个镜像）。 */
     private static final int TARGET_RESULTS = 5;
 
+    /** AI 版本匹配单次超时（秒），超时降级纯代码匹配。 */
+    private static final int AI_TIMEOUT_SECONDS = 5;
+
+    /** 候选仓库并发探测数量 = 需要结果数 × 本系数（避免把候选池全部拉去探测）。 */
+    private static final int PROBE_FACTOR = 2;
+
+    /** 单个候选仓库探测结果等待超时（秒），避免个别仓库卡死整次搜索。 */
+    private static final int PROBE_TIMEOUT_SECONDS = 15;
+
+    /** AI 版本匹配缓存上限，超限整体清空（按 repo+期望版本维度，量级很小）。 */
+    private static final int AI_TAG_CACHE_MAX = 500;
+
     private static final String SCENE = "MIRROR_ACCELERATOR";
 
     private final XuanYuanWebClient xuanYuanWebClient;
 
     private final AiCapabilityService aiCapabilityService;
 
+    private final ThreadPoolUtil threadPoolUtil;
+
+    /** AI 版本匹配结果缓存：repo|expectTag -> 命中 tag（空串表示无匹配，避免重复调用）。 */
+    private final Map<String, String> aiTagCache = new ConcurrentHashMap<>();
+
     public AiMirrorSearchServiceImpl(XuanYuanWebClient xuanYuanWebClient,
-                                     AiCapabilityService aiCapabilityService) {
+                                     AiCapabilityService aiCapabilityService,
+                                     ThreadPoolUtil threadPoolUtil) {
         this.xuanYuanWebClient = xuanYuanWebClient;
         this.aiCapabilityService = aiCapabilityService;
+        this.threadPoolUtil = threadPoolUtil;
     }
 
     @Override
@@ -76,16 +103,30 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
         repos.removeIf(existingRepos::contains);
         logPhase("官网搜索", phaseStart, "按下载量候选池=%s", repos.size());
 
-        // 4. 按下载量顺序逐仓库取第一个满足版本+架构的 tag，凑够 needVendors 个
+        // 4. 并发探测候选仓库（最多 needVendors × PROBE_FACTOR 个），按下载量顺序取前 needVendors 个结果
         phaseStart = System.currentTimeMillis();
         List<MirrorImageResult> newResults = new ArrayList<>();
-        for (String repo : repos) {
-            if (newResults.size() >= needVendors) {
-                break;
+        if (needVendors > 0 && !repos.isEmpty()) {
+            List<String> candidates = repos.subList(0, Math.min(repos.size(), needVendors * PROBE_FACTOR));
+            List<CompletableFuture<MirrorImageResult>> futures = new ArrayList<>();
+            for (String repo : candidates) {
+                futures.add(CompletableFuture.supplyAsync(
+                        () -> buildResultFromWeb(repo, tag, resolvedArch),
+                        threadPoolUtil.getExecutor(ThreadPoolEnum.MIRROR_SEARCH)));
             }
-            MirrorImageResult result = buildResultFromWeb(repo, tag, resolvedArch);
-            if (result != null) {
-                newResults.add(result);
+            for (CompletableFuture<MirrorImageResult> future : futures) {
+                if (newResults.size() >= needVendors) {
+                    break;
+                }
+                try {
+                    MirrorImageResult result = future.get(PROBE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                    if (result != null) {
+                        newResults.add(result);
+                    }
+                } catch (Exception e) {
+                    LoggerUtil.warn(LogFileEnum.COMMON_ERROR,
+                            "【镜像加速器】【搜索】仓库探测异常: {}", e.getMessage());
+                }
             }
         }
         logPhase("版本+架构匹配", phaseStart, "新增结果数=%s", newResults.size());
@@ -163,6 +204,17 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
             tagNames.add(tagName);
         }
 
+        // 精确版本优先：等值或主版本前缀（11 / 11.0.32 / 11-jdk）命中直接返回，跳过 AI
+        String directTag = findDirectVersionTag(tagNames, expectTag);
+        if (directTag != null) {
+            MirrorImageResult result = buildWithTag(repo, directTag, userArch, tags, namespace);
+            if (result != null) {
+                LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
+                        "【镜像加速器】【搜索】精确版本命中，跳过 AI: {}:{}", repo, directTag);
+                return result;
+            }
+        }
+
         // AI 版本匹配优先
         String aiTag = aiMatchVersion(repo, expectTag, tagNames);
         if (StrUtil.isNotBlank(aiTag)) {
@@ -172,7 +224,8 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
             }
         }
 
-        // AI 不可用或所选 tag 架构不匹配时：兜底取第一个满足架构的 tag
+        // AI 不可用或所选 tag 架构不匹配时：兜底按版本匹配度（等值 > 主版本前缀 > 其它）取第一个满足架构的 tag
+        tagNames.sort(Comparator.comparingInt((String t) -> versionScore(t, expectTag)).reversed());
         for (String tag : tagNames) {
             MirrorImageResult result = buildWithTag(repo, tag, userArch, tags, namespace);
             if (result != null) {
@@ -190,26 +243,102 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
      * AI 版本匹配：把第一页 tag 名列表交给 IMAGE_VERSION_MATCH，返回最符合期望版本的 tag。
      */
     private String aiMatchVersion(String repo, String expectTag, List<String> tagNames) {
+        String cacheKey = repo + "|" + expectTag;
+        if (aiTagCache.containsKey(cacheKey)) {
+            String cached = aiTagCache.get(cacheKey);
+            return StrUtil.isBlank(cached) ? null : cached;
+        }
+        String picked = null;
         try {
-            String raw = aiCapabilityService.invoke(SCENE, "IMAGE_VERSION_MATCH",
-                    "基础镜像名: " + repo + "\n用户期望版本: " + expectTag + "\ntag列表: " + String.join(",", tagNames));
+            CompletableFuture<String> future = CompletableFuture.supplyAsync(
+                    () -> invokeVersionMatch(repo, expectTag, tagNames),
+                    threadPoolUtil.getExecutor(ThreadPoolEnum.MIRROR_SEARCH));
+            String raw;
+            try {
+                raw = future.get(AI_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            } catch (TimeoutException te) {
+                LoggerUtil.warn(LogFileEnum.BIZ_SERVICE,
+                        "【镜像加速器】【AI】版本匹配超时(>{}s)，降级纯代码匹配: repo={}, 期望={}",
+                        AI_TIMEOUT_SECONDS, repo, expectTag);
+                aiTagCache.put(cacheKey, "");
+                return null;
+            }
             JSONObject json = parseAiJson(raw);
             JSONArray matchArray = json == null ? null : json.getJSONArray("matches");
             if (matchArray != null && !matchArray.isEmpty()) {
                 String tag = matchArray.getJSONObject(0).getString("tag");
-                if (StrUtil.isNotBlank(tag) && tagNames.contains(tag)) {
-                    return tag;
+                if (isValidAiTag(tag, expectTag, tagNames)) {
+                    picked = tag;
                 }
             }
-            String fallback = json == null ? null : json.getString("fallback");
-            if (StrUtil.isNotBlank(fallback) && tagNames.contains(fallback)) {
-                return fallback;
+            if (picked == null) {
+                String fallback = json == null ? null : json.getString("fallback");
+                if (isValidAiTag(fallback, expectTag, tagNames)) {
+                    picked = fallback;
+                }
             }
         } catch (Exception e) {
-            LoggerUtil.error(LogFileEnum.COMMON_ERROR,
-                    "【镜像加速器】【AI】版本匹配解析失败: repo={}, 期望={}", repo, expectTag);
+            LoggerUtil.error(LogFileEnum.COMMON_ERROR, e,
+                    "【镜像加速器】【AI】版本匹配解析失败: repo={}, 期望={}, 异常={}", repo, expectTag, e.getMessage());
         }
-        return null;
+        if (aiTagCache.size() >= AI_TAG_CACHE_MAX) {
+            aiTagCache.clear();
+        }
+        aiTagCache.put(cacheKey, picked == null ? "" : picked);
+        return picked;
+    }
+
+    /** 单独调用 AI 能力，供超时 Future 包装（异常会随 Future 抛出）。 */
+    private String invokeVersionMatch(String repo, String expectTag, List<String> tagNames) {
+        return aiCapabilityService.invoke(SCENE, "IMAGE_VERSION_MATCH",
+                "基础镜像名: " + repo + "\n用户期望版本: " + expectTag + "\ntag列表: " + String.join(",", tagNames));
+    }
+
+    /**
+     * AI 返回的 tag 必须真实存在于列表，且等值或以期望版本主版本开头
+     * （拒绝 27-ea-11 匹配 11 这类"子串误判"）。
+     */
+    private boolean isValidAiTag(String tag, String expectTag, List<String> tagNames) {
+        if (StrUtil.isBlank(tag) || !tagNames.contains(tag)) {
+            return false;
+        }
+        if (StrUtil.isBlank(expectTag) || "latest".equals(expectTag)) {
+            return true;
+        }
+        return versionScore(tag, expectTag) > 0;
+    }
+
+    /**
+     * 直接版本命中：tag 等值期望版本，或以期望版本+"."/"-" 开头（11 / 11.0.32 / 11-jdk）。
+     */
+    private String findDirectVersionTag(List<String> tagNames, String expectTag) {
+        if (StrUtil.isBlank(expectTag)) {
+            return null;
+        }
+        String prefixHit = null;
+        for (String tag : tagNames) {
+            if (tag.equals(expectTag)) {
+                return tag;
+            }
+            if (prefixHit == null && versionScore(tag, expectTag) > 0) {
+                prefixHit = tag;
+            }
+        }
+        return prefixHit;
+    }
+
+    /** 版本匹配度：等值 2，主版本前缀（11. / 11-）1，其它 0。 */
+    private int versionScore(String tag, String expectTag) {
+        if (StrUtil.isBlank(expectTag)) {
+            return 0;
+        }
+        if (tag.equals(expectTag)) {
+            return 2;
+        }
+        if (tag.startsWith(expectTag + ".") || tag.startsWith(expectTag + "-")) {
+            return 1;
+        }
+        return 0;
     }
 
     /**

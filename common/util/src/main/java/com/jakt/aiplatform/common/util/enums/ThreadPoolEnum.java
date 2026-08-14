@@ -12,7 +12,10 @@ public enum ThreadPoolEnum {
     ASYNC_THREAD_POOL("asyncThreadPool"),
 
     /** 镜像下载任务线程池。 */
-    MIRROR_DOWNLOAD("mirrorDownloadThreadPool");
+    MIRROR_DOWNLOAD("mirrorDownloadThreadPool"),
+
+    /** 镜像搜索并发探测线程池。 */
+    MIRROR_SEARCH("mirrorSearchThreadPool");
 
     private final String beanName;
 
