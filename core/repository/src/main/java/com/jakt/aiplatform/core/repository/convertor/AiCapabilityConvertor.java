@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.repository.convertor;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.dal.dataobject.AiCapabilityDO;
 import com.jakt.aiplatform.core.model.domain.AiCapability;
 import com.jakt.aiplatform.core.model.enums.BaseEnum;
@@ -56,7 +57,7 @@ public final class AiCapabilityConvertor {
         target.setCapabilityName(source.getCapabilityName());
         target.setDescription(source.getDescription());
         target.setSkillRules(source.getSkillRules());
-        target.setStatus(source.getStatus() == null ? null : source.getStatus().getCode());
+        target.setStatus(ObjectUtil.isNull(source.getStatus()) ? null : source.getStatus().getCode());
         target.setRemark(source.getRemark());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());

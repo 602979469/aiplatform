@@ -8,6 +8,9 @@ public final class AiPlatformConstant {
     /** 空字符串。 */
     public static final String EMPTY_STRING = "";
 
+    /** 默认会话名称（AI 对话新建会话时使用）。 */
+    public static final String DEFAULT_SESSION_NAME = "新会话";
+
     /** 封禁默认时长（秒）。 */
     public static final long DEFAULT_DISABLE_SECONDS = 1800L;
 

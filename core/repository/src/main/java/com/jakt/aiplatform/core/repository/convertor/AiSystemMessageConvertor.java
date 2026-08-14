@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.repository.convertor;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.dal.dataobject.AiSystemMessageDO;
 import com.jakt.aiplatform.core.model.domain.AiSystemMessage;
 import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
@@ -50,9 +51,9 @@ public final class AiSystemMessageConvertor {
         AiSystemMessageDO target = new AiSystemMessageDO();
         target.setMessageId(source.getMessageId());
         target.setSessionId(source.getSessionId());
-        target.setRole(source.getRole() == null ? null : source.getRole().getCode());
+        target.setRole(ObjectUtil.isNull(source.getRole()) ? null : source.getRole().getCode());
         target.setContent(source.getContent());
-        target.setStatus(source.getStatus() == null ? null : source.getStatus().getCode());
+        target.setStatus(ObjectUtil.isNull(source.getStatus()) ? null : source.getStatus().getCode());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
         return target;

@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.repository.convertor;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.dal.dataobject.AiSystemSessionDO;
 import com.jakt.aiplatform.core.model.domain.AiSystemSession;
 import com.jakt.aiplatform.core.model.enums.BaseEnum;
@@ -54,7 +55,7 @@ public final class AiSystemSessionConvertor {
         target.setSceneCode(source.getSceneCode());
         target.setCapabilityCode(source.getCapabilityCode());
         target.setSessionName(source.getSessionName());
-        target.setStatus(source.getStatus() == null ? null : source.getStatus().getCode());
+        target.setStatus(ObjectUtil.isNull(source.getStatus()) ? null : source.getStatus().getCode());
         target.setRemark(source.getRemark());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());

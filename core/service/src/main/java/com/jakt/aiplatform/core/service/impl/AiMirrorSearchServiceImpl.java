@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.core.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
@@ -15,9 +17,11 @@ import com.jakt.aiplatform.common.util.enums.LogFileEnum;
 import com.jakt.aiplatform.common.util.tools.LoggerUtil;
 import com.jakt.aiplatform.core.service.AiCapabilityService;
 import com.jakt.aiplatform.core.service.AiMirrorSearchService;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -31,8 +35,12 @@ import java.util.concurrent.TimeoutException;
 /**
  * 镜像搜索领域服务实现。
  *
- * <p>流程：本地解析名称/版本 → 本地文件检查（已有文件少查厂商）→ 官网搜索下载量最高的仓库 →
- * 逐仓库取第一个满足架构的 tag。版本号匹配由 AI（IMAGE_VERSION_MATCH）完成，最多返回 5 个候选（每厂商 1 个）。
+ * <p>整体流程见 {@link #search(String, String, String, String)}：
+ * 解析名称/版本 → 本地已下载文件检查（已有文件少查厂商）→ 官网按下载量搜候选仓库池 →
+ * 并发探测每个仓库的 tag 与架构 → 合并本地与新增结果，最多返回 5 个候选（每厂商 1 个）。
+ *
+ * <p>单个仓库的 tag 匹配按「精确版本 → AI（IMAGE_VERSION_MATCH）→ 纯代码兜底」三层进行，
+ * 每层选出的 tag 都会校验客户端架构，AI 超时或不可用时自动降级。
  */
 @Service
 public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
@@ -40,8 +48,8 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
     /** 目标结果数量（候选厂商数，每厂商 1 个镜像）。 */
     private static final int TARGET_RESULTS = 5;
 
-    /** AI 版本匹配单次超时（秒），超时降级纯代码匹配。 */
-    private static final int AI_TIMEOUT_SECONDS = 5;
+    /** 官网按下载量取的候选仓库池上限。 */
+    private static final int CANDIDATE_POOL_SIZE = 30;
 
     /** 候选仓库并发探测数量 = 需要结果数 × 本系数（避免把候选池全部拉去探测）。 */
     private static final int PROBE_FACTOR = 2;
@@ -49,10 +57,26 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
     /** 单个候选仓库探测结果等待超时（秒），避免个别仓库卡死整次搜索。 */
     private static final int PROBE_TIMEOUT_SECONDS = 15;
 
+    /** AI 版本匹配单次超时（秒），超时降级纯代码匹配。 */
+    private static final int AI_TIMEOUT_SECONDS = 5;
+
     /** AI 版本匹配缓存上限，超限整体清空（按 repo+期望版本维度，量级很小）。 */
     private static final int AI_TAG_CACHE_MAX = 500;
 
+    /** 客户端未指定架构时的默认架构。 */
+    private static final String DEFAULT_ARCH = "amd64";
+
+    /** 镜像未显式写版本时的默认版本。 */
+    private static final String DEFAULT_TAG = "latest";
+
+    /** AI 版本匹配无结果的缓存哨兵值：空串表示「已匹配过、无结果」，与未缓存区分开。 */
+    private static final String AI_NO_MATCH = "";
+
+    /** 镜像加速器场景标识。 */
     private static final String SCENE = "MIRROR_ACCELERATOR";
+
+    /** 版本匹配 AI 能力名。 */
+    private static final String CAPABILITY_IMAGE_VERSION_MATCH = "IMAGE_VERSION_MATCH";
 
     private final XuanYuanWebClient xuanYuanWebClient;
 
@@ -74,79 +98,125 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
     @Override
     public MirrorSearchResponse search(String imageName, String os, String arch, String userAgent) {
         long totalStart = System.currentTimeMillis();
-        String resolvedOs = StrUtil.isNotBlank(os) ? os : detectOs(userAgent);
-        String resolvedArch = StrUtil.isNotBlank(arch) ? arch : "amd64";
+        String resolvedOs = resolveOs(os, userAgent);
+        String resolvedArch = resolveArch(arch);
 
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】开始搜索: 输入={}, 客户端={}/{}",
                 imageName, resolvedOs, resolvedArch);
 
-        // 1. 本地解析名称与版本（如 mysql:8 -> mysql / 8）
-        long phaseStart = System.currentTimeMillis();
-        String[] parts = splitImageName(imageName);
-        String name = parts[0];
-        String tag = parts[1];
-        logPhase("名称解析", phaseStart, "%s -> name=%s, tag=%s", imageName, name, tag);
+        // 1. 解析镜像名称与版本（如 mysql:8 -> mysql / 8）
+        String[] nameAndTag = parseImageName(imageName);
+        String imageBaseName = nameAndTag[0];
+        String expectTag = nameAndTag[1];
 
         // 2. 本地已下载文件检查：已有几个就少查几个厂商
-        phaseStart = System.currentTimeMillis();
-        List<MirrorImageResult> existingResults = findExistingResults(name, tag);
+        List<MirrorImageResult> existingResults = findExistingResults(imageBaseName, expectTag);
         int needVendors = Math.max(0, TARGET_RESULTS - existingResults.size());
-        logPhase("本地文件检查", phaseStart, "已存在=%s, 还需查询厂商数=%s", existingResults.size(), needVendors);
 
-        // 3. 官网搜索：按下载量取候选仓库池（最多 30 个，便于往下顺延凑够厂商数）
-        phaseStart = System.currentTimeMillis();
-        List<String> repos = needVendors == 0 ? new ArrayList<>() : searchReposByPulls(name, 30);
+        // 3. 官网按下载量搜候选仓库池，并剔除本地已下载的厂商
+        List<String> candidateRepos = needVendors == 0
+                ? Collections.emptyList()
+                : searchCandidateRepos(imageBaseName, existingResults);
+
+        // 4. 并发探测候选仓库，按下载量顺序收满 needVendors 个结果
+        List<MirrorImageResult> newResults = probeCandidateRepos(candidateRepos, expectTag, resolvedArch, needVendors);
+
+        // 5. 合并本地与新增结果，最多 TARGET_RESULTS 个
+        List<MirrorImageResult> results = mergeResults(existingResults, newResults);
+
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】完成: 共 {} 个结果, 总耗时={}ms",
+                results.size(), System.currentTimeMillis() - totalStart);
+        return buildResponse(resolvedOs, resolvedArch, results);
+    }
+
+    /**
+     * 确定搜索目标操作系统：入参为空时从 User-Agent 推断。
+     *
+     * @param os        客户端显式传入的操作系统
+     * @param userAgent 客户端 User-Agent，用于兜底推断
+     * @return 解析后的操作系统
+     */
+    private String resolveOs(String os, String userAgent) {
+        return StrUtil.isNotBlank(os) ? os : detectOs(userAgent);
+    }
+
+    /**
+     * 确定搜索目标架构：入参为空时使用默认架构 {@link #DEFAULT_ARCH}。
+     *
+     * @param arch 客户端显式传入的架构
+     * @return 解析后的架构
+     */
+    private String resolveArch(String arch) {
+        return StrUtil.isNotBlank(arch) ? arch : DEFAULT_ARCH;
+    }
+
+    /**
+     * 解析镜像名称与版本（阶段 1）。
+     *
+     * <p>{@code mysql:8} 解析为 {@code ["mysql", "8"]}；未显式写版本时默认 {@link #DEFAULT_TAG}。
+     * 版本分隔符取最后一个冒号，且要求其后不含斜杠，避免把仓库地址中的端口误判为版本。
+     *
+     * @param input 用户输入的镜像名（可能带版本）
+     * @return [0] 仓库名，[1] 期望版本
+     */
+    private String[] parseImageName(String input) {
+        long phaseStart = System.currentTimeMillis();
+        String name = input;
+        String tag = DEFAULT_TAG;
+        int idx = input.lastIndexOf(':');
+        if (idx > 0 && !input.substring(idx + 1).contains("/")) {
+            name = input.substring(0, idx);
+            tag = input.substring(idx + 1);
+        }
+        logPhase("名称解析", phaseStart, "%s -> name=%s, tag=%s", input, name, tag);
+        return new String[] { name, tag };
+    }
+
+    /**
+     * 本地已下载文件转搜索结果（阶段 2），厂商用仓库命名空间，架构未知显示多架构。
+     *
+     * @param baseName 镜像名（不含版本）
+     * @param tag      期望版本
+     * @return 本地已下载镜像对应的搜索结果
+     */
+    private List<MirrorImageResult> findExistingResults(String baseName, String tag) {
+        long phaseStart = System.currentTimeMillis();
+        List<MirrorImageResult> results = new ArrayList<>();
+        for (String[] repoTag : MirrorFileUtil.findExistingImages(baseName, tag)) {
+            String repo = repoTag[0];
+            String fileTag = repoTag[1];
+            MirrorImageResult result = new MirrorImageResult();
+            result.setRepo(repo);
+            result.setTag(fileTag);
+            result.setFullName(repo + ":" + fileTag);
+            result.setVendor(repo.contains("/") ? repo.substring(0, repo.indexOf('/')) : "其他");
+            result.setArch("多架构");
+            result.setLocalFileName(MirrorFileUtil.buildFileName(repo, fileTag));
+            result.setLocalFileExists(true);
+            results.add(result);
+        }
+        logPhase("本地文件检查", phaseStart, "已存在=%s, 还需查询厂商数=%s",
+                results.size(), Math.max(0, TARGET_RESULTS - results.size()));
+        return results;
+    }
+
+    /**
+     * 官网按下载量搜索候选仓库池，并剔除本地已下载镜像对应的仓库（阶段 3）。
+     *
+     * @param name            镜像名（不含版本）
+     * @param existingResults 本地已下载镜像结果，用于排除已覆盖的厂商
+     * @return 按下载量从大到小排序的候选仓库，最多 {@link #CANDIDATE_POOL_SIZE} 个
+     */
+    private List<String> searchCandidateRepos(String name, List<MirrorImageResult> existingResults) {
+        long phaseStart = System.currentTimeMillis();
+        List<String> repos = searchReposByPulls(name, CANDIDATE_POOL_SIZE);
         Set<String> existingRepos = new HashSet<>();
         for (MirrorImageResult result : existingResults) {
             existingRepos.add(result.getRepo());
         }
         repos.removeIf(existingRepos::contains);
         logPhase("官网搜索", phaseStart, "按下载量候选池=%s", repos.size());
-
-        // 4. 并发探测候选仓库（最多 needVendors × PROBE_FACTOR 个），按下载量顺序取前 needVendors 个结果
-        phaseStart = System.currentTimeMillis();
-        List<MirrorImageResult> newResults = new ArrayList<>();
-        if (needVendors > 0 && !repos.isEmpty()) {
-            List<String> candidates = repos.subList(0, Math.min(repos.size(), needVendors * PROBE_FACTOR));
-            List<CompletableFuture<MirrorImageResult>> futures = new ArrayList<>();
-            for (String repo : candidates) {
-                futures.add(CompletableFuture.supplyAsync(
-                        () -> buildResultFromWeb(repo, tag, resolvedArch),
-                        threadPoolUtil.getExecutor(ThreadPoolEnum.MIRROR_SEARCH)));
-            }
-            for (CompletableFuture<MirrorImageResult> future : futures) {
-                if (newResults.size() >= needVendors) {
-                    break;
-                }
-                try {
-                    MirrorImageResult result = future.get(PROBE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-                    if (result != null) {
-                        newResults.add(result);
-                    }
-                } catch (Exception e) {
-                    LoggerUtil.warn(LogFileEnum.COMMON_ERROR,
-                            "【镜像加速器】【搜索】仓库探测异常: {}", e.getMessage());
-                }
-            }
-        }
-        logPhase("版本+架构匹配", phaseStart, "新增结果数=%s", newResults.size());
-
-        // 5. 合并：本地已有 + 新增，最多 TARGET_RESULTS 个
-        List<MirrorImageResult> results = new ArrayList<>(existingResults);
-        for (MirrorImageResult result : newResults) {
-            if (results.size() >= TARGET_RESULTS) {
-                break;
-            }
-            results.add(result);
-        }
-
-        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】完成: 共 {} 个结果, 总耗时={}ms",
-                results.size(), System.currentTimeMillis() - totalStart);
-        MirrorSearchResponse response = new MirrorSearchResponse();
-        response.setOs(resolvedOs);
-        response.setArch(resolvedArch);
-        response.setResults(results);
-        return response;
+        return repos;
     }
 
     /**
@@ -172,8 +242,87 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
     }
 
     /**
-     * 查询仓库 tags 第一页，AI 版本匹配选出合适 tag 后校验架构；AI 失败时兜底取第一个满足架构的 tag。
-     * 单个仓库接口失败时跳过该仓库，不影响整体搜索。
+     * 并发探测候选仓库，按下载量顺序收满 {@code needVendors} 个结果（阶段 4）。
+     *
+     * <p>候选池取 {@code needVendors × PROBE_FACTOR} 个并发探测，避免个别仓库查不到合适版本时结果不足；
+     * 单个仓库最多等待 {@link #PROBE_TIMEOUT_SECONDS} 秒，失败或超时跳过该仓库。
+     *
+     * @param candidateRepos 候选仓库列表（按下载量排序）
+     * @param expectTag      用户期望版本
+     * @param userArch       客户端架构
+     * @param needVendors    还需要的结果数
+     * @return 已选中的镜像结果，数量不超过 needVendors
+     */
+    private List<MirrorImageResult> probeCandidateRepos(List<String> candidateRepos, String expectTag,
+                                                        String userArch, int needVendors) {
+        long phaseStart = System.currentTimeMillis();
+        List<MirrorImageResult> newResults = new ArrayList<>();
+        if (needVendors > 0 && CollUtil.isNotEmpty(candidateRepos)) {
+            List<String> candidates = candidateRepos.subList(0,
+                    Math.min(candidateRepos.size(), needVendors * PROBE_FACTOR));
+            ThreadPoolTaskExecutor executor = threadPoolUtil.getExecutor(ThreadPoolEnum.MIRROR_SEARCH);
+            List<CompletableFuture<MirrorImageResult>> futures = new ArrayList<>();
+            for (String repo : candidates) {
+                futures.add(CompletableFuture.supplyAsync(
+                        () -> buildResultFromWeb(repo, expectTag, userArch), executor));
+            }
+            for (CompletableFuture<MirrorImageResult> future : futures) {
+                if (newResults.size() >= needVendors) {
+                    break;
+                }
+                try {
+                    MirrorImageResult result = future.get(PROBE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                    if (ObjectUtil.isNotNull(result)) {
+                        newResults.add(result);
+                    }
+                } catch (Exception e) {
+                    LoggerUtil.warn(LogFileEnum.COMMON_ERROR,
+                            "【镜像加速器】【搜索】仓库探测异常: {}", e.getMessage());
+                }
+            }
+        }
+        logPhase("版本+架构匹配", phaseStart, "新增结果数=%s", newResults.size());
+        return newResults;
+    }
+
+    /**
+     * 合并本地已下载与本次新增的镜像结果（阶段 5），本地结果优先，最多 {@link #TARGET_RESULTS} 个。
+     *
+     * @param existingResults 本地已下载的镜像结果
+     * @param newResults      本次并发探测新增的镜像结果
+     * @return 合并后的结果列表
+     */
+    private List<MirrorImageResult> mergeResults(List<MirrorImageResult> existingResults,
+                                                 List<MirrorImageResult> newResults) {
+        List<MirrorImageResult> results = new ArrayList<>(existingResults);
+        for (MirrorImageResult result : newResults) {
+            if (results.size() >= TARGET_RESULTS) {
+                break;
+            }
+            results.add(result);
+        }
+        return results;
+    }
+
+    /**
+     * 组装搜索响应：携带解析出的操作系统、架构与结果列表。
+     *
+     * @param os      解析后的操作系统
+     * @param arch    解析后的架构
+     * @param results 最终镜像结果列表
+     * @return 搜索响应
+     */
+    private MirrorSearchResponse buildResponse(String os, String arch, List<MirrorImageResult> results) {
+        MirrorSearchResponse response = new MirrorSearchResponse();
+        response.setOs(os);
+        response.setArch(arch);
+        response.setResults(results);
+        return response;
+    }
+
+    /**
+     * 查询仓库 tags 第一页，按「精确版本 → AI 匹配 → 纯代码兜底」选出满足架构的 tag。
+     * 单个仓库接口失败时返回 null 跳过该仓库，不影响整体搜索。
      */
     private MirrorImageResult buildResultFromWeb(String repo, String expectTag, String userArch) {
         int slash = repo.indexOf('/');
@@ -187,13 +336,57 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
                     repo, e.getMessage());
             return null;
         }
-        JSONArray tags = json == null ? null : json.getJSONArray("tags");
-        if (tags == null || tags.isEmpty()) {
+        JSONArray tags = ObjectUtil.isNull(json) ? null : json.getJSONArray("tags");
+        if (ObjectUtil.isNull(tags) || CollUtil.isEmpty(tags)) {
             LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【搜索】仓库无匹配版本: {}:{}", repo, expectTag);
             return null;
         }
 
         // 去重 tag 名（官网 tags 接口同一 tag 名会重复返回多条）
+        List<String> tagNames = collectTagNames(tags);
+
+        // 第一层：精确版本命中（11 / 11.0.32 / 11-jdk），直接采用并跳过 AI
+        String directTag = findDirectVersionTag(tagNames, expectTag);
+        if (StrUtil.isNotBlank(directTag)) {
+            MirrorImageResult result = buildWithTag(repo, directTag, userArch, tags, namespace);
+            if (ObjectUtil.isNotNull(result)) {
+                LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
+                        "【镜像加速器】【搜索】精确版本命中，跳过 AI: {}:{}", repo, directTag);
+                return result;
+            }
+        }
+
+        // 第二层：AI 版本匹配
+        String aiTag = aiMatchVersion(repo, expectTag, tagNames);
+        if (StrUtil.isNotBlank(aiTag)) {
+            MirrorImageResult result = buildWithTag(repo, aiTag, userArch, tags, namespace);
+            if (ObjectUtil.isNotNull(result)) {
+                return result;
+            }
+        }
+
+        // 第三层：AI 不可用或所选 tag 架构不匹配时，按版本匹配度（等值 > 主版本前缀 > 其它）取第一个满足架构的 tag
+        tagNames.sort(Comparator.comparingInt((String t) -> versionScore(t, expectTag)).reversed());
+        for (String tag : tagNames) {
+            MirrorImageResult result = buildWithTag(repo, tag, userArch, tags, namespace);
+            if (ObjectUtil.isNotNull(result)) {
+                LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
+                        "【镜像加速器】【搜索】AI 未选用，纯代码兜底: {}:{} , 架构={}", repo, tag, result.getArch());
+                return result;
+            }
+        }
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
+                "【镜像加速器】【搜索】仓库无匹配架构镜像: {}:{} , 客户端架构={}", repo, expectTag, userArch);
+        return null;
+    }
+
+    /**
+     * 提取并去重 tag 名列表（官网 tags 接口同一 tag 名会重复返回多条）。
+     *
+     * @param tags 官网返回的 tags 数组
+     * @return 去重后的 tag 名列表
+     */
+    private List<String> collectTagNames(JSONArray tags) {
         List<String> tagNames = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         for (int i = 0; i < tags.size(); i++) {
@@ -203,40 +396,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
             }
             tagNames.add(tagName);
         }
-
-        // 精确版本优先：等值或主版本前缀（11 / 11.0.32 / 11-jdk）命中直接返回，跳过 AI
-        String directTag = findDirectVersionTag(tagNames, expectTag);
-        if (directTag != null) {
-            MirrorImageResult result = buildWithTag(repo, directTag, userArch, tags, namespace);
-            if (result != null) {
-                LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
-                        "【镜像加速器】【搜索】精确版本命中，跳过 AI: {}:{}", repo, directTag);
-                return result;
-            }
-        }
-
-        // AI 版本匹配优先
-        String aiTag = aiMatchVersion(repo, expectTag, tagNames);
-        if (StrUtil.isNotBlank(aiTag)) {
-            MirrorImageResult result = buildWithTag(repo, aiTag, userArch, tags, namespace);
-            if (result != null) {
-                return result;
-            }
-        }
-
-        // AI 不可用或所选 tag 架构不匹配时：兜底按版本匹配度（等值 > 主版本前缀 > 其它）取第一个满足架构的 tag
-        tagNames.sort(Comparator.comparingInt((String t) -> versionScore(t, expectTag)).reversed());
-        for (String tag : tagNames) {
-            MirrorImageResult result = buildWithTag(repo, tag, userArch, tags, namespace);
-            if (result != null) {
-                LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
-                        "【镜像加速器】【搜索】AI 未选用，纯代码兜底: {}:{} , 架构={}", repo, tag, result.getArch());
-                return result;
-            }
-        }
-        LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
-                "【镜像加速器】【搜索】仓库无匹配架构镜像: {}:{} , 客户端架构={}", repo, expectTag, userArch);
-        return null;
+        return tagNames;
     }
 
     /**
@@ -250,9 +410,9 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
         }
         String picked = null;
         try {
+            ThreadPoolTaskExecutor executor = threadPoolUtil.getExecutor(ThreadPoolEnum.MIRROR_SEARCH);
             CompletableFuture<String> future = CompletableFuture.supplyAsync(
-                    () -> invokeVersionMatch(repo, expectTag, tagNames),
-                    threadPoolUtil.getExecutor(ThreadPoolEnum.MIRROR_SEARCH));
+                    () -> invokeVersionMatch(repo, expectTag, tagNames), executor);
             String raw;
             try {
                 raw = future.get(AI_TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -260,19 +420,19 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
                 LoggerUtil.warn(LogFileEnum.BIZ_SERVICE,
                         "【镜像加速器】【AI】版本匹配超时(>{}s)，降级纯代码匹配: repo={}, 期望={}",
                         AI_TIMEOUT_SECONDS, repo, expectTag);
-                aiTagCache.put(cacheKey, "");
+                aiTagCache.put(cacheKey, AI_NO_MATCH);
                 return null;
             }
             JSONObject json = parseAiJson(raw);
-            JSONArray matchArray = json == null ? null : json.getJSONArray("matches");
-            if (matchArray != null && !matchArray.isEmpty()) {
+            JSONArray matchArray = ObjectUtil.isNull(json) ? null : json.getJSONArray("matches");
+            if (ObjectUtil.isNotNull(matchArray) && CollUtil.isNotEmpty(matchArray)) {
                 String tag = matchArray.getJSONObject(0).getString("tag");
                 if (isValidAiTag(tag, expectTag, tagNames)) {
                     picked = tag;
                 }
             }
-            if (picked == null) {
-                String fallback = json == null ? null : json.getString("fallback");
+            if (ObjectUtil.isNull(picked)) {
+                String fallback = ObjectUtil.isNull(json) ? null : json.getString("fallback");
                 if (isValidAiTag(fallback, expectTag, tagNames)) {
                     picked = fallback;
                 }
@@ -284,13 +444,13 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
         if (aiTagCache.size() >= AI_TAG_CACHE_MAX) {
             aiTagCache.clear();
         }
-        aiTagCache.put(cacheKey, picked == null ? "" : picked);
+        aiTagCache.put(cacheKey, ObjectUtil.isNull(picked) ? AI_NO_MATCH : picked);
         return picked;
     }
 
     /** 单独调用 AI 能力，供超时 Future 包装（异常会随 Future 抛出）。 */
     private String invokeVersionMatch(String repo, String expectTag, List<String> tagNames) {
-        return aiCapabilityService.invoke(SCENE, "IMAGE_VERSION_MATCH",
+        return aiCapabilityService.invoke(SCENE, CAPABILITY_IMAGE_VERSION_MATCH,
                 "基础镜像名: " + repo + "\n用户期望版本: " + expectTag + "\ntag列表: " + String.join(",", tagNames));
     }
 
@@ -302,7 +462,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
         if (StrUtil.isBlank(tag) || !tagNames.contains(tag)) {
             return false;
         }
-        if (StrUtil.isBlank(expectTag) || "latest".equals(expectTag)) {
+        if (StrUtil.isBlank(expectTag) || DEFAULT_TAG.equals(expectTag)) {
             return true;
         }
         return versionScore(tag, expectTag) > 0;
@@ -320,7 +480,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
             if (tag.equals(expectTag)) {
                 return tag;
             }
-            if (prefixHit == null && versionScore(tag, expectTag) > 0) {
+            if (ObjectUtil.isNull(prefixHit) && versionScore(tag, expectTag) > 0) {
                 prefixHit = tag;
             }
         }
@@ -351,7 +511,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
                 continue;
             }
             String matchedArch = matchArch(tagObj.getJSONArray("images"), userArch);
-            if (matchedArch == null) {
+            if (ObjectUtil.isNull(matchedArch)) {
                 return null;
             }
             MirrorImageResult result = new MirrorImageResult();
@@ -373,7 +533,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
      * 解析 AI 返回的 JSON（兼容代码块包裹）。
      */
     private JSONObject parseAiJson(String text) {
-        String content = text == null ? "" : text.trim();
+        String content = ObjectUtil.isNull(text) ? "" : text.trim();
         if (content.startsWith("```")) {
             content = content.replaceFirst("^```[a-zA-Z]*\\s*", "").replaceAll("```\\s*$", "").trim();
         }
@@ -384,7 +544,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
      * 架构匹配：优先 linux 系统，同架构下再退而求其次。
      */
     private String matchArch(JSONArray images, String userArch) {
-        if (images == null) {
+        if (ObjectUtil.isNull(images)) {
             return null;
         }
         String anyOs = null;
@@ -398,7 +558,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
             if ("linux".equals(os)) {
                 return arch;
             }
-            if (anyOs == null) {
+            if (ObjectUtil.isNull(anyOs)) {
                 anyOs = arch;
             }
         }
@@ -438,41 +598,6 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
         } catch (NumberFormatException e) {
             return 0L;
         }
-    }
-
-    /**
-     * 本地解析镜像名称与版本。
-     */
-    private String[] splitImageName(String input) {
-        String name = input;
-        String tag = "latest";
-        int idx = input.lastIndexOf(':');
-        if (idx > 0 && !input.substring(idx + 1).contains("/")) {
-            name = input.substring(0, idx);
-            tag = input.substring(idx + 1);
-        }
-        return new String[] { name, tag };
-    }
-
-    /**
-     * 本地已下载文件转搜索结果（厂商用仓库命名空间，架构未知显示多架构）。
-     */
-    private List<MirrorImageResult> findExistingResults(String baseName, String tag) {
-        List<MirrorImageResult> results = new ArrayList<>();
-        for (String[] repoTag : MirrorFileUtil.findExistingImages(baseName, tag)) {
-            String repo = repoTag[0];
-            String fileTag = repoTag[1];
-            MirrorImageResult result = new MirrorImageResult();
-            result.setRepo(repo);
-            result.setTag(fileTag);
-            result.setFullName(repo + ":" + fileTag);
-            result.setVendor(repo.contains("/") ? repo.substring(0, repo.indexOf('/')) : "其他");
-            result.setArch("多架构");
-            result.setLocalFileName(MirrorFileUtil.buildFileName(repo, fileTag));
-            result.setLocalFileExists(true);
-            results.add(result);
-        }
-        return results;
     }
 
     /**

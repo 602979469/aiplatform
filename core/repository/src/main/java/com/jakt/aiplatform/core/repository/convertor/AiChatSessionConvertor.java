@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.repository.convertor;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.dal.dataobject.AiChatSessionDO;
 import com.jakt.aiplatform.common.dal.query.AiChatSessionDalQuery;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
@@ -54,13 +55,19 @@ public final class AiChatSessionConvertor {
         target.setSessionName(source.getSessionName());
         target.setUserId(source.getUserId());
         target.setUserName(source.getUserName());
-        target.setStatus(source.getStatus() == null ? null : source.getStatus().getCode());
+        target.setStatus(ObjectUtil.isNull(source.getStatus()) ? null : source.getStatus().getCode());
         target.setRemark(source.getRemark());
         target.setCreateTime(source.getCreateTime());
         target.setUpdateTime(source.getUpdateTime());
         return target;
     }
 
+    /**
+     * 领域查询参数 → 数据层查询对象。
+     *
+     * @param source 领域查询参数；为空返回空查询对象
+     * @return 数据层查询对象
+     */
     public static AiChatSessionDalQuery toDalQuery(AiChatSessionQueryParam source) {
         AiChatSessionDalQuery target = new AiChatSessionDalQuery();
         if (source == null) {
@@ -72,7 +79,7 @@ public final class AiChatSessionConvertor {
         target.setSessionName(source.getSessionName());
         target.setUserId(source.getUserId());
         target.setUserName(source.getUserName());
-        target.setStatus(source.getStatus() == null ? null : source.getStatus().getCode());
+        target.setStatus(ObjectUtil.isNull(source.getStatus()) ? null : source.getStatus().getCode());
         target.setRemark(source.getRemark());
         target.setCreateTimeBegin(source.getCreateTimeBegin());
         target.setCreateTimeEnd(source.getCreateTimeEnd());

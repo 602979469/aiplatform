@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.integration.deepseek.DeepSeekClient;
 import com.jakt.aiplatform.common.integration.deepseek.model.DeepSeekChatMessage;
@@ -35,9 +36,13 @@ import java.util.Objects;
 @Service
 public class AiChatServiceImpl implements AiChatService {
 
-    private static final String DEFAULT_SESSION_NAME = "新会话";
-
     private static final String SYSTEM_PROMPT = "你是一个友好、专业的AI助手，请用简洁准确的中文回答用户的问题。";
+
+    /** 模拟模式：模拟失败（测试用，与 {@link AiChatProperties#getSimulation()} 对应）。 */
+    private static final String SIMULATION_FAIL = "fail";
+
+    /** 模拟模式：模拟超时（测试用，与 {@link AiChatProperties#getSimulation()} 对应）。 */
+    private static final String SIMULATION_TIMEOUT = "timeout";
 
     /** 最多携带的上下文消息条数（超出后只携带最近的消息）。 */
     private static final int MAX_CONTEXT_MESSAGES = 30;
@@ -83,9 +88,9 @@ public class AiChatServiceImpl implements AiChatService {
         // 用户消息：重试时复用失败消息，否则新增一条提问
         AiChatMessage userMessage;
         boolean reused = false;
-        if (messageId != null) {
+        if (ObjectUtil.isNotNull(messageId)) {
             userMessage = aiChatMessageService.getAiChatMessage(messageId);
-            AssertUtil.throwErrWhenTrue(userMessage == null
+            AssertUtil.throwErrWhenTrue(ObjectUtil.isNull(userMessage)
                             || !Objects.equals(session.getSessionId(), userMessage.getSessionId())
                             || userMessage.getRole() != ChatRoleEnum.USER,
                     ErrorCodeEnum.CHAT_MESSAGE_NOT_RETRYABLE, "待重试的消息不存在或无权访问");
@@ -103,12 +108,12 @@ public class AiChatServiceImpl implements AiChatService {
 
         // 模拟失败/超时（测试用，配置 ai.chat.simulation）
         String simulation = aiChatProperties.getSimulation();
-        if ("fail".equals(simulation) || "timeout".equals(simulation)) {
-            if ("timeout".equals(simulation)) {
+        if (SIMULATION_FAIL.equals(simulation) || SIMULATION_TIMEOUT.equals(simulation)) {
+            if (SIMULATION_TIMEOUT.equals(simulation)) {
                 sleepQuietly(aiChatProperties.getTimeoutSeconds() * 1000L);
             }
             return failResult(session, userMessage,
-                    "模拟" + ("timeout".equals(simulation) ? "超时" : "失败") + "：模型暂未响应，请点击重试");
+                    "模拟" + (SIMULATION_TIMEOUT.equals(simulation) ? "超时" : "失败") + "：模型暂未响应，请点击重试");
         }
 
         String reply;
@@ -136,7 +141,7 @@ public class AiChatServiceImpl implements AiChatService {
 
         // 首次对话时用问题重命名会话
         String sessionName = session.getSessionName();
-        if (StrUtil.isBlank(sessionName) || DEFAULT_SESSION_NAME.equals(sessionName)) {
+        if (StrUtil.isBlank(sessionName) || AiPlatformConstant.DEFAULT_SESSION_NAME.equals(sessionName)) {
             sessionName = truncate(content, 30);
             AiChatSession update = new AiChatSession();
             update.setSessionId(session.getSessionId());
@@ -170,16 +175,16 @@ public class AiChatServiceImpl implements AiChatService {
      * 校验会话归属，不存在时自动新建。
      */
     private AiChatSession resolveSession(Long sessionId, Long userId, String userName) {
-        if (sessionId == null) {
+        if (ObjectUtil.isNull(sessionId)) {
             AiChatSession session = new AiChatSession();
-            session.setSessionName(DEFAULT_SESSION_NAME);
+            session.setSessionName(AiPlatformConstant.DEFAULT_SESSION_NAME);
             session.setStatus(EnableStatusEnum.ENABLE);
             session.setUserId(userId);
             session.setUserName(userName);
             return aiChatSessionService.createAiChatSession(session);
         }
         AiChatSession session = aiChatSessionService.getAiChatSession(sessionId);
-        AssertUtil.throwErrWhenTrue(session == null || !Objects.equals(userId, session.getUserId()),
+        AssertUtil.throwErrWhenTrue(ObjectUtil.isNull(session) || !Objects.equals(userId, session.getUserId()),
                 ErrorCodeEnum.SESSION_ACCESS_DENIED, "会话不存在或无权访问");
         return session;
     }
@@ -210,7 +215,7 @@ public class AiChatServiceImpl implements AiChatService {
      * 截断字符串，用于会话命名。
      */
     private String truncate(String text, int maxLength) {
-        if (text == null) {
+        if (ObjectUtil.isNull(text)) {
             return AiPlatformConstant.EMPTY_STRING;
         }
         String oneLine = text.replaceAll("\\s+", " ").trim();
@@ -218,7 +223,7 @@ public class AiChatServiceImpl implements AiChatService {
     }
 
     /**
- * 静默休眠（忽略中断异常）。
+     * 静默休眠（忽略中断异常）。
      */
     private void sleepQuietly(long millis) {
         try {

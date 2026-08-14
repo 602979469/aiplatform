@@ -1,8 +1,10 @@
 package com.jakt.aiplatform.biz.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.biz.service.AiChatManager;
 import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.core.model.constant.AiPlatformConstant;
 import com.jakt.aiplatform.core.model.context.UserContext;
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
 import com.jakt.aiplatform.core.model.domain.AiChatResult;
@@ -26,8 +28,8 @@ import java.util.Objects;
 @Service
 public class AiChatManagerImpl implements AiChatManager {
 
-    /** 默认会话名称。 */
-    public static final String DEFAULT_SESSION_NAME = "新会话";
+    /** 默认会话名称（单点定义见 {@link AiPlatformConstant#DEFAULT_SESSION_NAME}）。 */
+    public static final String DEFAULT_SESSION_NAME = AiPlatformConstant.DEFAULT_SESSION_NAME;
 
     private final AiChatSessionService aiChatSessionService;
 
@@ -98,7 +100,7 @@ public class AiChatManagerImpl implements AiChatManager {
      */
     private AiChatSession checkOwner(Long sessionId) {
         AiChatSession session = aiChatSessionService.getAiChatSession(sessionId);
-        AssertUtil.throwErrWhenTrue(session == null
+        AssertUtil.throwErrWhenTrue(ObjectUtil.isNull(session)
                         || !Objects.equals(UserContext.getUserId(), session.getUserId()),
                 ErrorCodeEnum.SESSION_ACCESS_DENIED, "会话不存在或无权访问");
         return session;

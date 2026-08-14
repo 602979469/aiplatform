@@ -76,7 +76,7 @@ public class AiCapabilityServiceImpl implements AiCapabilityService {
     }
 
     /**
- * 插入一条会话消息。
+     * 插入一条会话消息。
      */
     private void insertMessage(Long sessionId, ChatRoleEnum role, String content) {
         AiSystemMessage message = new AiSystemMessage();

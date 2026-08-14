@@ -8,6 +8,8 @@ import com.jakt.aiplatform.common.integration.exception.AiIntegrationErrorCode;
 import com.jakt.aiplatform.common.integration.exception.AiIntegrationException;
 import com.jakt.aiplatform.common.util.enums.LogFileEnum;
 import com.jakt.aiplatform.common.util.tools.LoggerUtil;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -54,10 +56,10 @@ public class DeepSeekClient {
         body.put("model", properties.getModel());
         body.put("messages", messages);
         body.put("stream", false);
-        if (properties.getTemperature() != null) {
+        if (ObjectUtil.isNotNull(properties.getTemperature())) {
             body.put("temperature", properties.getTemperature());
         }
-        if (properties.getMaxTokens() != null) {
+        if (ObjectUtil.isNotNull(properties.getMaxTokens())) {
             body.put("max_tokens", properties.getMaxTokens());
         }
 
@@ -91,8 +93,8 @@ public class DeepSeekClient {
             throw new AiIntegrationException(AiIntegrationErrorCode.DEEPSEEK_API_ERROR, "AI 服务返回为空");
         }
         JSONObject result = JSON.parseObject(response);
-        JSONArray choices = result == null ? null : result.getJSONArray("choices");
-        if (choices == null || choices.isEmpty()) {
+        JSONArray choices = ObjectUtil.isNull(result) ? null : result.getJSONArray("choices");
+        if (ObjectUtil.isNull(choices) || CollUtil.isEmpty(choices)) {
             LoggerUtil.error(LogFileEnum.COMMON_ERROR, "DeepSeek 响应异常: {}", response);
             throw new AiIntegrationException(AiIntegrationErrorCode.DEEPSEEK_API_ERROR, "AI 服务返回异常，请稍后重试");
         }
