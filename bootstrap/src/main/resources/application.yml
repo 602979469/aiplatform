@@ -71,10 +71,6 @@ aiplatform:
     username: ${XUANYUAN_USERNAME:}
     password: ${XUANYUAN_PASSWORD:}
     api-timeout-seconds: 30
-  chat:
-    # 模拟模式：none 正常 / fail 模拟失败 / timeout 模拟超时（测试用）
-    simulation: none
-    timeout-seconds: 60
 
 logging:
   pattern:

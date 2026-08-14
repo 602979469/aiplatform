@@ -73,8 +73,6 @@ public final class AiChatSessionConvertor {
         if (source == null) {
             return target;
         }
-        target.setPageNum(source.getPageNum());
-        target.setPageSize(source.getPageSize());
         target.setSessionId(source.getSessionId());
         target.setSessionName(source.getSessionName());
         target.setUserId(source.getUserId());

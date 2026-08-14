@@ -9,6 +9,7 @@ import com.jakt.aiplatform.common.util.result.Result;
 import com.jakt.aiplatform.common.util.template.BizTemplate;
 import com.jakt.aiplatform.common.util.template.TransactionTemplate;
 import com.jakt.aiplatform.core.repository.AiChatSessionRepository;
+import com.jakt.aiplatform.core.service.AiChatMessageService;
 import com.jakt.aiplatform.core.service.AiChatSessionService;
 import org.springframework.stereotype.Service;
 
@@ -23,12 +24,17 @@ public class AiChatSessionServiceImpl implements AiChatSessionService {
     /** AI会话表仓储。 */
     private final AiChatSessionRepository aiChatSessionRepository;
 
+    /** AI会话消息服务：删会话时连带删消息（跨表多写由事务模板统一包裹）。 */
+    private final AiChatMessageService aiChatMessageService;
+
     /** 事务模板：删会话（连同消息）跨表多写统一走事务。 */
     private final TransactionTemplate transactionTemplate;
 
     public AiChatSessionServiceImpl(AiChatSessionRepository aiChatSessionRepository,
+                                    AiChatMessageService aiChatMessageService,
                                     TransactionTemplate transactionTemplate) {
         this.aiChatSessionRepository = aiChatSessionRepository;
+        this.aiChatMessageService = aiChatMessageService;
         this.transactionTemplate = transactionTemplate;
     }
 
@@ -46,7 +52,10 @@ public class AiChatSessionServiceImpl implements AiChatSessionService {
     @Override
     public void deleteAiChatSession(Long id) {
         Result<Void> result = BizTemplate.executeWithoutResult(transactionTemplate,
-                () -> aiChatSessionRepository.deleteWithMessages(id));
+                () -> {
+                    aiChatMessageService.deleteBySessionId(id);
+                    aiChatSessionRepository.deleteById(id);
+                });
         if (!result.isSuccess()) {
             throw AiPlatformException.ofThrow(result.getErrorCode(), result.getErrorMessage());
         }

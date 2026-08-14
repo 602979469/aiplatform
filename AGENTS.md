@@ -230,6 +230,7 @@ BizTemplate.execute(transactionTemplate, callback);
 - 负责 `DO/DalResult → Model`；
 - 转换代码必须写在 `XxxConvertor`；
 - Convertor 之间允许互相调用。
+- Repository 之间禁止互相调用；跨表多写由 core-service 在 BizTemplate 事务内编排。
 
 仓储返回值：
 
@@ -386,6 +387,7 @@ BizTemplate.execute(transactionTemplate, callback);
 10. 我的用例是否发生多次写操作？是则必须走 `BizTemplate`。
 11. 我的命名、注释、包结构是否符合本文件？
 12. 我是否照抄了同仓已有合规实现，而不是自创写法？
+13. 我是否在 Repository 里注入或调用了其他 Repository？
 
 ## 10. 禁止概念速查表
 
@@ -396,6 +398,7 @@ BizTemplate.execute(transactionTemplate, callback);
 | 手写日志 | `LoggerFactory`、`System.out`、`printStackTrace` | `LoggerUtil` |
 | 空 catch | catch 块无日志无处理 | 分类处理并记日志 |
 | 业务层碰数据源 | core-service/web 出现 DO、Mapper、DalQuery、Redis | 收口 Repository |
+| Repository 互调 | core-repository 注入或调用其他 Repository | 跨表多写由 core-service 在 BizTemplate 事务内编排多个仓储/服务调用 |
 | core-model 引框架 | 出现 Spring/MyBatis/Redis import | 仅领域语义 + common-util |
 | 字符串裸错误 | 返回裸字符串、`Result.fail("...")` | ErrorCode + ApiResult |
 | @Transactional | 业务模块使用 | `BizTemplate.execute(transactionTemplate, callback)` |

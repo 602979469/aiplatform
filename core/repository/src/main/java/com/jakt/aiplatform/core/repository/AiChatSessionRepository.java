@@ -48,10 +48,4 @@ public interface AiChatSessionRepository {
      */
     int deleteById(Long id);
 
-    /**
-     * 删除会话并连同消息逻辑删除（组合会话/消息仓储，无事务注解，由上层事务模板包裹）。
-     *
-     * @param sessionId 会话ID
-     */
-    void deleteWithMessages(Long sessionId);
 }

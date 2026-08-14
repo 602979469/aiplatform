@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.model.param;
 
+import com.jakt.aiplatform.core.model.domain.BaseModel;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import java.time.LocalDateTime;
 import lombok.Data;
@@ -10,7 +11,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class AiChatSessionQueryParam extends PageParam {
+public class AiChatSessionQueryParam extends BaseModel {
 
     /** 主键。 */
     private Long sessionId;

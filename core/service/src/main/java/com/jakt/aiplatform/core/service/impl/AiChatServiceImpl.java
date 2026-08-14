@@ -4,7 +4,6 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.integration.deepseek.DeepSeekClient;
 import com.jakt.aiplatform.common.integration.deepseek.model.DeepSeekChatMessage;
-import com.jakt.aiplatform.common.util.config.AiChatProperties;
 import com.jakt.aiplatform.common.util.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
 import com.jakt.aiplatform.core.model.domain.AiChatResult;
@@ -38,12 +37,6 @@ public class AiChatServiceImpl implements AiChatService {
 
     private static final String SYSTEM_PROMPT = "你是一个友好、专业的AI助手，请用简洁准确的中文回答用户的问题。";
 
-    /** 模拟模式：模拟失败（测试用，与 {@link AiChatProperties#getSimulation()} 对应）。 */
-    private static final String SIMULATION_FAIL = "fail";
-
-    /** 模拟模式：模拟超时（测试用，与 {@link AiChatProperties#getSimulation()} 对应）。 */
-    private static final String SIMULATION_TIMEOUT = "timeout";
-
     /** 最多携带的上下文消息条数（超出后只携带最近的消息）。 */
     private static final int MAX_CONTEXT_MESSAGES = 30;
 
@@ -53,19 +46,15 @@ public class AiChatServiceImpl implements AiChatService {
 
     private final DeepSeekClient deepSeekClient;
 
-    private final AiChatProperties aiChatProperties;
-
     private final TransactionTemplate transactionTemplate;
 
     public AiChatServiceImpl(AiChatSessionService aiChatSessionService,
                              AiChatMessageService aiChatMessageService,
                              DeepSeekClient deepSeekClient,
-                             AiChatProperties aiChatProperties,
                              TransactionTemplate transactionTemplate) {
         this.aiChatSessionService = aiChatSessionService;
         this.aiChatMessageService = aiChatMessageService;
         this.deepSeekClient = deepSeekClient;
-        this.aiChatProperties = aiChatProperties;
         this.transactionTemplate = transactionTemplate;
     }
 
@@ -104,16 +93,6 @@ public class AiChatServiceImpl implements AiChatService {
             userMessage.setStatus(AiChatMessageStatusEnum.NORMAL);
             // 返回模型回填 messageId，后续失败标记依赖它
             userMessage = aiChatMessageService.createAiChatMessage(userMessage);
-        }
-
-        // 模拟失败/超时（测试用，配置 ai.chat.simulation）
-        String simulation = aiChatProperties.getSimulation();
-        if (SIMULATION_FAIL.equals(simulation) || SIMULATION_TIMEOUT.equals(simulation)) {
-            if (SIMULATION_TIMEOUT.equals(simulation)) {
-                sleepQuietly(aiChatProperties.getTimeoutSeconds() * 1000L);
-            }
-            return failResult(session, userMessage,
-                    "模拟" + (SIMULATION_TIMEOUT.equals(simulation) ? "超时" : "失败") + "：模型暂未响应，请点击重试");
         }
 
         String reply;
@@ -222,14 +201,4 @@ public class AiChatServiceImpl implements AiChatService {
         return oneLine.length() <= maxLength ? oneLine : oneLine.substring(0, maxLength);
     }
 
-    /**
-     * 静默休眠（忽略中断异常）。
-     */
-    private void sleepQuietly(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
 }

@@ -9,7 +9,6 @@ import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.common.util.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.AiChatSessionQueryParam;
 import com.jakt.aiplatform.common.util.tools.LoggerUtil;
-import com.jakt.aiplatform.core.repository.AiChatMessageRepository;
 import com.jakt.aiplatform.core.repository.AiChatSessionRepository;
 import com.jakt.aiplatform.core.repository.convertor.AiChatSessionConvertor;
 import org.springframework.stereotype.Repository;
@@ -25,13 +24,8 @@ public class AiChatSessionRepositoryImpl implements AiChatSessionRepository {
     /** AI会话表 Mapper。 */
     private final AiChatSessionMapper aiChatSessionMapper;
 
-    /** AI会话消息表仓储（组合：删会话时连带删消息）。 */
-    private final AiChatMessageRepository aiChatMessageRepository;
-
-    public AiChatSessionRepositoryImpl(AiChatSessionMapper aiChatSessionMapper,
-                                       AiChatMessageRepository aiChatMessageRepository) {
+    public AiChatSessionRepositoryImpl(AiChatSessionMapper aiChatSessionMapper) {
         this.aiChatSessionMapper = aiChatSessionMapper;
-        this.aiChatMessageRepository = aiChatMessageRepository;
     }
 
     @Override
@@ -63,9 +57,4 @@ public class AiChatSessionRepositoryImpl implements AiChatSessionRepository {
         return aiChatSessionMapper.deleteById(id);
     }
 
-    @Override
-    public void deleteWithMessages(Long sessionId) {
-        aiChatMessageRepository.deleteBySessionId(sessionId);
-        aiChatSessionMapper.deleteById(sessionId);
-    }
 }
