@@ -28,10 +28,11 @@
             <groupId>com.jakt</groupId>
             <artifactId>aiplatform-common-util</artifactId>
         </dependency>
-        <!-- 临时：Repository 层测试（测试控制器直调仓储，验证后移除） -->
+
+        <!-- Sa-Token：@SaCheckPermission / SaInterceptor / SaRouter / 异常类（starter 含拦截器实现） -->
         <dependency>
-            <groupId>com.jakt</groupId>
-            <artifactId>aiplatform-core-repository</artifactId>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-spring-boot4-starter</artifactId>
         </dependency>
 
         <dependency>

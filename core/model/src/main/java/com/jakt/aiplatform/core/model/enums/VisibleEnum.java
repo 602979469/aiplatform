@@ -1,18 +1,18 @@
 package com.jakt.aiplatform.core.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 /**
- * 菜单菜单状态（0显示 1隐藏）枚举。
+ * 显示状态枚举：菜单 visible 列。
  */
 @Getter
-@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum VisibleEnum implements BaseEnum<String> {
 
     /** 显示。 */
     SHOW("0", "显示"),
+
     /** 隐藏。 */
     HIDE("1", "隐藏"),
     ;
@@ -29,6 +29,7 @@ public enum VisibleEnum implements BaseEnum<String> {
     }
 
     @Override
+    @JsonValue
     public String getCode() {
         return code;
     }
@@ -46,16 +47,6 @@ public enum VisibleEnum implements BaseEnum<String> {
      */
     @JsonCreator
     public static VisibleEnum fromCodeJson(String code) {
-        return BaseEnum.fromCode(VisibleEnum.class, code);
-    }
-
-    /**
-     * 按 code 反查枚举（业务代码/Convertor 使用）。
-     *
-     * @param code code
-     * @return 枚举
-     */
-    public static VisibleEnum fromCode(String code) {
         return BaseEnum.fromCode(VisibleEnum.class, code);
     }
 }

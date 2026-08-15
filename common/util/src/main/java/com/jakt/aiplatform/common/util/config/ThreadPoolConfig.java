@@ -41,4 +41,32 @@ public class ThreadPoolConfig {
         executor.setAwaitTerminationSeconds(60);
         return executor;
     }
+
+    /** 镜像下载任务线程池，与 {@link ThreadPoolEnum#MIRROR_DOWNLOAD} 对应。 */
+    @Bean(name = "mirrorDownloadThreadPool")
+    public ThreadPoolTaskExecutor mirrorDownloadThreadPool() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("mirror-download-");
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        return executor;
+    }
+
+    /** 镜像搜索候选仓库并发探测线程池，与 {@link ThreadPoolEnum#MIRROR_SEARCH} 对应。 */
+    @Bean(name = "mirrorSearchThreadPool")
+    public ThreadPoolTaskExecutor mirrorSearchThreadPool() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("mirror-search-");
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
+        return executor;
+    }
 }
