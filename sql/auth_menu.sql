@@ -11,6 +11,7 @@ CREATE TABLE `auth_menu` (
   `menu_type` char(1) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'M' COMMENT '类型（M目录 C菜单 F按钮）',
   `visible` char(1) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0' COMMENT '是否显示（0显示 1隐藏）',
   `status` char(1) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0' COMMENT '状态（0正常 1停用）',
+  `del_flag` char(1) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
   `perms` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '权限标识',
   `icon` varchar(100) COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '菜单图标',
   `remark` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '备注',
