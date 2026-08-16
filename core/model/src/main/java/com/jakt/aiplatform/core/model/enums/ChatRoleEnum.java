@@ -1,14 +1,13 @@
 package com.jakt.aiplatform.core.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 /**
  * AI 对话角色枚举（code 与 DeepSeek 消息角色一致，可直接传给外部接口）。
  */
 @Getter
-@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum ChatRoleEnum implements BaseEnum<String> {
 
     /** 用户。 */
@@ -31,6 +30,7 @@ public enum ChatRoleEnum implements BaseEnum<String> {
     }
 
     @Override
+    @JsonValue
     public String getCode() {
         return code;
     }

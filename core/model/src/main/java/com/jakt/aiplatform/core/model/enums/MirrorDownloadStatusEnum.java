@@ -1,14 +1,13 @@
 package com.jakt.aiplatform.core.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 /**
  * 镜像下载任务状态枚举。
  */
 @Getter
-@JsonFormat(shape = JsonFormat.Shape.OBJECT)
 public enum MirrorDownloadStatusEnum implements BaseEnum<String> {
 
     /** 已就绪（打包完成或本地已存在，可下载）。 */
@@ -31,6 +30,7 @@ public enum MirrorDownloadStatusEnum implements BaseEnum<String> {
     }
 
     @Override
+    @JsonValue
     public String getCode() {
         return code;
     }

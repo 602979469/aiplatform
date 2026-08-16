@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiplatform
+  namespace: tsk
+  labels:
+    app: aiplatform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aiplatform
+  template:
+    metadata:
+      labels:
+        app: aiplatform
+    spec:
+      containers:
+        - name: aiplatform
+          # 流水线会替换为 aiplatform:<commit 短哈希>
+          image: aiplatform:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: MYSQL_HOST
+              value: mysql.tsk.svc.cluster.local
+            - name: MYSQL_PORT
+              value: "3306"
+            - name: MYSQL_USERNAME
+              value: root
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: root-password
+            - name: REDIS_HOST
+              value: ruoyi-redis.tsk.svc.cluster.local
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              value: ""
+            - name: AIPLATFORM_AVATAR_DIR
+              value: /data/uploads
+          volumeMounts:
+            - name: uploads
+              mountPath: /data/uploads
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5
+      volumes:
+        - name: uploads
+          hostPath:
+            path: /data/aiplatform-uploads
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aiplatform
+  namespace: tsk
+  labels:
+    app: aiplatform
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30081
+      protocol: TCP
+      name: http
+  selector:
+    app: aiplatform
