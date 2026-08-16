@@ -1,9 +1,7 @@
-package com.jakt.aiplatform.core.service.capability;
+package com.jakt.aiplatform.core.service;
 
 /**
  * AI能力领域服务（内部机制，不对外暴露 Controller）。
- *
- * <p>承载 AI 能力调用与其上下文（系统会话 + 消息），后续能力相关能力统一在此扩展。
  */
 public interface AiCapabilityService {
 

@@ -4,26 +4,30 @@ import com.jakt.aiplatform.biz.service.AuthMenuManager;
 import com.jakt.aiplatform.core.model.context.UserContext;
 import com.jakt.aiplatform.core.model.domain.AuthMenu;
 import com.jakt.aiplatform.core.model.param.AuthMenuQueryParam;
+import com.jakt.aiplatform.core.service.AuthMenuAdminService;
 import com.jakt.aiplatform.core.service.AuthMenuService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 /**
- * 菜单管理用例编排实现：只依赖菜单领域服务（菜单 CRUD + 路由树）。
+ * 菜单管理用例编排实现：路由树走菜单领域服务，管理操作走菜单管理领域服务。
  */
 @Service
 public class AuthMenuManagerImpl implements AuthMenuManager {
 
     private final AuthMenuService authMenuService;
 
-    public AuthMenuManagerImpl(AuthMenuService authMenuService) {
+    private final AuthMenuAdminService authMenuAdminService;
+
+    public AuthMenuManagerImpl(AuthMenuService authMenuService, AuthMenuAdminService authMenuAdminService) {
         this.authMenuService = authMenuService;
+        this.authMenuAdminService = authMenuAdminService;
     }
 
     @Override
     public AuthMenu getMenu(Long menuId) {
-        return authMenuService.getMenu(menuId);
+        return authMenuAdminService.getMenu(menuId);
     }
 
     @Override
@@ -34,26 +38,26 @@ public class AuthMenuManagerImpl implements AuthMenuManager {
 
     @Override
     public List<AuthMenu> menuTree() {
-        return authMenuService.menuTree();
+        return authMenuAdminService.menuTree();
     }
 
     @Override
     public List<AuthMenu> menuList(AuthMenuQueryParam query) {
-        return authMenuService.menuList(query);
+        return authMenuAdminService.menuList(query);
     }
 
     @Override
     public AuthMenu createMenu(AuthMenu menu) {
-        return authMenuService.createMenu(menu);
+        return authMenuAdminService.createMenu(menu);
     }
 
     @Override
     public void updateMenu(AuthMenu menu) {
-        authMenuService.updateMenu(menu);
+        authMenuAdminService.updateMenu(menu);
     }
 
     @Override
     public void deleteMenu(Long menuId) {
-        authMenuService.deleteMenu(menuId);
+        authMenuAdminService.deleteMenu(menuId);
     }
 }
