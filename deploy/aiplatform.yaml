@@ -43,6 +43,13 @@ spec:
               value: ""
             - name: AIPLATFORM_AVATAR_DIR
               value: /data/uploads
+            # DeepSeek API Key 从 secret aiplatform-secret 注入（对应 application.yml 的 ${DEEPSEEK_API_KEY:}）
+            - name: DEEPSEEK_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aiplatform-secret
+                  key: DEEPSEEK_API_KEY
+                  optional: true
           volumeMounts:
             - name: uploads
               mountPath: /data/uploads
