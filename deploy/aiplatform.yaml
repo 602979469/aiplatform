@@ -99,14 +99,16 @@ kind: Ingress
 metadata:
   name: aiplatform
   namespace: tsk
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
-    - host: aiplatform.com
+    - host: www.jakt.online
       http:
         paths:
-          - path: /
-            pathType: Prefix
+          - path: /prod-api(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: aiplatform
