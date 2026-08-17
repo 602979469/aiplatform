@@ -15,13 +15,20 @@ public final class ClientInfoUtil {
     }
 
     /**
-     * 获取客户端 IP（优先 X-Forwarded-For，缺省 127.0.0.1）。
+     * 获取客户端 IP。
+     *
+     * <p>读取顺序：可信代理写入的 X-Real-IP → X-Forwarded-For 最左侧 → 缺省 127.0.0.1。
+     * 公网入口为 Caddy（frp 隧道）时，Caddy 已把真实客户端 IP 写入 X-Real-IP，避免
+     * ingress-nginx 透传后只剩 127.0.0.1。
      *
      * @return 客户端 IP
      */
     public static String getClientIp() {
-        String ip = SaHolder.getRequest().getHeader("X-Forwarded-For");
-        if (StrUtil.isBlank(ip)) {
+        String ip = SaHolder.getRequest().getHeader("X-Real-IP");
+        if (isInvalidIp(ip)) {
+            ip = SaHolder.getRequest().getHeader("X-Forwarded-For");
+        }
+        if (isInvalidIp(ip)) {
             return "127.0.0.1";
         }
         // X-Forwarded-For 可能是逗号分隔的多级代理列表，取最左侧真实客户端 IP
@@ -35,6 +42,16 @@ public final class ClientInfoUtil {
             ip = ip.substring("::ffff:".length());
         }
         return ip;
+    }
+
+    /**
+     * 判断 IP 是否为空或无效占位（如 unknown）。
+     *
+     * @param ip IP 值
+     * @return true 表示无效
+     */
+    private static boolean isInvalidIp(String ip) {
+        return StrUtil.isBlank(ip) || "unknown".equalsIgnoreCase(ip.trim());
     }
 
     /**
