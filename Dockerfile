@@ -1,5 +1,5 @@
 # 构建产物：bootstrap/target/aiplatform-bootstrap-*.jar
-FROM eclipse-temurin:17-jre
+FROM docker.xuanyuan.run/library/eclipse-temurin:17-jre
 
 WORKDIR /app
 

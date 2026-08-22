@@ -15,6 +15,15 @@ spec:
       labels:
         app: aiplatform
     spec:
+      affinity:                                        # ← 改动1：新增节点亲和性（钉 master）
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - k8s-master
       containers:
         - name: aiplatform
           # 流水线会替换为 aiplatform:<commit 短哈希>
@@ -36,7 +45,7 @@ spec:
                   name: mysql-secret
                   key: root-password
             - name: REDIS_HOST
-              value: ruoyi-redis.tsk.svc.cluster.local
+              value: redis.tsk.svc.cluster.local        # ← 改动2：ruoyi-redis → redis
             - name: REDIS_PORT
               value: "6379"
             - name: REDIS_PASSWORD
