@@ -49,7 +49,10 @@ spec:
             - name: REDIS_PORT
               value: "6379"
             - name: REDIS_PASSWORD
-              value: ""
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: redis-password
             - name: AIPLATFORM_AVATAR_DIR
               value: /data/uploads
             # DeepSeek API Key 从 secret aiplatform-secret 注入（对应 application.yml 的 ${DEEPSEEK_API_KEY:}）
