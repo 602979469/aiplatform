@@ -35,6 +35,7 @@ public final class AuthMenuAssembler {
         response.setOrderNum(menu.getOrderNum());
         response.setPath(menu.getPath());
         response.setComponent(menu.getComponent());
+        response.setIsFrame(menu.getIsFrame());
         response.setMenuType(menu.getMenuType());
         response.setVisible(menu.getVisible());
         response.setStatus(menu.getStatus());
@@ -60,6 +61,7 @@ public final class AuthMenuAssembler {
         response.setMenuName(menu.getMenuName());
         response.setPath(menu.getPath());
         response.setComponent(menu.getComponent());
+        response.setIsFrame(menu.getIsFrame());
         response.setMenuType(menu.getMenuType());
         response.setIcon(menu.getIcon());
         response.setChildren(ConvertUtil.map(menu.getChildren(), AuthMenuAssembler::toRouteResponse));
@@ -110,6 +112,7 @@ public final class AuthMenuAssembler {
         menu.setOrderNum(request.getOrderNum());
         menu.setPath(request.getPath());
         menu.setComponent(request.getComponent());
+        menu.setIsFrame(request.getIsFrame());
         menu.setMenuType(request.getMenuType());
         menu.setVisible(request.getVisible());
         menu.setStatus(request.getStatus());

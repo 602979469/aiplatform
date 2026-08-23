@@ -43,6 +43,7 @@ create table if not exists auth_menu (
   order_num   int          not null default 0 comment '显示顺序',
   path        varchar(200) not null default '' comment '路由地址',
   component   varchar(200) not null default '' comment '组件路径',
+  is_frame    char(1)      not null default '1' comment '是否外链（0是 1否）',
   menu_type   char(1)      not null default 'M' comment '类型（M目录 C菜单 F按钮）',
   visible     char(1)      not null default '0' comment '是否显示（0显示 1隐藏）',
   status      char(1)      not null default '0' comment '状态（0正常 1停用）',

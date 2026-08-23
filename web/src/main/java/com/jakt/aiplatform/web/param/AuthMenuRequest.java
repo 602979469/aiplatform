@@ -38,6 +38,9 @@ public class AuthMenuRequest extends BaseRequest {
     @Size(max = 200, message = "组件路径长度不能超过200")
     private String component;
 
+    /** 是否外链（0是 1否）。 */
+    private String isFrame;
+
     /** 类型（M目录 C菜单 F按钮）。 */
     @NotNull(message = "菜单类型不能为空")
     private MenuTypeEnum menuType;

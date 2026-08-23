@@ -21,6 +21,8 @@ public class MenuRouteResponse extends BaseResult {
     private String path;
     /** 组件路径。 */
     private String component;
+    /** 是否外链（0是 1否）。 */
+    private String isFrame;
     /** 类型（M目录 C菜单）。 */
     private MenuTypeEnum menuType;
     /** 图标。 */

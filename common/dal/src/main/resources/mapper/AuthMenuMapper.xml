@@ -3,7 +3,7 @@
 <mapper namespace="com.jakt.aiplatform.common.dal.mapper.AuthMenuMapper">
 
     <sql id="selectColumns">
-        menu_id, menu_name, parent_id, order_num, path, component, menu_type, visible, status, perms, icon, remark, create_time, update_time
+        menu_id, menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, status, perms, icon, remark, create_time, update_time
     </sql>
 
     <sql id="queryConditions">
@@ -82,7 +82,7 @@
     </select>
 
     <select id="selectMenusByUserId" resultType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO">
-        SELECT m.menu_id, m.menu_name, m.parent_id, m.order_num, m.path, m.component,
+        SELECT m.menu_id, m.menu_name, m.parent_id, m.order_num, m.path, m.component, m.is_frame,
                m.menu_type, m.visible, m.status, m.perms, m.icon, m.remark, m.create_time, m.update_time
         FROM auth_menu m
         JOIN auth_role_menu rm ON m.menu_id = rm.menu_id
@@ -121,8 +121,8 @@
 
     <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO"
             useGeneratedKeys="true" keyProperty="menuId">
-        INSERT INTO auth_menu (menu_name, parent_id, order_num, path, component, menu_type, visible, status, perms, icon, remark)
-        VALUES (#{menuName}, #{parentId}, #{orderNum}, #{path}, #{component}, #{menuType}, #{visible}, #{status}, #{perms}, #{icon}, #{remark})
+        INSERT INTO auth_menu (menu_name, parent_id, order_num, path, component, is_frame, menu_type, visible, status, perms, icon, remark)
+        VALUES (#{menuName}, #{parentId}, #{orderNum}, #{path}, #{component}, #{isFrame}, #{menuType}, #{visible}, #{status}, #{perms}, #{icon}, #{remark})
     </insert>
 
     <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO">
@@ -132,6 +132,7 @@
             order_num = #{orderNum},
             path = #{path},
             component = #{component},
+            is_frame = #{isFrame},
             menu_type = #{menuType},
             visible = #{visible},
             status = #{status},
@@ -143,7 +144,7 @@
     </update>
 
     <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO">
-        <if test="menuName != null or parentId != null or orderNum != null or path != null or component != null or menuType != null or visible != null or status != null or perms != null or icon != null or remark != null">
+        <if test="menuName != null or parentId != null or orderNum != null or path != null or component != null or isFrame != null or menuType != null or visible != null or status != null or perms != null or icon != null or remark != null">
             UPDATE auth_menu
         <set>
             <if test="menuName != null">
@@ -160,6 +161,9 @@
             </if>
             <if test="component != null">
                 component = #{component},
+            </if>
+            <if test="isFrame != null">
+                is_frame = #{isFrame},
             </if>
             <if test="menuType != null">
                 menu_type = #{menuType},

@@ -32,6 +32,9 @@ public class AuthMenu extends BaseModel {
     /** 组件路径。 */
     private String component;
 
+    /** 是否外链（0是 1否）。 */
+    private String isFrame;
+
     /** 类型（M目录 C菜单 F按钮）。 */
     private MenuTypeEnum menuType;
 

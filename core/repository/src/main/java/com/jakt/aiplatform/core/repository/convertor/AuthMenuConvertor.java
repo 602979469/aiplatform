@@ -37,6 +37,7 @@ public final class AuthMenuConvertor {
         target.setOrderNum(source.getOrderNum());
         target.setPath(source.getPath());
         target.setComponent(source.getComponent());
+        target.setIsFrame(source.getIsFrame());
         target.setMenuType(BaseEnum.fromCode(MenuTypeEnum.class, source.getMenuType()));
         target.setVisible(BaseEnum.fromCode(VisibleEnum.class, source.getVisible()));
         target.setStatus(BaseEnum.fromCode(EnableStatusEnum.class, source.getStatus()));
@@ -65,6 +66,7 @@ public final class AuthMenuConvertor {
         target.setOrderNum(source.getOrderNum());
         target.setPath(source.getPath());
         target.setComponent(source.getComponent());
+        target.setIsFrame(source.getIsFrame());
         target.setMenuType(ObjectUtil.isNull(source.getMenuType()) ? null : source.getMenuType().getCode());
         target.setVisible(ObjectUtil.isNull(source.getVisible()) ? null : source.getVisible().getCode());
         target.setStatus(ObjectUtil.isNull(source.getStatus()) ? null : source.getStatus().getCode());
