@@ -1,10 +1,10 @@
 package com.jakt.aiplatform.core.service.impl;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import com.jakt.aiplatform.core.model.domain.AuthLoginLog;
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.param.AuthLoginLogQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.repository.AuthLoginLogRepository;
 import com.jakt.aiplatform.core.service.AuthLoginLogService;
 import org.springframework.stereotype.Service;
@@ -29,6 +29,6 @@ public class AuthLoginLogServiceImpl implements AuthLoginLogService {
     @Override
     public void deleteLoginLog(Long logId) {
         int affected = authLoginLogRepository.deleteById(logId);
-        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.DELETE_FAILED, "删除失败：记录不存在或已被删除");
+        AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.DELETE_FAILED, "删除失败：记录不存在或已被删除");
     }
 }

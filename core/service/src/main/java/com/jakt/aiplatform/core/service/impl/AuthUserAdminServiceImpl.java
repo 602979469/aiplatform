@@ -1,4 +1,6 @@
 package com.jakt.aiplatform.core.service.impl;
+import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
@@ -6,16 +8,15 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.file.FileNameUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AuthUser;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.exception.AiPlatformException;
+import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 import com.jakt.aiplatform.core.model.param.AuthUserQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
-import com.jakt.aiplatform.common.util.result.Result;
-import com.jakt.aiplatform.common.util.template.BizTemplate;
-import com.jakt.aiplatform.common.util.template.TransactionTemplate;
+import com.jakt.aiplatform.common.framework.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.Result;
+import com.jakt.aiplatform.common.framework.template.BizTemplate;
+import com.jakt.aiplatform.common.framework.template.TransactionTemplate;
 import com.jakt.aiplatform.core.repository.AuthUserRepository;
 import com.jakt.aiplatform.core.service.AuthUserAdminService;
 import org.springframework.stereotype.Service;
@@ -56,14 +57,14 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
     @Override
     public AuthUser getUser(Long userId) {
         AuthUser user = authUserRepository.findById(userId);
-        AssertUtil.throwErrWhenNull(user, ErrorCodeEnum.RESOURCE_NOT_FOUND, "用户不存在");
+        AssertUtil.throwErrWhenNull(user, BizErrorCodeEnum.RESOURCE_NOT_FOUND, "用户不存在");
         return user;
     }
 
     @Override
     public AuthUser createUser(AuthUser user, List<Long> roleIds) {
         AssertUtil.throwErrWhenTrue(authUserRepository.findByUsername(user.getUsername()) != null,
-                ErrorCodeEnum.USERNAME_EXISTS);
+                BizErrorCodeEnum.USERNAME_EXISTS);
         user.setNickname(StrUtil.blankToDefault(user.getNickname(), user.getUsername()));
         user.setEmail(StrUtil.nullToEmpty(user.getEmail()));
         user.setAvatar(StrUtil.nullToEmpty(user.getAvatar()));
@@ -85,7 +86,7 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
     @Override
     public void updateUser(AuthUser user) {
         int affected = authUserRepository.updateByCondition(user);
-        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+        AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
     }
 
     @Override
@@ -94,7 +95,7 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
         update.setUserId(userId);
         update.setStatus(status);
         int affected = authUserRepository.updateByCondition(update);
-        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+        AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
         if (status == EnableStatusEnum.DISABLE) {
             StpUtil.logout(userId);
         }
@@ -106,26 +107,26 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
         update.setUserId(userId);
         update.setPassword(BCrypt.hashpw(password));
         int affected = authUserRepository.updateByCondition(update);
-        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+        AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
     }
 
     @Override
     public void updatePassword(Long userId, String oldPassword, String newPassword) {
         AuthUser user = authUserRepository.findById(userId);
-        AssertUtil.throwErrWhenNull(user, ErrorCodeEnum.RESOURCE_NOT_FOUND, "用户不存在");
+        AssertUtil.throwErrWhenNull(user, BizErrorCodeEnum.RESOURCE_NOT_FOUND, "用户不存在");
         AssertUtil.throwErrWhenFalse(BCrypt.checkpw(oldPassword, user.getPassword()),
-                ErrorCodeEnum.OLD_PASSWORD_ERROR);
+                BizErrorCodeEnum.OLD_PASSWORD_ERROR);
         AuthUser update = new AuthUser();
         update.setUserId(userId);
         update.setPassword(BCrypt.hashpw(newPassword));
         int affected = authUserRepository.updateByCondition(update);
-        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+        AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
     }
 
     @Override
     public String updateAvatar(Long userId, byte[] imageBytes, String originalFilename) {
         AuthUser user = authUserRepository.findById(userId);
-        AssertUtil.throwErrWhenNull(user, ErrorCodeEnum.RESOURCE_NOT_FOUND, "用户不存在");
+        AssertUtil.throwErrWhenNull(user, BizErrorCodeEnum.RESOURCE_NOT_FOUND, "用户不存在");
         String ext = FileNameUtil.extName(originalFilename);
         AssertUtil.throwErrWhenFalse(StrUtil.isNotBlank(ext) && AVATAR_EXTS.contains(ext.toLowerCase()),
                 ErrorCodeEnum.PARAM_INVALID, "头像仅支持 png/jpg/jpeg/gif/webp");
@@ -136,7 +137,7 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
         update.setUserId(userId);
         update.setAvatar(avatarUrl);
         int affected = authUserRepository.updateByCondition(update);
-        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+        AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
         return avatarUrl;
     }
 
@@ -147,7 +148,7 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
         update.setNickname(nickname);
         update.setEmail(email);
         int affected = authUserRepository.updateByCondition(update);
-        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+        AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
     }
 
     @Override

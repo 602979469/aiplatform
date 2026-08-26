@@ -1,0 +1,25 @@
+# aiplatform 集群管理权限：aiplatform 是管理面业务 pod，需要操作整个集群（大盘/部署/实时管理）。
+# 内部使用，权限拉满；如需收紧，改 ClusterRole.rules 限定命名空间与操作即可。
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aiplatform-cluster-admin
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+  - nonResourceURLs: ["*"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: aiplatform-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: aiplatform-cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: tsk

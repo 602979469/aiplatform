@@ -3,7 +3,7 @@ package com.jakt.aiplatform.biz.service.impl;
 import com.jakt.aiplatform.biz.service.AuthLoginLogManager;
 import com.jakt.aiplatform.core.model.domain.AuthLoginLog;
 import com.jakt.aiplatform.core.model.param.AuthLoginLogQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.service.AuthLoginLogService;
 import org.springframework.stereotype.Service;
 

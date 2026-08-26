@@ -16,6 +16,11 @@
     <description>基础工具：TraceId、RestTemplate、条件断言（AiPlatformInvoker）、线程池等</description>
 
     <dependencies>
+        <!-- common-framework：Result/PageResult、异常体系、AssertUtil/LoggerUtil/ParamValidator、事务模板等公共类 -->
+        <dependency>
+            <groupId>com.jakt</groupId>
+            <artifactId>aiplatform-common-framework</artifactId>
+        </dependency>
         <!-- Sa-Token core：ClientInfoUtil 经 SaHolder 获取请求客户端信息 -->
         <dependency>
             <groupId>cn.dev33</groupId>
@@ -52,6 +57,20 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <!-- spring-retry：@Retryable 重试机制（部署失败重试） -->
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+            <version>2.0.10</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aop</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

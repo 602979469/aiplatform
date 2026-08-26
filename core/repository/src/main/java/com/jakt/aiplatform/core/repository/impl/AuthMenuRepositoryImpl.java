@@ -1,16 +1,16 @@
 package com.jakt.aiplatform.core.repository.impl;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO;
 import com.jakt.aiplatform.common.dal.mapper.AuthMenuMapper;
 import com.jakt.aiplatform.common.dal.mapper.AuthRoleMenuMapper;
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AuthMenu;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.AuthMenuQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
-import com.jakt.aiplatform.common.util.tools.LoggerUtil;
+import com.jakt.aiplatform.common.framework.result.PageResult;
+import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.core.repository.AuthMenuRepository;
 import com.jakt.aiplatform.core.repository.convertor.AuthMenuConvertor;
 import org.springframework.stereotype.Repository;
@@ -49,7 +49,7 @@ public class AuthMenuRepositoryImpl implements AuthMenuRepository {
     @Override
     public AuthMenu findOne(AuthMenuQueryParam query) {
         List<AuthMenuDO> doList = authMenuMapper.selectList(AuthMenuConvertor.toDalQuery(query));
-        AssertUtil.throwErrWhenTrue(doList.size() > 1, ErrorCodeEnum.RESULT_NOT_UNIQUE,
+        AssertUtil.throwErrWhenTrue(doList.size() > 1, BizErrorCodeEnum.RESULT_NOT_UNIQUE,
                 "查询结果不唯一：预期 1 条，实际 " + doList.size() + " 条");
         return doList.isEmpty() ? null : AuthMenuConvertor.toModel(doList.get(0));
     }

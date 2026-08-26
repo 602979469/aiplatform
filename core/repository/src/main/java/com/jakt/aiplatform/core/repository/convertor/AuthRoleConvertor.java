@@ -4,7 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.dal.dataobject.AuthRoleDO;
 import com.jakt.aiplatform.common.dal.query.AuthRoleDalQuery;
 import com.jakt.aiplatform.core.model.domain.AuthRole;
-import com.jakt.aiplatform.core.model.enums.BaseEnum;
+import com.jakt.aiplatform.common.framework.enums.BaseEnum;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.param.AuthRoleQueryParam;
 

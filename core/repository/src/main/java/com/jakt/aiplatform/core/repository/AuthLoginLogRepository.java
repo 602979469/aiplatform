@@ -2,7 +2,7 @@ package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.AuthLoginLog;
 import com.jakt.aiplatform.core.model.param.AuthLoginLogQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 
 /**
  * 登录记录表仓储：封装 Mapper，对外只暴露领域模型。当前阶段单表操作不引入事务。

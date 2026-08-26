@@ -1,6 +1,7 @@
 package com.jakt.aiplatform.common.util.tools;
 
-import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
+import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import cn.hutool.core.util.StrUtil;
 
 import java.io.BufferedReader;

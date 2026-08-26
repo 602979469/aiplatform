@@ -6,15 +6,15 @@ spring:
     name: aiplatform
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/aiplatform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${MYSQL_HOST:192.168.3.131}:${MYSQL_PORT:30306}/aiplatform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: ${MYSQL_USERNAME:root}
     # 仅本地默认值，生产环境必须通过环境变量注入
     password: ${MYSQL_PASSWORD:123456}
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      host: ${REDIS_HOST:192.168.3.131}
+      port: ${REDIS_PORT:30379}
+      password: ${REDIS_PASSWORD:Redis@2026}
       database: ${REDIS_DATABASE:0}
       timeout: 10s
       lettuce:
@@ -62,6 +62,19 @@ ai:
   xuanyuan:
     registry-url: https://docker.xuanyuan.run
     web-url: https://xuanyuan.cloud
+  ssh:
+    # master 主机 SSH（构建/部署脚本执行机）
+    username: ${SSH_USERNAME:ubuntu}
+    private-key-path: ${SSH_PRIVATE_KEY_PATH:}
+    timeout-seconds: 900
+
+# 集群管理（cluster-ci）
+cluster:
+  ci:
+    # master 上的工作根目录（挂载/脚本目录）
+    work-dir: ${CLUSTER_CI_WORK_DIR:/home/ubuntu/cluster-ci}
+    master-host: ${CLUSTER_CI_MASTER_HOST:192.168.3.131}
+    worker-host: ${CLUSTER_CI_WORKER_HOST:192.168.3.217}
 
 # 本地文件上传
 aiplatform:

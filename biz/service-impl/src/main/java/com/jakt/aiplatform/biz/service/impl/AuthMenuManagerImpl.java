@@ -1,7 +1,7 @@
 package com.jakt.aiplatform.biz.service.impl;
 
 import com.jakt.aiplatform.biz.service.AuthMenuManager;
-import com.jakt.aiplatform.core.model.context.UserContext;
+import com.jakt.aiplatform.common.framework.context.UserContext;
 import com.jakt.aiplatform.core.model.domain.AuthMenu;
 import com.jakt.aiplatform.core.model.param.AuthMenuQueryParam;
 import com.jakt.aiplatform.core.service.AuthMenuAdminService;

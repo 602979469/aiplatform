@@ -5,7 +5,7 @@ import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.biz.service.AuthLoginLogManager;
 import com.jakt.aiplatform.core.model.domain.AuthLoginLog;
 import com.jakt.aiplatform.core.model.param.AuthLoginLogQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.web.assembler.AuthLoginLogAssembler;
 import com.jakt.aiplatform.web.checker.AuthLoginLogParamChecker;
 import com.jakt.aiplatform.web.param.AuthLoginLogQueryRequest;

@@ -1,6 +1,6 @@
 package com.jakt.aiplatform.common.util.tools;
 
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

@@ -16,6 +16,11 @@
     <description>业务应用层：BizService 用例编排，操作领域模型</description>
 
     <dependencies>
+        <!-- common-framework：PageResult/AssertUtil/LoggerUtil/UserContext 等公共类 -->
+        <dependency>
+            <groupId>com.jakt</groupId>
+            <artifactId>aiplatform-common-framework</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.jakt</groupId>
             <artifactId>aiplatform-core-model</artifactId>

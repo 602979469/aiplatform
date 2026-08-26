@@ -4,7 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO;
 import com.jakt.aiplatform.common.dal.query.AuthMenuDalQuery;
 import com.jakt.aiplatform.core.model.domain.AuthMenu;
-import com.jakt.aiplatform.core.model.enums.BaseEnum;
+import com.jakt.aiplatform.common.framework.enums.BaseEnum;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.enums.MenuTypeEnum;
 import com.jakt.aiplatform.core.model.enums.VisibleEnum;

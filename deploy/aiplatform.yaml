@@ -24,6 +24,8 @@ spec:
                     operator: In
                     values:
                       - k8s-master
+      # 集群管理权限：绑定到 ClusterRoleBinding aiplatform-cluster-admin（见 aiplatform-cluster-rbac.yaml）
+      serviceAccountName: default
       containers:
         - name: aiplatform
           # 流水线会替换为 aiplatform:<commit 短哈希>

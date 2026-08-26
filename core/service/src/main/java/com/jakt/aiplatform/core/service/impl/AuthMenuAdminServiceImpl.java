@@ -1,18 +1,18 @@
 package com.jakt.aiplatform.core.service.impl;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AuthMenu;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.core.model.enums.MenuTypeEnum;
 import com.jakt.aiplatform.core.model.enums.VisibleEnum;
-import com.jakt.aiplatform.core.model.exception.AiPlatformException;
+import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 import com.jakt.aiplatform.core.model.param.AuthMenuQueryParam;
-import com.jakt.aiplatform.common.util.result.Result;
-import com.jakt.aiplatform.common.util.template.BizTemplate;
-import com.jakt.aiplatform.common.util.template.TransactionTemplate;
+import com.jakt.aiplatform.common.framework.result.Result;
+import com.jakt.aiplatform.common.framework.template.BizTemplate;
+import com.jakt.aiplatform.common.framework.template.TransactionTemplate;
 import com.jakt.aiplatform.core.repository.AuthMenuRepository;
 import com.jakt.aiplatform.core.service.AuthMenuAdminService;
 import org.springframework.stereotype.Service;
@@ -41,7 +41,7 @@ public class AuthMenuAdminServiceImpl implements AuthMenuAdminService {
     @Override
     public AuthMenu getMenu(Long menuId) {
         AuthMenu menu = authMenuRepository.findById(menuId);
-        AssertUtil.throwErrWhenNull(menu, ErrorCodeEnum.RESOURCE_NOT_FOUND, "菜单不存在");
+        AssertUtil.throwErrWhenNull(menu, BizErrorCodeEnum.RESOURCE_NOT_FOUND, "菜单不存在");
         return menu;
     }
 
@@ -75,7 +75,7 @@ public class AuthMenuAdminServiceImpl implements AuthMenuAdminService {
     @Override
     public void updateMenu(AuthMenu menu) {
         int affected = authMenuRepository.updateByCondition(menu);
-        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+        AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
     }
 
     @Override
@@ -83,7 +83,7 @@ public class AuthMenuAdminServiceImpl implements AuthMenuAdminService {
         AuthMenuQueryParam query = new AuthMenuQueryParam();
         query.setParentId(menuId);
         AssertUtil.throwErrWhenTrue(CollUtil.isNotEmpty(authMenuRepository.findList(query)),
-                ErrorCodeEnum.MENU_HAS_CHILDREN, "存在子菜单，禁止删除");
+                BizErrorCodeEnum.MENU_HAS_CHILDREN, "存在子菜单，禁止删除");
         checkResult(BizTemplate.executeWithoutResult(transactionTemplate,
                 () -> {
                     authMenuRepository.clearMenuBindings(menuId);

@@ -36,6 +36,7 @@ biz/service-impl           → aiplatform-biz-service-impl
 core/model                 → aiplatform-core-model
 core/repository            → aiplatform-core-repository
 core/service               → aiplatform-core-service
+common/framework           → aiplatform-common-framework
 common/dal                 → aiplatform-common-dal
 common/util                → aiplatform-common-util
 common/integration         → aiplatform-common-integration
@@ -45,16 +46,17 @@ bootstrap                  → aiplatform-bootstrap
 ### 2.2 依赖方向
 
 ```text
-common-util
+common-framework
     ↑
+    ├── common-util
     ├── core-model
     ├── common-dal
     ├── common-integration
     │
-    core-repository → core-model + common-dal + common-util
-    core-service    → core-model + core-repository + common-util + common-integration
-    biz-service-impl → core-model + core-service + common-util
-    web             → biz-service-impl + core-model + common-util
+    core-repository → core-model + common-dal + common-util + common-framework
+    core-service    → core-model + core-repository + common-util + common-framework + common-integration
+    biz-service-impl → core-model + core-service + common-util + common-framework
+    web             → biz-service-impl + core-model + common-util + common-framework
     bootstrap       → 以上所有模块
 ```
 
@@ -66,14 +68,16 @@ common-util
 - `web` 不得直接依赖 `common-dal`、`core-repository`；
 - `core-model` 不得依赖 Spring、MyBatis、Redis；
 - `core-service` 不得直接依赖 `common-dal`；
-- `common-util` 是最底层基础工具，不依赖任何内部业务模块。
+- `common-framework` 是最底层基础模块，不依赖任何内部业务模块；
+- `common-util`、`core-model`、`common-dal`、`common-integration` 及各上层模块可依赖 `common-framework`。
 
 ### 2.3 各模块职责
 
 | 模块 | 只允许出现 | 禁止出现 |
 |---|---|---|
-| common-util | ErrorCode、CommonErrorCode、CommonException、Result、PageResult、LogFileEnum、LoggerUtil、AssertUtil、ConvertUtil、ParamValidator、TransactionTemplate、BizTemplate、ClientInfoUtil、ThreadPoolUtil、JsonUtil、TraceIdUtil、基础配置 | core-model、common-dal、web、biz、业务规则 |
-| core-model | domain、enums、param、dto、exception、context、constant | Spring/MyBatis/Redis、业务服务实现、持久化细节 |
+| common-framework | ErrorCode、ErrorCodeEnum、CommonException、Result、PageResult、LogFileEnum、LoggerUtil、AssertUtil、ParamValidator、TransactionTemplate、BizTemplate、BaseEnum、BaseModel、PageParam、PageConstants、UserContext、TraceIdUtil、AiPlatformException、基础配置 | core-model、common-dal、web、biz、业务规则 |
+| common-util | CommonErrorCode、ConvertUtil、ClientInfoUtil、CommandUtil、JsonUtil、ThreadPoolUtil、MirrorFileUtil、ThreadPoolEnum、基础配置 | core-model、common-dal、web、biz、业务规则、framework 已收口的公共类型 |
+| core-model | domain、enums（含 BizErrorCodeEnum）、param、dto、context、constant | Spring/MyBatis/Redis、业务服务实现、持久化细节、framework 已收口的公共类型 |
 | common-dal | DO、Mapper、Mapper.xml、DalQuery、DalResult、RedisClient、持久化连接配置 | core-model、业务规则、web/biz 类型 |
 | common-integration | 外部 HTTP/RPC 客户端、集成异常、集成配置 | core-model、common-dal、业务规则 |
 | core-repository | Repository、RepositoryImpl、Convertor | 业务规则、对外暴露 DO/DalQuery/DalResult |
@@ -88,7 +92,7 @@ common-util
 2. 不发明新写法。规则未覆盖时，找同仓最接近的合规实现照抄，并说明依据。
 3. 禁止等价绕过。禁止概念的替代写法同样违规。
 4. 动笔前先搜索同仓已有的枚举、错误码、常量、工具。
-5. 遇到通用能力先查 common-util，再查 Hutool；仍不满足时评估 Apache Commons、Guava、Jackson 等成熟库。
+5. 遇到通用能力先查 common-framework，再查 common-util，再查 Hutool；仍不满足时评估 Apache Commons、Guava、Jackson 等成熟库。
 6. 优先简单实现，不为了“显得高级”引入不必要抽象。
 7. 提交前逐项通过第 9 节自查清单。
 
@@ -97,7 +101,7 @@ common-util
 | 关注点 | 唯一出口 | 禁止 |
 |---|---|---|
 | 条件断言 | `AssertUtil.throwErrWhenXxx`，必须显式传 ErrorCode | 手写 `if (...) { throw ... }` |
-| 无条件业务失败 | `throw AiPlatformException.ofThrow(ErrorCodeEnum.XXX[, message])` | `throw new AiPlatformException`、其他异常类 |
+| 无条件业务失败 | `throw AiPlatformException.ofThrow(BizErrorCodeEnum.XXX[, message])` | `throw new AiPlatformException`、其他异常类 |
 | 判空 | Hutool `ObjectUtil/StrUtil/CollUtil/ArrayUtil/MapUtil` | 业务代码手写 `== null`、`isEmpty()` |
 | 日志 | `LoggerUtil` + `LogFileEnum` | `LoggerFactory`、`System.out`、`printStackTrace`、空 catch |
 | DTO/Model/DO 转换 | `XxxAssembler`、`XxxConvertor` | 业务层 `new XxxModel()` + setter |
@@ -194,7 +198,7 @@ common-util
 - 禁止 import common-dal；
 - 条件失败用 `AssertUtil`；
 - 无条件失败用 `AiPlatformException.ofThrow`；
-- 相同语义复用已有 `ErrorCodeEnum`，新语义新增错误码。
+- 相同语义复用已有 `BizErrorCodeEnum`，新语义新增错误码；通用错误码用 framework `ErrorCodeEnum`。
 
 `BizChecker`：
 
@@ -256,30 +260,25 @@ BizTemplate.execute(transactionTemplate, callback);
 
 ### 5.6 common-util
 
-`common-util` 是最底层基础模块，不依赖内部业务模块。
+`common-util` 依赖 common-framework，保留本模块独有的工具类，不重复收口 framework 公共类型。
 
 核心类型：
 
-- `ErrorCode`
 - `CommonErrorCode`
-- `CommonException`
-- `Result<T>` / `PageResult<T>`
-- `LogFileEnum`
-- `LoggerUtil`
-- `AssertUtil`
 - `ConvertUtil`
-- `ParamValidator`
-- `TransactionTemplate`
-- `BizTemplate`
 - `ClientInfoUtil`
+- `CommandUtil`
 - `ThreadPoolUtil`
 - `JsonUtil`
-- `TraceIdUtil`
+- `MirrorFileUtil`
+- `ThreadPoolEnum`
+
+公共类型（`ErrorCode`/`ErrorCodeEnum`/`CommonException`/`Result<T>`/`PageResult<T>`/`LogFileEnum`/`LoggerUtil`/`AssertUtil`/`ParamValidator`/`TransactionTemplate`/`BizTemplate`/`BaseEnum`/`BaseModel`/`PageParam`/`PageConstants`/`UserContext`/`TraceIdUtil`/`AiPlatformException`）统一在 `common-framework`，禁止在业务模块重复定义。
 
 ### 5.7 common-integration
 
 - 只放外部 HTTP/RPC 客户端；
-- 依赖 common-util，不依赖 core-model/common-dal；
+- 依赖 common-framework + common-util，不依赖 core-model/common-dal；
 - 集成异常 `AiIntegrationException extends CommonException`；
 - 所有集成异常必须在 common-integration 内打日志，使用 `LogFileEnum.INTEGRATION`；
 - 集成错误码用枚举，`getCode()` 返回枚举名。
@@ -355,8 +354,8 @@ BizTemplate.execute(transactionTemplate, callback);
 - 枚举由生成器生成自己的 `findByCode`；
 - 生成器配置中枚举列必须同步 `columns.type: enum`；
 - 业务 key、默认值、角色 key、权限码等收口 `core-model.constant`；
-- 错误码集中 `ErrorCodeEnum`；
-- 日志枚举 `LogFileEnum` 放 common-util；
+- 通用错误码收口 framework `ErrorCodeEnum`；业务错误码收口 core-model `BizErrorCodeEnum`，禁止写入 framework；
+- 日志枚举 `LogFileEnum` 放 common-framework；
 - 领域语义值必须有名字，禁止散落魔法值。
 
 ## 8. 代码风格
@@ -399,7 +398,7 @@ BizTemplate.execute(transactionTemplate, callback);
 | 空 catch | catch 块无日志无处理 | 分类处理并记日志 |
 | 业务层碰数据源 | core-service/web 出现 DO、Mapper、DalQuery、Redis | 收口 Repository |
 | Repository 互调 | core-repository 注入或调用其他 Repository | 跨表多写由 core-service 在 BizTemplate 事务内编排多个仓储/服务调用 |
-| core-model 引框架 | 出现 Spring/MyBatis/Redis import | 仅领域语义 + common-util |
+| core-model 引框架 | 出现 Spring/MyBatis/Redis import | 仅领域语义 + common-framework/common-util |
 | 字符串裸错误 | 返回裸字符串、`Result.fail("...")` | ErrorCode + ApiResult |
 | @Transactional | 业务模块使用 | `BizTemplate.execute(transactionTemplate, callback)` |
 | @Valid | Controller 方法参数使用 | ParamChecker + ParamValidator |

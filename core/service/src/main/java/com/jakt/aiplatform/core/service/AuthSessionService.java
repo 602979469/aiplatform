@@ -2,7 +2,7 @@ package com.jakt.aiplatform.core.service;
 
 import com.jakt.aiplatform.core.model.dto.AuthOnlineInfo;
 import com.jakt.aiplatform.core.model.param.AuthOnlineQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 
 /**
  * 在线会话领域服务：在线列表、踢人、强制注销、封禁。

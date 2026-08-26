@@ -1,18 +1,18 @@
 package com.jakt.aiplatform.core.service.impl;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.integration.xuanyuan.XuanYuanProperties;
 import com.jakt.aiplatform.common.util.enums.ThreadPoolEnum;
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.common.util.tools.CommandUtil;
 import com.jakt.aiplatform.common.util.tools.MirrorFileUtil;
 import com.jakt.aiplatform.common.util.tools.ThreadPoolUtil;
 import com.jakt.aiplatform.core.model.domain.MirrorDownloadTask;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.core.model.enums.MirrorDownloadStatusEnum;
-import com.jakt.aiplatform.core.model.exception.AiPlatformException;
-import com.jakt.aiplatform.common.util.enums.LogFileEnum;
-import com.jakt.aiplatform.common.util.tools.LoggerUtil;
+import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
+import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
+import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.core.service.AiMirrorDownloadService;
 import org.springframework.stereotype.Service;
 
@@ -90,20 +90,20 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
     @Override
     public MirrorDownloadTask getStatus(String taskId) {
         MirrorDownloadTask task = tasks.get(taskId);
-        AssertUtil.throwErrWhenNull(task, ErrorCodeEnum.MIRROR_TASK_NOT_FOUND,
+        AssertUtil.throwErrWhenNull(task, BizErrorCodeEnum.MIRROR_TASK_NOT_FOUND,
                 "下载任务不存在或已过期，请重新生成");
         return task;
     }
 
     @Override
     public File getFile(String fileName) {
-        AssertUtil.throwErrWhenFalse(MirrorFileUtil.isValidFileName(fileName), ErrorCodeEnum.MIRROR_FILE_NAME_INVALID,
+        AssertUtil.throwErrWhenFalse(MirrorFileUtil.isValidFileName(fileName), BizErrorCodeEnum.MIRROR_FILE_NAME_INVALID,
                 "非法的文件名");
         Path path = Paths.get(MirrorFileUtil.IMAGE_DIR).resolve(fileName).normalize();
         File file = path.toFile();
-        AssertUtil.throwErrWhenFalse(file.exists(), ErrorCodeEnum.MIRROR_FILE_NOT_FOUND,
+        AssertUtil.throwErrWhenFalse(file.exists(), BizErrorCodeEnum.MIRROR_FILE_NOT_FOUND,
                 "本地文件不存在，请重新生成下载链接");
-        AssertUtil.throwErrWhenFalse(file.isFile(), ErrorCodeEnum.MIRROR_FILE_NOT_REGULAR,
+        AssertUtil.throwErrWhenFalse(file.isFile(), BizErrorCodeEnum.MIRROR_FILE_NOT_REGULAR,
                 "本地文件不存在，请重新生成下载链接");
         return file;
     }
@@ -207,7 +207,7 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
         try {
             MirrorFileUtil.ensureImageDir();
         } catch (IllegalStateException e) {
-            throw AiPlatformException.ofThrow(ErrorCodeEnum.MIRROR_DIR_CREATE_FAILED.getCode(), "创建镜像存储目录失败: " + e.getMessage());
+            throw AiPlatformException.ofThrow(BizErrorCodeEnum.MIRROR_DIR_CREATE_FAILED.getCode(), "创建镜像存储目录失败: " + e.getMessage());
         }
     }
 

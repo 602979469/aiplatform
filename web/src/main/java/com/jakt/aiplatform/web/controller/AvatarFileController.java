@@ -1,10 +1,11 @@
 package com.jakt.aiplatform.web.controller;
+import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.file.FileNameUtil;
 import cn.hutool.core.util.StrUtil;
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -52,7 +53,7 @@ public class AvatarFileController {
                         || !AVATAR_EXTS.contains(FileNameUtil.extName(fileName).toLowerCase()),
                 ErrorCodeEnum.PARAM_INVALID, "文件名不合法");
         File file = FileUtil.file(avatarDir, fileName);
-        AssertUtil.throwErrWhenFalse(file.isFile(), ErrorCodeEnum.RESOURCE_NOT_FOUND, "头像文件不存在");
+        AssertUtil.throwErrWhenFalse(file.isFile(), BizErrorCodeEnum.RESOURCE_NOT_FOUND, "头像文件不存在");
         String ext = FileNameUtil.extName(fileName).toLowerCase();
         String mimeExt = "jpg".equals(ext) ? "jpeg" : ext;
         MediaType mediaType = MediaType.parseMediaType("image/" + mimeExt);

@@ -1,19 +1,20 @@
 package com.jakt.aiplatform.biz.service.impl;
+import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.biz.service.AiChatManager;
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.constant.AiPlatformConstant;
-import com.jakt.aiplatform.core.model.context.UserContext;
+import com.jakt.aiplatform.common.framework.context.UserContext;
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
 import com.jakt.aiplatform.core.model.domain.AiChatResult;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.AiChatSessionQueryParam;
-import com.jakt.aiplatform.common.util.tools.LoggerUtil;
+import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.core.service.AiChatMessageService;
 import com.jakt.aiplatform.core.service.AiChatService;
 import com.jakt.aiplatform.core.service.AiChatSessionService;
@@ -102,7 +103,7 @@ public class AiChatManagerImpl implements AiChatManager {
         AiChatSession session = aiChatSessionService.getAiChatSession(sessionId);
         AssertUtil.throwErrWhenTrue(ObjectUtil.isNull(session)
                         || !Objects.equals(UserContext.getUserId(), session.getUserId()),
-                ErrorCodeEnum.SESSION_ACCESS_DENIED, "会话不存在或无权访问");
+                BizErrorCodeEnum.SESSION_ACCESS_DENIED, "会话不存在或无权访问");
         return session;
     }
 }

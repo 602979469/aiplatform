@@ -3,7 +3,7 @@ package com.jakt.aiplatform.web.interceptor;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.convert.Convert;
 import com.jakt.aiplatform.core.model.context.AuthSessionKeys;
-import com.jakt.aiplatform.core.model.context.UserContext;
+import com.jakt.aiplatform.common.framework.context.UserContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;

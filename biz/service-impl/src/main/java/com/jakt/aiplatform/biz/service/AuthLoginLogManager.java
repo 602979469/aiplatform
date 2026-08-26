@@ -2,7 +2,7 @@ package com.jakt.aiplatform.biz.service;
 
 import com.jakt.aiplatform.core.model.domain.AuthLoginLog;
 import com.jakt.aiplatform.core.model.param.AuthLoginLogQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 
 /**
  * 登录记录用例编排：分页查询与删除。

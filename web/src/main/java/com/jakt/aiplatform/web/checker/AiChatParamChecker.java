@@ -1,8 +1,8 @@
 package com.jakt.aiplatform.web.checker;
+import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
-import com.jakt.aiplatform.common.util.tools.ParamValidator;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.tools.ParamValidator;
 import com.jakt.aiplatform.web.param.AiChatRequest;
 import com.jakt.aiplatform.web.param.AiChatSessionRenameRequest;
 

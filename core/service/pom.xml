@@ -16,6 +16,11 @@
     <description>领域服务：承载业务规则（唯一性、状态流转等）</description>
 
     <dependencies>
+        <!-- common-framework：Result/PageResult/BizTemplate/TransactionTemplate/AssertUtil/LoggerUtil 等公共类 -->
+        <dependency>
+            <groupId>com.jakt</groupId>
+            <artifactId>aiplatform-common-framework</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.jakt</groupId>
             <artifactId>aiplatform-core-model</artifactId>

@@ -3,7 +3,7 @@ package com.jakt.aiplatform.web.config;
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.stp.StpUtil;
-import com.jakt.aiplatform.core.model.enums.BaseEnum;
+import com.jakt.aiplatform.common.framework.enums.BaseEnum;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.enums.LoginLogStatusEnum;
 import com.jakt.aiplatform.core.model.enums.MenuTypeEnum;

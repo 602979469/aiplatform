@@ -1,4 +1,5 @@
 package com.jakt.aiplatform.core.model.enums;
+import com.jakt.aiplatform.common.framework.enums.BaseEnum;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;

@@ -1,6 +1,6 @@
 package com.jakt.aiplatform.core.model.param;
 
-import com.jakt.aiplatform.core.model.domain.BaseModel;
+import com.jakt.aiplatform.common.framework.model.BaseModel;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import java.time.LocalDateTime;
 import lombok.Data;

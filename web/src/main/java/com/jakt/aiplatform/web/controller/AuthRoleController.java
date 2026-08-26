@@ -5,7 +5,7 @@ import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.biz.service.AuthRoleManager;
 import com.jakt.aiplatform.core.model.domain.AuthRole;
 import com.jakt.aiplatform.core.model.param.AuthRoleQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.web.assembler.AuthRoleAssembler;
 import com.jakt.aiplatform.web.checker.AuthRoleParamChecker;
 import com.jakt.aiplatform.web.param.AuthRoleQueryRequest;

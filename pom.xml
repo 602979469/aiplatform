@@ -86,6 +86,11 @@
             <!-- 本工程模块 -->
             <dependency>
                 <groupId>com.jakt</groupId>
+                <artifactId>aiplatform-common-framework</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jakt</groupId>
                 <artifactId>aiplatform-core-model</artifactId>
                 <version>${project.version}</version>
             </dependency>

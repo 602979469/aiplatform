@@ -16,6 +16,11 @@
     <description>外部服务调用集成：HTTP/RPC 客户端封装</description>
 
     <dependencies>
+        <!-- common-framework：ErrorCode/CommonException 异常体系、LoggerUtil/LogFileEnum -->
+        <dependency>
+            <groupId>com.jakt</groupId>
+            <artifactId>aiplatform-common-framework</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.jakt</groupId>
             <artifactId>aiplatform-common-util</artifactId>
@@ -38,6 +43,18 @@
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
             <version>2.0.62</version>
+        </dependency>
+        <!-- fabric8：Kubernetes 客户端（集群查询/部署操作） -->
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-client</artifactId>
+            <version>6.13.4</version>
+        </dependency>
+        <!-- JSch：SSH 远程执行（驱动 master 构建/部署脚本） -->
+        <dependency>
+            <groupId>com.github.mwiede</groupId>
+            <artifactId>jsch</artifactId>
+            <version>0.2.20</version>
         </dependency>
     </dependencies>
 </project>

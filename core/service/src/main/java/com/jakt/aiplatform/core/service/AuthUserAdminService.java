@@ -3,7 +3,7 @@ package com.jakt.aiplatform.core.service;
 import com.jakt.aiplatform.core.model.domain.AuthUser;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.param.AuthUserQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 
 import java.util.List;
 

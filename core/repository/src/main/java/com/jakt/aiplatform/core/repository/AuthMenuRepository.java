@@ -2,7 +2,7 @@ package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.core.model.domain.AuthMenu;
 import com.jakt.aiplatform.core.model.param.AuthMenuQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 
 import java.util.List;
 

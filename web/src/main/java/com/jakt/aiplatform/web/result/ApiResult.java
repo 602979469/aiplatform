@@ -1,6 +1,6 @@
 package com.jakt.aiplatform.web.result;
 
-import com.jakt.aiplatform.common.util.error.ErrorCode;
+import com.jakt.aiplatform.common.framework.error.ErrorCode;
 import com.jakt.aiplatform.common.util.error.CommonErrorCode;
 import lombok.Data;
 

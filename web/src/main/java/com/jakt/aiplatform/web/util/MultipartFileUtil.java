@@ -1,8 +1,8 @@
 package com.jakt.aiplatform.web.util;
+import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 
 import cn.hutool.core.io.IoUtil;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.exception.AiPlatformException;
+import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;

@@ -1,10 +1,11 @@
 package com.jakt.aiplatform.core.service.impl;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.integration.deepseek.DeepSeekClient;
 import com.jakt.aiplatform.common.integration.deepseek.model.DeepSeekChatMessage;
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AiChatMessage;
 import com.jakt.aiplatform.core.model.domain.AiChatResult;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
@@ -12,13 +13,12 @@ import com.jakt.aiplatform.core.model.constant.AiPlatformConstant;
 import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
 import com.jakt.aiplatform.core.model.enums.ChatRoleEnum;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.exception.AiPlatformException;
-import com.jakt.aiplatform.common.util.enums.LogFileEnum;
-import com.jakt.aiplatform.common.util.result.Result;
-import com.jakt.aiplatform.common.util.template.BizTemplate;
-import com.jakt.aiplatform.common.util.template.TransactionTemplate;
-import com.jakt.aiplatform.common.util.tools.LoggerUtil;
+import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
+import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
+import com.jakt.aiplatform.common.framework.result.Result;
+import com.jakt.aiplatform.common.framework.template.BizTemplate;
+import com.jakt.aiplatform.common.framework.template.TransactionTemplate;
+import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.core.service.AiChatMessageService;
 import com.jakt.aiplatform.core.service.AiChatService;
 import com.jakt.aiplatform.core.service.AiChatSessionService;
@@ -82,7 +82,7 @@ public class AiChatServiceImpl implements AiChatService {
             AssertUtil.throwErrWhenTrue(ObjectUtil.isNull(userMessage)
                             || !Objects.equals(session.getSessionId(), userMessage.getSessionId())
                             || userMessage.getRole() != ChatRoleEnum.USER,
-                    ErrorCodeEnum.CHAT_MESSAGE_NOT_RETRYABLE, "待重试的消息不存在或无权访问");
+                    BizErrorCodeEnum.CHAT_MESSAGE_NOT_RETRYABLE, "待重试的消息不存在或无权访问");
             reused = true;
         } else {
             userMessage = new AiChatMessage();
@@ -164,7 +164,7 @@ public class AiChatServiceImpl implements AiChatService {
         }
         AiChatSession session = aiChatSessionService.getAiChatSession(sessionId);
         AssertUtil.throwErrWhenTrue(ObjectUtil.isNull(session) || !Objects.equals(userId, session.getUserId()),
-                ErrorCodeEnum.SESSION_ACCESS_DENIED, "会话不存在或无权访问");
+                BizErrorCodeEnum.SESSION_ACCESS_DENIED, "会话不存在或无权访问");
         return session;
     }
 

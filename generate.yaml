@@ -5,7 +5,7 @@ projectArtifactPrefix: aiplatform
 
 # ---------------- 数据库（配置了 tables 时必填） ----------------
 jdbc:
-  url: jdbc:mysql://localhost:3306/aiplatform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+  url: jdbc:mysql://192.168.3.131:30306/aiplatform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
   username: root
   password: "123456"
 
@@ -47,3 +47,25 @@ tables:
     model_name: AuthLoginLog
     model_comment: 登录记录表
     generateController: false
+
+  - db_table_name: cluster_pod_config
+    model_name: ClusterPodConfig
+    model_comment: "业务pod配置表"
+    generateController: true
+    logicDelete:
+      enable: true
+      column_name: del_flag
+      normal_value: 0
+      delete_value: 2
+    columns:
+      resource_name:
+        comment: "资源名称"
+        type: String
+      pod_name:
+        comment: "pod名称"
+        type: String
+      git_url:
+        type: String
+      auto_refresh:
+        type: Integer
+        comment: "自动刷新开关"

@@ -1,4 +1,5 @@
 package com.jakt.aiplatform.core.repository.impl;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import cn.hutool.core.collection.CollUtil;
@@ -7,13 +8,12 @@ import com.jakt.aiplatform.common.dal.dataobject.AuthRoleDO;
 import com.jakt.aiplatform.common.dal.mapper.AuthRoleMapper;
 import com.jakt.aiplatform.common.dal.mapper.AuthRoleMenuMapper;
 import com.jakt.aiplatform.common.dal.mapper.AuthUserRoleMapper;
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AuthRole;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.AuthRoleQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
-import com.jakt.aiplatform.common.util.tools.LoggerUtil;
+import com.jakt.aiplatform.common.framework.result.PageResult;
+import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.core.repository.AuthRoleRepository;
 import com.jakt.aiplatform.core.repository.convertor.AuthRoleConvertor;
 import org.springframework.stereotype.Repository;
@@ -63,7 +63,7 @@ public class AuthRoleRepositoryImpl implements AuthRoleRepository {
     @Override
     public AuthRole findOne(AuthRoleQueryParam query) {
         List<AuthRoleDO> doList = authRoleMapper.selectList(AuthRoleConvertor.toDalQuery(query));
-        AssertUtil.throwErrWhenTrue(doList.size() > 1, ErrorCodeEnum.RESULT_NOT_UNIQUE,
+        AssertUtil.throwErrWhenTrue(doList.size() > 1, BizErrorCodeEnum.RESULT_NOT_UNIQUE,
                 "查询结果不唯一：预期 1 条，实际 " + doList.size() + " 条");
         return doList.isEmpty() ? null : AuthRoleConvertor.toModel(doList.get(0));
     }

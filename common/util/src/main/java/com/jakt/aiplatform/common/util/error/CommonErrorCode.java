@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.common.util.error;
 
+import com.jakt.aiplatform.common.framework.error.ErrorCode;
+
 /**
  * common-util 层通用错误码。
  */

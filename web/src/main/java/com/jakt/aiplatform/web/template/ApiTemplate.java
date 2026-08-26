@@ -2,9 +2,9 @@ package com.jakt.aiplatform.web.template;
 
 import com.jakt.aiplatform.web.result.ApiResult;
 import com.jakt.aiplatform.common.util.error.CommonErrorCode;
-import com.jakt.aiplatform.common.util.error.CommonException;
-import com.jakt.aiplatform.common.util.enums.LogFileEnum;
-import com.jakt.aiplatform.common.util.tools.LoggerUtil;
+import com.jakt.aiplatform.common.framework.error.CommonException;
+import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
+import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import jakarta.validation.ValidationException;
 import org.springframework.dao.DataIntegrityViolationException;
 

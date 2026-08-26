@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.ClusterPodConfigMapper">
+
+    <sql id="selectColumns">
+        id, resource_name, pod_name, version_no, namespace, git_url, git_branch, dockerfile, deploy_yaml, auto_refresh, last_built_commit, create_by, update_by, remark, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="resourceName != null and resourceName != ''">
+                AND resource_name = #{resourceName}
+            </if>
+            <if test="podName != null and podName != ''">
+                AND pod_name = #{podName}
+            </if>
+            <if test="versionNo != null and versionNo != ''">
+                AND version_no = #{versionNo}
+            </if>
+            <if test="namespace != null and namespace != ''">
+                AND namespace = #{namespace}
+            </if>
+            <if test="gitUrl != null and gitUrl != ''">
+                AND git_url = #{gitUrl}
+            </if>
+            <if test="gitBranch != null and gitBranch != ''">
+                AND git_branch = #{gitBranch}
+            </if>
+            <if test="dockerfile != null and dockerfile != ''">
+                AND dockerfile = #{dockerfile}
+            </if>
+            <if test="deployYaml != null and deployYaml != ''">
+                AND deploy_yaml = #{deployYaml}
+            </if>
+            <if test="autoRefresh != null">
+                AND auto_refresh = #{autoRefresh}
+            </if>
+            <if test="lastBuiltCommit != null and lastBuiltCommit != ''">
+                AND last_built_commit = #{lastBuiltCommit}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                AND create_by = #{createBy}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                AND update_by = #{updateBy}
+            </if>
+            <if test="remark != null and remark != ''">
+                AND remark = #{remark}
+            </if>
+            AND del_flag = '0'
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO">
+        SELECT <include refid="selectColumns"/>
+        FROM cluster_pod_config
+        WHERE id = #{id}
+        AND del_flag = '0'
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO">
+        SELECT <include refid="selectColumns"/>
+        FROM cluster_pod_config
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO">
+        SELECT <include refid="selectColumns"/>
+        FROM cluster_pod_config
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectOne" resultType="com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO">
+        SELECT <include refid="selectColumns"/>
+        FROM cluster_pod_config
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM cluster_pod_config
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO cluster_pod_config (resource_name, pod_name, version_no, namespace, git_url, git_branch, dockerfile, deploy_yaml, auto_refresh, last_built_commit, remark, create_time, update_time)
+        VALUES (#{resourceName}, #{podName}, #{versionNo}, #{namespace}, #{gitUrl}, #{gitBranch}, #{dockerfile}, #{deployYaml}, #{autoRefresh}, #{lastBuiltCommit}, #{remark}, NOW(), NOW())
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO">
+        UPDATE cluster_pod_config
+        SET resource_name = #{resourceName},
+            pod_name = #{podName},
+            version_no = #{versionNo},
+            namespace = #{namespace},
+            git_url = #{gitUrl},
+            git_branch = #{gitBranch},
+            dockerfile = #{dockerfile},
+            deploy_yaml = #{deployYaml},
+            auto_refresh = #{autoRefresh},
+            last_built_commit = #{lastBuiltCommit},
+            remark = #{remark}, update_time = NOW()
+        WHERE id = #{id}
+        AND del_flag = '0'
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO">
+        <if test="resourceName != null or podName != null or versionNo != null or namespace != null or gitUrl != null or gitBranch != null or dockerfile != null or deployYaml != null or autoRefresh != null or lastBuiltCommit != null or remark != null">
+            UPDATE cluster_pod_config
+        <set>
+            <if test="resourceName != null">
+                resource_name = #{resourceName},
+            </if>
+            <if test="podName != null">
+                pod_name = #{podName},
+            </if>
+            <if test="versionNo != null">
+                version_no = #{versionNo},
+            </if>
+            <if test="namespace != null">
+                namespace = #{namespace},
+            </if>
+            <if test="gitUrl != null">
+                git_url = #{gitUrl},
+            </if>
+            <if test="gitBranch != null">
+                git_branch = #{gitBranch},
+            </if>
+            <if test="dockerfile != null">
+                dockerfile = #{dockerfile},
+            </if>
+            <if test="deployYaml != null">
+                deploy_yaml = #{deployYaml},
+            </if>
+            <if test="autoRefresh != null">
+                auto_refresh = #{autoRefresh},
+            </if>
+            <if test="lastBuiltCommit != null">
+                last_built_commit = #{lastBuiltCommit},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+            update_time = NOW(),
+        </set>
+            WHERE id = #{id}
+            AND del_flag = '0'
+        </if>
+    </update>
+
+    <update id="deleteById" parameterType="com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO">
+        UPDATE cluster_pod_config
+        SET del_flag = '2'
+        WHERE id = #{id} AND del_flag = '0'
+    </update>
+</mapper>

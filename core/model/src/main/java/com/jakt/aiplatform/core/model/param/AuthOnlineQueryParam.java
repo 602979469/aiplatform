@@ -1,4 +1,5 @@
 package com.jakt.aiplatform.core.model.param;
+import com.jakt.aiplatform.common.framework.param.PageParam;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -1,7 +1,8 @@
 package com.jakt.aiplatform.common.util.tools;
 
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.error.CommonException;
 import com.jakt.aiplatform.common.util.error.CommonErrorCode;
-import com.jakt.aiplatform.common.util.error.CommonException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;

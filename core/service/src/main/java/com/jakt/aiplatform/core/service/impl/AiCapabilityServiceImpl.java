@@ -1,15 +1,15 @@
 package com.jakt.aiplatform.core.service.impl;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import com.jakt.aiplatform.common.integration.deepseek.DeepSeekClient;
 import com.jakt.aiplatform.common.integration.deepseek.model.DeepSeekChatMessage;
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AiCapability;
 import com.jakt.aiplatform.core.model.domain.AiSystemMessage;
 import com.jakt.aiplatform.core.model.domain.AiSystemSession;
 import com.jakt.aiplatform.core.model.enums.AiChatMessageStatusEnum;
 import com.jakt.aiplatform.core.model.enums.ChatRoleEnum;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.core.repository.AiCapabilityRepository;
 import com.jakt.aiplatform.core.service.AiCapabilityService;
 import com.jakt.aiplatform.core.service.AiSystemMessageService;
@@ -49,9 +49,9 @@ public class AiCapabilityServiceImpl implements AiCapabilityService {
     @Override
     public String invoke(String sceneCode, String capabilityCode, String input) {
         AiCapability capability = aiCapabilityRepository.getBySceneAndCode(sceneCode, capabilityCode);
-        AssertUtil.throwErrWhenNull(capability, ErrorCodeEnum.RESOURCE_NOT_FOUND,
+        AssertUtil.throwErrWhenNull(capability, BizErrorCodeEnum.RESOURCE_NOT_FOUND,
                 "AI能力不存在或已停用: " + sceneCode + "/" + capabilityCode);
-        AssertUtil.throwErrWhenBlank(capability.getSkillRules(), ErrorCodeEnum.RESOURCE_NOT_FOUND,
+        AssertUtil.throwErrWhenBlank(capability.getSkillRules(), BizErrorCodeEnum.RESOURCE_NOT_FOUND,
                 "AI能力未配置约束规则: " + capabilityCode);
 
         // 每次调用独立上下文：新建系统会话并落库（system规则 + user输入 + assistant回答）

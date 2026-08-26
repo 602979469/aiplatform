@@ -1,25 +1,26 @@
 package com.jakt.aiplatform.core.service.impl;
+import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.common.util.tools.ClientInfoUtil;
 import com.jakt.aiplatform.core.model.dto.AuthLoginInfo;
 import com.jakt.aiplatform.core.model.domain.AuthRole;
 import com.jakt.aiplatform.core.model.domain.AuthUser;
-import com.jakt.aiplatform.core.model.context.UserContext;
+import com.jakt.aiplatform.common.framework.context.UserContext;
 import com.jakt.aiplatform.core.model.context.AuthSessionKeys;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.core.model.enums.LoginLogStatusEnum;
-import com.jakt.aiplatform.core.model.exception.AiPlatformException;
-import com.jakt.aiplatform.common.util.enums.LogFileEnum;
+import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
+import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.param.AuthRoleQueryParam;
-import com.jakt.aiplatform.common.util.result.Result;
-import com.jakt.aiplatform.common.util.template.BizTemplate;
-import com.jakt.aiplatform.common.util.template.TransactionTemplate;
-import com.jakt.aiplatform.common.util.tools.LoggerUtil;
+import com.jakt.aiplatform.common.framework.result.Result;
+import com.jakt.aiplatform.common.framework.template.BizTemplate;
+import com.jakt.aiplatform.common.framework.template.TransactionTemplate;
+import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.core.repository.AuthLoginLogRepository;
 import com.jakt.aiplatform.core.repository.AuthRoleRepository;
 import com.jakt.aiplatform.core.repository.AuthUserRepository;
@@ -61,10 +62,10 @@ public class AuthServiceImpl implements AuthService {
         AuthUser user = authUserRepository.findByUsername(username);
         if (user == null || !BCrypt.checkpw(password, user.getPassword())) {
             writeLoginLog(null, username, LoginLogStatusEnum.FAIL, "用户名或密码错误");
-            throw AiPlatformException.ofThrow(ErrorCodeEnum.LOGIN_FAILED);
+            throw AiPlatformException.ofThrow(BizErrorCodeEnum.LOGIN_FAILED);
         }
-        AssertUtil.throwErrWhenTrue(user.getStatus() == EnableStatusEnum.DISABLE, ErrorCodeEnum.USER_DISABLED);
-        AssertUtil.throwErrWhenTrue(StpUtil.isDisable(user.getUserId()), ErrorCodeEnum.ACCOUNT_BANNED);
+        AssertUtil.throwErrWhenTrue(user.getStatus() == EnableStatusEnum.DISABLE, BizErrorCodeEnum.USER_DISABLED);
+        AssertUtil.throwErrWhenTrue(StpUtil.isDisable(user.getUserId()), BizErrorCodeEnum.ACCOUNT_BANNED);
         StpUtil.login(user.getUserId());
         StpUtil.getSession().set(AuthSessionKeys.USERNAME, user.getUsername());
         return buildLoginInfo(user.getUserId());
@@ -73,7 +74,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthLoginInfo register(String username, String password, String nickname, String email) {
         AssertUtil.throwErrWhenTrue(authUserRepository.findByUsername(username) != null,
-                ErrorCodeEnum.USERNAME_EXISTS);
+                BizErrorCodeEnum.USERNAME_EXISTS);
         Result<AuthUser> result = BizTemplate.execute(transactionTemplate, () -> {
             AuthUser user = new AuthUser();
             user.setUsername(username);
@@ -107,7 +108,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthUser getCurrentUser() {
         AuthUser user = authUserRepository.findById(UserContext.getUserId());
-        AssertUtil.throwErrWhenNull(user, ErrorCodeEnum.NOT_LOGIN);
+        AssertUtil.throwErrWhenNull(user, BizErrorCodeEnum.NOT_LOGIN);
         return user;
     }
 

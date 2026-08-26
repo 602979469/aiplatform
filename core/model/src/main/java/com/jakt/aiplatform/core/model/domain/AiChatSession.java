@@ -1,4 +1,5 @@
 package com.jakt.aiplatform.core.model.domain;
+import com.jakt.aiplatform.common.framework.model.BaseModel;
 
 
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;

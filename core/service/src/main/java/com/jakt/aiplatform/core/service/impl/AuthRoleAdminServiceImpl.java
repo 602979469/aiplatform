@@ -1,15 +1,15 @@
 package com.jakt.aiplatform.core.service.impl;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AuthRole;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.exception.AiPlatformException;
+import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 import com.jakt.aiplatform.core.model.param.AuthRoleQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
-import com.jakt.aiplatform.common.util.result.Result;
-import com.jakt.aiplatform.common.util.template.BizTemplate;
-import com.jakt.aiplatform.common.util.template.TransactionTemplate;
+import com.jakt.aiplatform.common.framework.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.Result;
+import com.jakt.aiplatform.common.framework.template.BizTemplate;
+import com.jakt.aiplatform.common.framework.template.TransactionTemplate;
 import com.jakt.aiplatform.core.repository.AuthRoleRepository;
 import com.jakt.aiplatform.core.service.AuthRoleAdminService;
 import org.springframework.stereotype.Service;
@@ -41,7 +41,7 @@ public class AuthRoleAdminServiceImpl implements AuthRoleAdminService {
     @Override
     public AuthRole getRole(Long roleId) {
         AuthRole role = authRoleRepository.findById(roleId);
-        AssertUtil.throwErrWhenNull(role, ErrorCodeEnum.RESOURCE_NOT_FOUND, "角色不存在");
+        AssertUtil.throwErrWhenNull(role, BizErrorCodeEnum.RESOURCE_NOT_FOUND, "角色不存在");
         return role;
     }
 
@@ -61,7 +61,7 @@ public class AuthRoleAdminServiceImpl implements AuthRoleAdminService {
         getRole(role.getRoleId());
         checkRoleKeyUnique(role.getRoleKey(), role.getRoleId());
         int affected = authRoleRepository.updateByCondition(role);
-        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+        AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
     }
 
     @Override
@@ -70,7 +70,7 @@ public class AuthRoleAdminServiceImpl implements AuthRoleAdminService {
         update.setRoleId(roleId);
         update.setStatus(status);
         int affected = authRoleRepository.updateByCondition(update);
-        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+        AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
     }
 
     @Override
@@ -101,7 +101,7 @@ public class AuthRoleAdminServiceImpl implements AuthRoleAdminService {
         query.setRoleKey(roleKey);
         AuthRole exists = authRoleRepository.findOne(query);
         AssertUtil.throwErrWhenTrue(exists != null && !Objects.equals(exists.getRoleId(), excludeRoleId),
-                ErrorCodeEnum.ROLE_KEY_EXISTS, "角色标识已存在");
+                BizErrorCodeEnum.ROLE_KEY_EXISTS, "角色标识已存在");
     }
 
     /** 校验事务结果，失败抛业务异常。 */

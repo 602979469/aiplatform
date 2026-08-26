@@ -3,7 +3,7 @@ package com.jakt.aiplatform.biz.service.impl;
 import com.jakt.aiplatform.biz.service.AuthOnlineManager;
 import com.jakt.aiplatform.core.model.dto.AuthOnlineInfo;
 import com.jakt.aiplatform.core.model.param.AuthOnlineQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.service.AuthSessionService;
 import org.springframework.stereotype.Service;
 

@@ -3,7 +3,7 @@ package com.jakt.aiplatform.core.repository.convertor;
 import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.dal.dataobject.AiCapabilityDO;
 import com.jakt.aiplatform.core.model.domain.AiCapability;
-import com.jakt.aiplatform.core.model.enums.BaseEnum;
+import com.jakt.aiplatform.common.framework.enums.BaseEnum;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 
 

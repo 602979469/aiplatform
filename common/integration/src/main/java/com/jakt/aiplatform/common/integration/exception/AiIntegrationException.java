@@ -1,7 +1,7 @@
 package com.jakt.aiplatform.common.integration.exception;
 
-import com.jakt.aiplatform.common.util.error.CommonException;
-import com.jakt.aiplatform.common.util.error.ErrorCode;
+import com.jakt.aiplatform.common.framework.error.CommonException;
+import com.jakt.aiplatform.common.framework.error.ErrorCode;
 
 /**
  * 外部集成异常。

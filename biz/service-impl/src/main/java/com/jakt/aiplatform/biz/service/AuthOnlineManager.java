@@ -2,7 +2,7 @@ package com.jakt.aiplatform.biz.service;
 
 import com.jakt.aiplatform.core.model.dto.AuthOnlineInfo;
 import com.jakt.aiplatform.core.model.param.AuthOnlineQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 
 /**
  * 在线会话管理用例编排。

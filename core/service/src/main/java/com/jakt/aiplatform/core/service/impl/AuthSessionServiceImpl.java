@@ -8,7 +8,7 @@ import com.jakt.aiplatform.core.model.constant.AiPlatformConstant;
 import com.jakt.aiplatform.core.model.dto.AuthOnlineInfo;
 import com.jakt.aiplatform.core.model.dto.AuthOnlineSnapshot;
 import com.jakt.aiplatform.core.model.param.AuthOnlineQueryParam;
-import com.jakt.aiplatform.common.util.result.PageResult;
+import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.repository.AuthOnlineRepository;
 import com.jakt.aiplatform.core.service.AuthSessionService;
 import org.springframework.stereotype.Service;

@@ -16,6 +16,11 @@
     <description>视图层：Controller、DTO、Result、全局异常处理、日志切面</description>
 
     <dependencies>
+        <!-- common-framework：ErrorCode/CommonException/PageResult/AssertUtil/LoggerUtil/UserContext 等公共类 -->
+        <dependency>
+            <groupId>com.jakt</groupId>
+            <artifactId>aiplatform-common-framework</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.jakt</groupId>
             <artifactId>aiplatform-biz-service-impl</artifactId>
@@ -42,6 +47,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <!-- SnakeYAML：Deployment YAML 格式校验（版本由 spring-boot-dependencies 管理） -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>

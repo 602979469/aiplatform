@@ -1,13 +1,13 @@
 package com.jakt.aiplatform.core.service.impl;
+import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
-import com.jakt.aiplatform.common.util.tools.AssertUtil;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
-import com.jakt.aiplatform.core.model.enums.ErrorCodeEnum;
-import com.jakt.aiplatform.core.model.exception.AiPlatformException;
+import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 import com.jakt.aiplatform.core.model.param.AiChatSessionQueryParam;
-import com.jakt.aiplatform.common.util.result.Result;
-import com.jakt.aiplatform.common.util.template.BizTemplate;
-import com.jakt.aiplatform.common.util.template.TransactionTemplate;
+import com.jakt.aiplatform.common.framework.result.Result;
+import com.jakt.aiplatform.common.framework.template.BizTemplate;
+import com.jakt.aiplatform.common.framework.template.TransactionTemplate;
 import com.jakt.aiplatform.core.repository.AiChatSessionRepository;
 import com.jakt.aiplatform.core.service.AiChatMessageService;
 import com.jakt.aiplatform.core.service.AiChatSessionService;
@@ -46,7 +46,7 @@ public class AiChatSessionServiceImpl implements AiChatSessionService {
     @Override
     public void updateByCondition(AiChatSession aiChatSession) {
         int affected = aiChatSessionRepository.updateByCondition(aiChatSession);
-        AssertUtil.throwErrWhenTrue(affected == 0, ErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
+        AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
     }
 
     @Override

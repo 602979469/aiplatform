@@ -4,7 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.dal.dataobject.AuthLoginLogDO;
 import com.jakt.aiplatform.common.dal.query.AuthLoginLogDalQuery;
 import com.jakt.aiplatform.core.model.domain.AuthLoginLog;
-import com.jakt.aiplatform.core.model.enums.BaseEnum;
+import com.jakt.aiplatform.common.framework.enums.BaseEnum;
 import com.jakt.aiplatform.core.model.enums.LoginLogStatusEnum;
 import com.jakt.aiplatform.core.model.param.AuthLoginLogQueryParam;
 

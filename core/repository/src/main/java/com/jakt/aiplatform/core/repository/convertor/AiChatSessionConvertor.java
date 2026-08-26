@@ -5,7 +5,7 @@ import com.jakt.aiplatform.common.dal.dataobject.AiChatSessionDO;
 import com.jakt.aiplatform.common.dal.query.AiChatSessionDalQuery;
 import com.jakt.aiplatform.core.model.domain.AiChatSession;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
-import com.jakt.aiplatform.core.model.enums.BaseEnum;
+import com.jakt.aiplatform.common.framework.enums.BaseEnum;
 import com.jakt.aiplatform.core.model.param.AiChatSessionQueryParam;
 
 

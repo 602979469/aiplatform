@@ -16,6 +16,11 @@
     <description>核心领域模型：Model、查询参数、异常体系、返回体、业务模板（仅依赖 lombok/slf4j）</description>
 
     <dependencies>
+        <!-- common-framework：BaseModel/BaseEnum/PageParam/ErrorCodeEnum/AiPlatformException 等公共基类 -->
+        <dependency>
+            <groupId>com.jakt</groupId>
+            <artifactId>aiplatform-common-framework</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.jakt</groupId>
             <artifactId>aiplatform-common-util</artifactId>
