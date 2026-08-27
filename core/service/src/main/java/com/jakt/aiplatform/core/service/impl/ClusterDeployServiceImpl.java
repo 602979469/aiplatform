@@ -108,11 +108,11 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "部署文件准备失败: " + e.getMessage());
         }
 
-        // 3. 拉取源码（git 浅克隆，带 GitHub token 防限流；输出 tee 到构建日志）
+        // 3. 拉取源码（git 浅克隆，直接用用户填写的 git 地址，私有仓库地址自带 token；输出 tee 到构建日志）
         //    log_dir 传 appDir，fetch 输出写 apps/{configId}/fetch.log
         SshResult fetchResult = sshClient.execute(ciProperties.getMasterHost(),
                 "bash " + ciProperties.getWorkDir() + "/bin/fetch_source.sh "
-                        + config.getGitUrl() + " " + config.getGitBranch() + " " + remoteSrcDir
+                        + "'" + config.getGitUrl() + "' " + config.getGitBranch() + " " + remoteSrcDir
                         + " " + remoteDockerfile + " " + appDir,
                 600);
         if (!fetchResult.isSuccess()) {

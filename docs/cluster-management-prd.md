@@ -52,25 +52,26 @@ aiplatform 需要一个"集群管理"功能，让开发同学通过页面完成�
 | 镜像构建 | 每目标节点各自本地构建 | master 构建 AMD、worker 构建 ARM，各自导入自己 containerd |
 | 调度 | Java 层定时任务（`@Scheduled`） | 不做系统级 cron；按业务 pod 配置的"自动刷新"开关轮询 git 分支 |
 
-### 4.2 部署链路（三件套）
+### 4.2 部署链路（脚本一体）
 
 ```text
-┌────────────┐  SSH    ┌─────────────────────────────────────┐
-│   Java      │ ──────▶ │   master 上的 ~/aiplatform-ci/      │
-│ (aiplatform)│         │                                     │
-│            │         │  image_tools.sh（改版）              │
-│ 读配置      │         │    ├─ master: git拉码→docker build   │
-│ 生成Dockerfile│       │    │           →docker save→ctr import│
-│ 生成deploy.yaml │      │    └─ worker: 同上（按架构选择）     │
-│ SSH触发脚本  │         │                                     │
-│ k8s client   │         │  deploy.sh                          │
-│ 查大盘/状态   │         │    └─ kubectl apply deploy.yaml    │
-└────────────┘         └─────────────────────────────────────┘
+┌────────────┐  SSH    ┌────────────────────────────────────────┐
+│   Java      │ ──────▶ │   master 上的 ~/cluster-ci/            │
+│ (aiplatform)│         │                                        │
+│            │         │  fetch_source.sh（拉源码）              │
+│ 读配置      │         │    └─ git 浅克隆指定分支               │
+│ 生成Dockerfile│       │  build_deploy.sh（构建+部署一体）        │
+│ 生成deploy.yaml │      │    ├─ master: docker build→save→ctr   │
+│ SSH触发脚本  │         │    ├─ worker: 同上（各自架构）         │
+│ k8s client   │         │    └─ kubectl apply + rollout         │
+│ 查大盘/状态   │         │  全程输出 tee 到 deploy-*.log         │
+└────────────┘         └────────────────────────────────────────┘
 ```
 
 - **Java（aiplatform）**：读配置 → 生成 Dockerfile + deployment.yaml → 写入挂载目录 → SSH 触发 master 脚本 → 轮询状态 → 日志回显。
-- **image_tools.sh（改版）**：按架构选择，逐节点各自构建导入。
-- **deploy.sh**：`kubectl apply -f` + `rollout status`。
+- **fetch_source.sh**：git 浅克隆指定分支到挂载目录；大仓库带低网速保护（60s 低于 1KB/s 终止）。
+- **build_deploy.sh**：构建 + 部署一体——master/worker 各自构建导入 + `kubectl apply` + `set image` + `rollout status`，**全程输出 tee 到 `apps/<configId>/deploy-*.log`**（一次 SSH 调用，日志完整可见）。
+- **image_tools.sh / deploy.sh**：保留为底层组件，被 build_deploy.sh 内联调用（避免双重 tee）。
 
 ### 4.3 镜像构建语义
 
@@ -100,8 +101,8 @@ aiplatform 需要一个"集群管理"功能，让开发同学通过页面完成�
       └─ 比对"上次构建 commit"与远程分支最新 commit，有变化才触发
   → 部署前校验：集群中已存在同 podName 的 Deployment → 提示"已部署过"，拒绝本次部署
   → 未部署过 → 异步执行：生成 Dockerfile + deployment.yaml → 写入挂载目录
-  → SSH master 执行 image_tools.sh（逐节点构建导入）
-  → SSH master 执行 deploy.sh（kubectl apply + rollout status）
+  → SSH master 执行 fetch_source.sh（git 浅克隆拉源码）
+  → SSH master 执行 build_deploy.sh（逐节点构建导入 + kubectl apply + rollout，全程写日志）
   → 结束：成功/失败不随请求返回，用户在实时管理页通过状态、日志、Events 自行排查
 ```
 
@@ -290,29 +291,31 @@ aiplatform 需要一个"集群管理"功能，让开发同学通过页面完成�
 
 ## 10. 脚本契约
 
-### 10.1 image_tools.sh（改版）
+### 10.1 fetch_source.sh（拉源码）
 
-入参：`<configId>`。工作目录：`~/aiplatform-ci/apps/<configId>/`（挂载目录）。
+入参：`<git_url> <branch> <dest_dir> <dockerfile_path> [log_dir]`。
 
 执行逻辑：
 
-1. 读取该目录下的参数文件（镜像名、分支、git 地址）与 deployment.yaml。
-2. 从 deployment.yaml 的 `nodeSelector` 解析目标架构，确定目标节点（master=AMD，worker=ARM）。
-3. 逐节点：`git clone/pull 指定分支 → docker build -t <podName>:<短哈希> → docker save → sudo ctr -n k8s.io image import`。
-4. 全部输出由 Java 捕获并追加写入部署日志文件；任一节点失败即整体失败（日志记录原因）。
+1. 直接用用户填写的 git URL 浅克隆；公开仓库无需凭证，私有仓库由用户在地址中携带凭证（`https://用户名:token@域名/owner/repo.git`，GitHub/Gitee 通用）。
+2. git 浅克隆单分支到 `dest_dir`；带低网速保护（`GIT_HTTP_LOW_SPEED_LIMIT=1`、`GIT_HTTP_LOW_SPEED_TIME=60`，持续 60s 低于 1KB/s 终止）。
+3. 用用户配置的 Dockerfile 覆盖仓库里的 Dockerfile（保证构建用系统配置）。
+4. 输出 commit 短哈希（镜像 tag）。
+5. `log_dir` 非空时输出 tee 到 `${log_dir}/fetch.log`。
 
-> 与现状差异：现版是"master 拉镜像 → tar 分发导入"；改版为"每节点各自构建导入"。
+### 10.2 build_deploy.sh（构建 + 部署一体）
 
-### 10.2 deploy.sh
+入参：`<image> <tag> <src_dir> <log_dir> <namespace> <yaml_path> <worker_host>`。
 
-入参：`<configId>`。
+执行逻辑：
 
-```bash
-kubectl apply -f ~/aiplatform-ci/apps/<configId>/deployment.yaml
-kubectl rollout status <deployment> -n <namespace> --timeout=180s
-```
+1. 全程输出 `exec > >(tee ${log_dir}/deploy-<时间戳>.log)`——**构建和部署每一步都实时写入日志文件**（一次 SSH 调用，日志完整可见）。
+2. master 本机：`docker build → docker save → sudo ctr -n k8s.io image import`。
+3. worker：同步源码 → 远端同步骤（各自架构，天然正确）。
+4. `kubectl apply -f <yaml>` → `kubectl set image` → `kubectl rollout status`。
+5. 任一节点失败即整体失败（日志记录原因）。
 
-输出由 Java 捕获并追加写入部署日志文件；失败返回非零退出码与错误输出（一并入日志）。
+> image_tools.sh（构建导入）与 deploy.sh（apply）保留为底层组件，由 build_deploy.sh 内联调用，避免双重 tee 产生多份日志。
 
 ## 11. 安全与敏感信息
 

@@ -101,7 +101,7 @@ public final class ClusterPodConfigAssembler {
     }
 
     /**
-     * 领域模型 → 响应 VO（gitUrl 脱敏）。
+     * 领域模型 → 响应 VO（gitUrl 原样返回，内部工具不脱敏，复制回填需要真实地址）。
      *
      * @param clusterPodConfig 领域模型；为空返回 null
      * @return 响应 VO
@@ -116,7 +116,7 @@ public final class ClusterPodConfigAssembler {
         response.setPodName(clusterPodConfig.getPodName());
         response.setStatus(clusterPodConfig.getStatus());
         response.setNamespace(clusterPodConfig.getNamespace());
-        response.setGitUrl(maskGitUrl(clusterPodConfig.getGitUrl()));
+        response.setGitUrl(clusterPodConfig.getGitUrl());
         response.setGitBranch(clusterPodConfig.getGitBranch());
         response.setDockerfile(clusterPodConfig.getDockerfile());
         response.setDeployYaml(clusterPodConfig.getDeployYaml());
@@ -216,24 +216,4 @@ public final class ClusterPodConfigAssembler {
                 .build();
     }
 
-    /**
-     * git 地址脱敏：只保留协议、主机与路径，隐藏 user:token 部分。
-     *
-     * @param gitUrl git 地址
-     * @return 脱敏后的 git 地址
-     */
-    private static String maskGitUrl(String gitUrl) {
-        if (gitUrl == null) {
-            return null;
-        }
-        int atIndex = gitUrl.indexOf('@');
-        if (atIndex <= 0) {
-            return gitUrl;
-        }
-        int schemeIndex = gitUrl.indexOf("://");
-        if (schemeIndex < 0 || schemeIndex > atIndex) {
-            return gitUrl;
-        }
-        return gitUrl.substring(0, schemeIndex + 3) + "***" + gitUrl.substring(atIndex);
-    }
 }

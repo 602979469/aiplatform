@@ -7,7 +7,7 @@ CREATE TABLE `cluster_pod_config` (
   `resource_name` varchar(64) NOT NULL COMMENT '资源名称（中文名）',
   `pod_name` varchar(64) NOT NULL COMMENT '业务pod名称（镜像名）',
   `namespace` varchar(64) NOT NULL COMMENT '业务命名空间',
-  `git_url` varchar(512) NOT NULL COMMENT 'git仓库地址（不带token，凭证由cluster-ci统一管理）',
+  `git_url` varchar(512) NOT NULL COMMENT 'git仓库地址（公开仓库无需token；私有仓库在地址中携带token，如 https://用户名:token@域名/owner/repo.git）',
   `git_branch` varchar(128) NOT NULL COMMENT 'git分支',
   `dockerfile` text NOT NULL COMMENT 'Dockerfile内容',
   `deploy_yaml` mediumtext NOT NULL COMMENT 'Deployment YAML',
