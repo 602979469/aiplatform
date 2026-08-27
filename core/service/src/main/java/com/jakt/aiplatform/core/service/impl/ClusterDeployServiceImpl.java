@@ -123,26 +123,16 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
         String imageTag = fetchResult.getOutput().trim();
         AssertUtil.throwErrWhenBlank(imageTag, ErrorCodeEnum.SYSTEM_ERROR, "镜像 tag 为空");
 
-        // 5. 触发双架构构建导入（image_tools.sh：master + worker 各自构建）
-        SshResult buildResult = sshClient.execute(ciProperties.getMasterHost(),
-                "bash " + ciProperties.getWorkDir() + "/bin/image_tools.sh "
-                        + config.getPodName() + " " + imageTag + " " + remoteSrcDir
-                        + " " + appDir,
+        // 5. 构建 + 部署一体（build_deploy.sh：双架构构建导入 + apply + set image + rollout，全程 tee 日志）
+        SshResult deployResult = sshClient.execute(ciProperties.getMasterHost(),
+                "bash " + ciProperties.getWorkDir() + "/bin/build_deploy.sh "
+                        + config.getPodName() + " " + imageTag + " " + remoteSrcDir + " "
+                        + appDir + " " + config.getNamespace() + " " + remoteDeployYaml
+                        + " " + ciProperties.getWorkerHost(),
                 DEPLOY_TIMEOUT_SECONDS);
-        if (!buildResult.isSuccess()) {
+        if (!deployResult.isSuccess()) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
-                    "镜像构建导入失败: " + shortOutput(buildResult.getOutput()));
-        }
-
-        // 6. apply + set image + rollout（deploy.sh）
-        SshResult applyResult = sshClient.execute(ciProperties.getMasterHost(),
-                "bash " + ciProperties.getWorkDir() + "/bin/deploy.sh "
-                        + config.getNamespace() + " " + remoteDeployYaml + " "
-                        + config.getPodName() + " " + imageTag,
-                DEPLOY_TIMEOUT_SECONDS);
-        if (!applyResult.isSuccess()) {
-            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
-                    "部署 apply 失败: " + shortOutput(applyResult.getOutput()));
+                    "构建部署失败: " + shortOutput(deployResult.getOutput()));
         }
 
         // 7. 记录本次构建 commit（自动刷新比对用）
