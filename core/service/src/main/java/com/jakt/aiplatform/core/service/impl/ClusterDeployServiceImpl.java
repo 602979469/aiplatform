@@ -87,22 +87,19 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "部署文件准备失败: " + e.getMessage());
         }
 
-        // 3. git 拉取指定分支到挂载目录
-        String gitClone = "rm -rf " + remoteSrcDir + " && git clone --depth 1 -b "
-                + config.getGitBranch() + " " + config.getGitUrl() + " " + remoteSrcDir;
-        SshResult cloneResult = sshClient.execute(ciProperties.getMasterHost(), gitClone, 300);
-        if (!cloneResult.isSuccess()) {
+        // 3. 拉取源码（API 查 commit + codeload 下载，带 GitHub token 防限流；脚本输出 commit 短哈希）
+        //    传入用户上传的 Dockerfile，脚本拉完源码后用其覆盖仓库 Dockerfile（保证构建用系统配置）
+        SshResult fetchResult = sshClient.execute(ciProperties.getMasterHost(),
+                "bash " + ciProperties.getWorkDir() + "/bin/fetch_source.sh "
+                        + config.getGitUrl() + " " + config.getGitBranch() + " " + remoteSrcDir
+                        + " " + remoteDockerfile,
+                300);
+        if (!fetchResult.isSuccess()) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
-                    "git 拉取失败: " + shortOutput(cloneResult.getOutput()));
+                    "源码拉取失败: " + shortOutput(fetchResult.getOutput()));
         }
-
-        // 4. 获取 commit 短哈希作为镜像 tag（脚本自动算，用户不接触镜像版本号）
-        SshResult commitResult = sshClient.execute(ciProperties.getMasterHost(),
-                "git -C " + remoteSrcDir + " rev-parse --short HEAD", 60);
-        if (!commitResult.isSuccess()) {
-            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "获取 commit 失败");
-        }
-        String imageTag = commitResult.getOutput().trim();
+        // 4. 镜像 tag = commit 短哈希（脚本最后一行输出，用户不接触镜像版本号）
+        String imageTag = fetchResult.getOutput().trim();
         AssertUtil.throwErrWhenBlank(imageTag, ErrorCodeEnum.SYSTEM_ERROR, "镜像 tag 为空");
 
         // 5. 触发双架构构建导入（image_tools.sh：master + worker 各自构建）
@@ -129,7 +126,7 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
         // 7. 记录本次构建 commit（自动刷新比对用）
         ClusterPodConfig update = new ClusterPodConfig();
         update.setId(config.getId());
-        update.setLastBuiltCommit(commitResult.getOutput().trim());
+        update.setLastBuiltCommit(imageTag);
         clusterPodConfigService.updateByCondition(update);
 
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE,

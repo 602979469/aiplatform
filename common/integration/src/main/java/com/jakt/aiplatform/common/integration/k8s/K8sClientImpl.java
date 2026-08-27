@@ -14,9 +14,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.metrics.v1beta1.NodeMetrics;
 import io.fabric8.kubernetes.api.model.metrics.v1beta1.NodeMetricsList;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.LogWatch;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import org.springframework.beans.factory.DisposableBean;
@@ -77,21 +75,25 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
                 metric.setMemoryTotalBytes(parseMemoryBytes(node.getStatus().getCapacity().get("memory")));
                 result.add(metric);
             }
-            // metrics-server 用量：单节点失败不影响整体，失败节点用量置 null
-            NodeMetricsList nodeMetricsList = kubernetesClient.top().nodes().metrics();
-            if (nodeMetricsList != null && nodeMetricsList.getItems() != null) {
-                for (NodeMetrics nodeMetrics : nodeMetricsList.getItems()) {
-                    String nodeName = nodeMetrics.getMetadata() == null ? null : nodeMetrics.getMetadata().getName();
-                    K8sNodeMetric metric = result.stream()
-                            .filter(m -> m.getNodeName().equals(nodeName))
-                            .findFirst()
-                            .orElse(null);
-                    if (metric == null || nodeMetrics.getUsage() == null) {
-                        continue;
+            // metrics-server 用量：metrics API 不可用（未安装 metrics-server）时降级，仅返回节点容量，不抛异常
+            try {
+                NodeMetricsList nodeMetricsList = kubernetesClient.top().nodes().metrics();
+                if (nodeMetricsList != null && nodeMetricsList.getItems() != null) {
+                    for (NodeMetrics nodeMetrics : nodeMetricsList.getItems()) {
+                        String nodeName = nodeMetrics.getMetadata() == null ? null : nodeMetrics.getMetadata().getName();
+                        K8sNodeMetric metric = result.stream()
+                                .filter(m -> m.getNodeName().equals(nodeName))
+                                .findFirst()
+                                .orElse(null);
+                        if (metric == null || nodeMetrics.getUsage() == null) {
+                            continue;
+                        }
+                        metric.setCpuUsedMilli(parseCpuMilli(nodeMetrics.getUsage().get("cpu")));
+                        metric.setMemoryUsedBytes(parseMemoryBytes(nodeMetrics.getUsage().get("memory")));
                     }
-                    metric.setCpuUsedMilli(parseCpuMilli(nodeMetrics.getUsage().get("cpu")));
-                    metric.setMemoryUsedBytes(parseMemoryBytes(nodeMetrics.getUsage().get("memory")));
                 }
+            } catch (KubernetesClientException e) {
+                LoggerUtil.warn(LogFileEnum.INTEGRATION, "【K8S】metrics-server 不可用，资源用量置空: {}", e.getMessage());
             }
             return result;
         } catch (KubernetesClientException e) {

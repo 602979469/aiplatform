@@ -83,7 +83,10 @@ public final class ClusterPodConfigParamChecker {
         try {
             LoaderOptions loaderOptions = new LoaderOptions();
             loaderOptions.setAllowDuplicateKeys(false);
-            new Yaml(loaderOptions).load(deployYaml);
+            // 支持多文档 YAML（Deployment + Service + Ingress 用 --- 分隔）
+            for (Object ignored : new Yaml(loaderOptions).loadAll(deployYaml)) {
+                // 逐个文档解析，任一非法即抛异常
+            }
         } catch (YAMLException e) {
             throw new CommonException(ErrorCodeEnum.PARAM_INVALID.getCode(),
                     "Deployment YAML 格式不合法: " + e.getMessage());

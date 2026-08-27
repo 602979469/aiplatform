@@ -32,7 +32,7 @@ public class ClusterPodConfigCreateRequest extends BaseRequest {
     @Size(max = 64, message = "业务命名空间长度不能超过 64")
     private String namespace;
 
-    /** git仓库地址（可含token，敏感，仅提交时传入，不回显）。 */
+    /** git仓库地址（https://github.com/xxx/yyy.git，不带 token；拉取凭证由 cluster-ci secrets 统一管理）。 */
     @NotBlank(message = "git仓库地址不能为空")
     @Size(max = 512, message = "git仓库地址长度不能超过 512")
     private String gitUrl;

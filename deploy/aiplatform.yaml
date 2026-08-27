@@ -57,6 +57,17 @@ spec:
                   key: redis-password
             - name: AIPLATFORM_AVATAR_DIR
               value: /data/uploads
+            # 集群部署编排 SSH：pod 内挂载的 master 私钥（secret: aiplatform-ssh-key）
+            - name: SSH_USERNAME
+              value: ubuntu
+            - name: SSH_PRIVATE_KEY_PATH
+              value: /root/.ssh/id_rsa
+            - name: CLUSTER_CI_WORK_DIR
+              value: /home/ubuntu/cluster-ci
+            - name: CLUSTER_CI_MASTER_HOST
+              value: 192.168.3.131
+            - name: CLUSTER_CI_WORKER_HOST
+              value: 192.168.3.217
             # DeepSeek API Key 从 secret aiplatform-secret 注入（对应 application.yml 的 ${DEEPSEEK_API_KEY:}）
             - name: DEEPSEEK_API_KEY
               valueFrom:
@@ -67,6 +78,8 @@ spec:
           volumeMounts:
             - name: uploads
               mountPath: /data/uploads
+            - name: ssh-key
+              mountPath: /root/.ssh
           resources:
             requests:
               cpu: 250m
@@ -89,6 +102,10 @@ spec:
           hostPath:
             path: /data/aiplatform-uploads
             type: DirectoryOrCreate
+        - name: ssh-key
+          secret:
+            secretName: aiplatform-ssh-key
+            defaultMode: 0400
 ---
 apiVersion: v1
 kind: Service

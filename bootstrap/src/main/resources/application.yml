@@ -65,7 +65,7 @@ ai:
   ssh:
     # master 主机 SSH（构建/部署脚本执行机）
     username: ${SSH_USERNAME:ubuntu}
-    private-key-path: ${SSH_PRIVATE_KEY_PATH:}
+    private-key-path: ${SSH_PRIVATE_KEY_PATH:/Users/jakt/.ssh/id_ed25519}
     timeout-seconds: 900
 
 # 集群管理（cluster-ci）
