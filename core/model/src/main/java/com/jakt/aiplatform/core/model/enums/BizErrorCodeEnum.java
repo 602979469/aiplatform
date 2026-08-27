@@ -81,7 +81,10 @@ public enum BizErrorCodeEnum implements ErrorCode {
     MIRROR_FILE_NOT_REGULAR("镜像文件不是普通文件"),
 
     /** 创建镜像存储目录失败。 */
-    MIRROR_DIR_CREATE_FAILED("创建镜像存储目录失败");
+    MIRROR_DIR_CREATE_FAILED("创建镜像存储目录失败"),
+
+    /** 当前状态不允许该操作。 */
+    STATUS_NOT_ALLOWED("当前状态不允许该操作");
 
     private final String message;
 

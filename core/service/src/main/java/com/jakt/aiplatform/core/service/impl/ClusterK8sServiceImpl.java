@@ -116,6 +116,19 @@ public class ClusterK8sServiceImpl implements ClusterK8sService {
     }
 
     @Override
+    public void delete(String namespace, String deploymentName) {
+        Result<Void> result = BizTemplate.executeWithoutResult(() -> {
+            K8sDeploymentInfo deployment = k8sClient.getDeployment(namespace, deploymentName);
+            if (deployment == null) {
+                throw AiPlatformException.ofThrow(BizErrorCodeEnum.RESOURCE_NOT_FOUND,
+                        "业务 pod 不存在: " + deploymentName);
+            }
+            k8sClient.deleteDeployment(namespace, deploymentName);
+        });
+        checkResult(result, "删除业务 pod 失败");
+    }
+
+    @Override
     public String getPodLogs(String namespace, String deploymentName) {
         Result<String> result = BizTemplate.execute(() -> {
             K8sDeploymentInfo deployment = k8sClient.getDeployment(namespace, deploymentName);

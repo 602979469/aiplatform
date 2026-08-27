@@ -3,6 +3,7 @@ import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.collection.CollUtil;
 import com.jakt.aiplatform.biz.service.ClusterPodConfigManager;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
@@ -13,6 +14,7 @@ import com.jakt.aiplatform.core.model.domain.ClusterDashboard;
 import com.jakt.aiplatform.core.model.domain.ClusterPodConfig;
 import com.jakt.aiplatform.core.model.domain.ClusterRuntimeEvent;
 import com.jakt.aiplatform.core.model.domain.ClusterRuntimePod;
+import com.jakt.aiplatform.core.model.enums.ClusterPodConfigStatusEnum;
 import com.jakt.aiplatform.core.model.enums.BizNamespaceEnum;
 import com.jakt.aiplatform.core.model.param.ClusterPodConfigQueryParam;
 import com.jakt.aiplatform.core.service.ClusterK8sService;
@@ -122,43 +124,91 @@ public class ClusterPodConfigManagerImpl implements ClusterPodConfigManager {
     @Async("asyncThreadPool")
     public void deploy(Long id) {
         ClusterPodConfig config = requireConfig(id);
+        // 状态机：BUILDING（构建中）与 RETIRED（弃用）不可部署
+        AssertUtil.throwErrWhenTrue(
+                ClusterPodConfigStatusEnum.BUILDING == config.getStatus()
+                        || ClusterPodConfigStatusEnum.RETIRED == config.getStatus(),
+                BizErrorCodeEnum.STATUS_NOT_ALLOWED,
+                "当前状态不允许部署");
+        // 状态机：允许部署的状态（DRAFT/BUILDING/BUILD_FAILED/PUBLISHED）先置构建中
+        clusterPodConfigService.markBuilding(id);
         // 异步执行：成功/失败由用户通过实时管理页排查；部署内部 @Retryable 重试 3 次
         clusterDeployService.deploy(config);
-        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "部署已受理 id={} podName={} versionNo={}",
-                id, config.getPodName(), config.getVersionNo());
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "部署已受理 id={} podName={}",
+                id, config.getPodName());
     }
 
     @Override
     public void stop(Long id) {
         ClusterPodConfig config = requireConfig(id);
-        clusterK8sService.stop(config.getNamespace(), deploymentName(config));
-        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "停用业务pod成功 id={} deployment={}", id, deploymentName(config));
+        String deploymentName = clusterDeployService.resolveDeploymentName(config);
+        clusterK8sService.stop(config.getNamespace(), deploymentName);
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "停用业务pod成功 id={} deployment={}", id, deploymentName);
     }
 
     @Override
     public void start(Long id) {
         ClusterPodConfig config = requireConfig(id);
+        String deploymentName = clusterDeployService.resolveDeploymentName(config);
         int replicas = resolveReplicas(config.getDeployYaml());
-        clusterK8sService.start(config.getNamespace(), deploymentName(config), replicas);
+        clusterK8sService.start(config.getNamespace(), deploymentName, replicas);
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "启用业务pod成功 id={} deployment={} replicas={}",
-                id, deploymentName(config), replicas);
+                id, deploymentName, replicas);
     }
 
     @Override
     public List<ClusterRuntimePod> listRuntimePods() {
-        return clusterK8sService.listRuntimePods(listNamespaces());
+        List<ClusterRuntimePod> pods = clusterK8sService.listRuntimePods(listNamespaces());
+        fillPodConfigId(pods);
+        return pods;
     }
 
     @Override
-    public String getPodLogs(String podName) {
-        ClusterPodConfig config = findConfigByPodName(podName);
-        return clusterK8sService.getPodLogs(config.getNamespace(), deploymentName(config));
+    public String getPodLogs(Long configId) {
+        ClusterPodConfig config = requireConfig(configId);
+        return clusterK8sService.getPodLogs(config.getNamespace(), clusterDeployService.resolveDeploymentName(config));
     }
 
     @Override
-    public List<ClusterRuntimeEvent> getPodEvents(String podName) {
-        ClusterPodConfig config = findConfigByPodName(podName);
-        return clusterK8sService.getPodEvents(config.getNamespace(), deploymentName(config));
+    public List<ClusterRuntimeEvent> getPodEvents(Long configId) {
+        ClusterPodConfig config = requireConfig(configId);
+        return clusterK8sService.getPodEvents(config.getNamespace(), clusterDeployService.resolveDeploymentName(config));
+    }
+
+    @Override
+    public void deleteInstance(Long configId) {
+        ClusterPodConfig config = requireConfig(configId);
+        // 删除 K8s 实例资源，不删配置行
+        clusterDeployService.deleteInstance(config);
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "业务pod实例已删除 id={} podName={}", configId, config.getPodName());
+    }
+
+    @Override
+    public String getBuildLog(Long configId) {
+        return clusterDeployService.getBuildLog(configId);
+    }
+
+    @Override
+    public void retire(Long id) {
+        clusterPodConfigService.retire(id);
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "弃用业务pod配置成功 id={}", id);
+    }
+
+    @Override
+    public ClusterPodConfig copyConfig(Long id) {
+        ClusterPodConfig source = requireConfig(id);
+        ClusterPodConfig copy = new ClusterPodConfig();
+        copy.setResourceName(source.getResourceName() + "（副本）");
+        copy.setPodName(buildCopyPodName(source.getPodName()));
+        copy.setNamespace(source.getNamespace());
+        copy.setGitUrl(source.getGitUrl());
+        copy.setGitBranch(source.getGitBranch());
+        copy.setDockerfile(source.getDockerfile());
+        copy.setDeployYaml(source.getDeployYaml());
+        copy.setAutoRefresh(source.getAutoRefresh());
+        copy.setRemark(source.getRemark());
+        // 复制配置状态为草稿，不触发部署
+        return clusterPodConfigService.createClusterPodConfig(copy);
     }
 
     /**
@@ -174,28 +224,53 @@ public class ClusterPodConfigManagerImpl implements ClusterPodConfigManager {
     }
 
     /**
-     * 按 podName 查配置（取第一条），不存在抛业务异常。
+     * 生成复制后的 podName：原名称 + "-copy"，冲突时追加序号（-copy1、-copy2...）。
      *
-     * @param podName pod 名称
-     * @return 配置
+     * @param podName 原 pod 名称
+     * @return 不冲突的新名称
      */
-    private ClusterPodConfig findConfigByPodName(String podName) {
-        ClusterPodConfigQueryParam query = new ClusterPodConfigQueryParam();
-        query.setPodName(podName);
-        List<ClusterPodConfig> configs = clusterPodConfigService.findList(query);
-        AssertUtil.throwErrWhenTrue(configs.isEmpty(), BizErrorCodeEnum.RESOURCE_NOT_FOUND,
-                "podName 未配置: " + podName);
-        return configs.get(0);
+    private String buildCopyPodName(String podName) {
+        String base = podName + "-copy";
+        String candidate = base;
+        int suffix = 1;
+        while (podNameExists(candidate)) {
+            candidate = base + suffix;
+            suffix++;
+        }
+        return candidate;
     }
 
     /**
-     * Deployment 命名规则：podName-versionNo（K8s 名称小写化）。
+     * 判断 podName 是否已存在（配置表唯一）。
      *
-     * @param config 配置
-     * @return Deployment 名称
+     * @param podName pod 名称
+     * @return 是否存在
      */
-    private String deploymentName(ClusterPodConfig config) {
-        return (config.getPodName() + "-" + config.getVersionNo()).toLowerCase();
+    private boolean podNameExists(String podName) {
+        ClusterPodConfigQueryParam query = new ClusterPodConfigQueryParam();
+        query.setPodName(podName);
+        return clusterPodConfigService.findList(query).size() > 0;
+    }
+
+    /**
+     * 给实时 pod 列表补齐配置 ID：deployment 名可能是 podName（取决于用户 YAML），按 podName 匹配配置。
+     *
+     * @param pods 实时 pod 列表
+     */
+    private void fillPodConfigId(List<ClusterRuntimePod> pods) {
+        if (CollUtil.isEmpty(pods)) {
+            return;
+        }
+        List<ClusterPodConfig> configs = clusterPodConfigService.findList(new ClusterPodConfigQueryParam());
+        for (ClusterRuntimePod pod : pods) {
+            for (ClusterPodConfig config : configs) {
+                if (config.getPodName().equals(pod.getPodName())) {
+                    pod.setPodConfigId(config.getId());
+                    pod.setPodName(config.getPodName());
+                    break;
+                }
+            }
+        }
     }
 
     /**

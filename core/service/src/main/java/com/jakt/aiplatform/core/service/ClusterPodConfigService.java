@@ -54,6 +54,42 @@ public interface ClusterPodConfigService {
     ClusterPodConfig getClusterPodConfig(Long id);
 
     /**
+     * 校验配置是否允许更新（状态机：DRAFT/BUILD_FAILED 可更新，其余不可）。
+     *
+     * @param config 配置（含状态）
+     */
+    void checkUpdateAllowed(ClusterPodConfig config);
+
+    /**
+     * 校验配置是否允许删除（状态机：DRAFT/BUILD_FAILED 可删除，其余不可）。
+     *
+     * @param config 配置（含状态）
+     */
+    void checkDeleteAllowed(ClusterPodConfig config);
+
+    /**
+     * 构建开始前置状态：DRAFT/BUILD_FAILED/PUBLISHED → BUILDING。
+     *
+     * @param id 配置主键
+     */
+    void markBuilding(Long id);
+
+    /**
+     * 构建结果回调：成功 → PUBLISHED，失败 → BUILD_FAILED。
+     *
+     * @param id      配置主键
+     * @param success 是否成功
+     */
+    void markBuildResult(Long id, boolean success);
+
+    /**
+     * 弃用（仅 PUBLISHED 可弃用）：PUBLISHED → RETIRED。
+     *
+     * @param id 配置主键
+     */
+    void retire(Long id);
+
+    /**
      * 分页查询业务pod配置表
      *
      * @param query 查询参数

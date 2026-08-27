@@ -39,7 +39,6 @@ public final class ClusterPodConfigAssembler {
         ClusterPodConfig clusterPodConfig = new ClusterPodConfig();
         clusterPodConfig.setResourceName(request.getResourceName());
         clusterPodConfig.setPodName(request.getPodName());
-        clusterPodConfig.setVersionNo(request.getVersionNo());
         clusterPodConfig.setNamespace(request.getNamespace());
         clusterPodConfig.setGitUrl(request.getGitUrl());
         clusterPodConfig.setGitBranch(request.getGitBranch());
@@ -65,7 +64,6 @@ public final class ClusterPodConfigAssembler {
         clusterPodConfig.setId(id);
         clusterPodConfig.setResourceName(request.getResourceName());
         clusterPodConfig.setPodName(request.getPodName());
-        clusterPodConfig.setVersionNo(request.getVersionNo());
         clusterPodConfig.setNamespace(request.getNamespace());
         clusterPodConfig.setGitUrl(request.getGitUrl());
         clusterPodConfig.setGitBranch(request.getGitBranch());
@@ -89,7 +87,7 @@ public final class ClusterPodConfigAssembler {
         ClusterPodConfigQueryParam param = new ClusterPodConfigQueryParam();
         param.setResourceName(request.getResourceName());
         param.setPodName(request.getPodName());
-        param.setVersionNo(request.getVersionNo());
+        param.setStatus(request.getStatus());
         param.setNamespace(request.getNamespace());
         param.setGitBranch(request.getGitBranch());
         param.setAutoRefresh(request.getAutoRefresh());
@@ -116,7 +114,7 @@ public final class ClusterPodConfigAssembler {
         response.setId(clusterPodConfig.getId());
         response.setResourceName(clusterPodConfig.getResourceName());
         response.setPodName(clusterPodConfig.getPodName());
-        response.setVersionNo(clusterPodConfig.getVersionNo());
+        response.setStatus(clusterPodConfig.getStatus());
         response.setNamespace(clusterPodConfig.getNamespace());
         response.setGitUrl(maskGitUrl(clusterPodConfig.getGitUrl()));
         response.setGitBranch(clusterPodConfig.getGitBranch());
@@ -187,7 +185,7 @@ public final class ClusterPodConfigAssembler {
         }
         return ClusterRuntimePodResponse.builder()
                 .podName(pod.getPodName())
-                .versionNo(pod.getVersionNo())
+                .podConfigId(pod.getPodConfigId())
                 .namespace(pod.getNamespace())
                 .status(pod.getStatus())
                 .readyReplicas(pod.getReadyReplicas())

@@ -1,7 +1,10 @@
 package com.jakt.aiplatform.core.repository.convertor;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO;
 import com.jakt.aiplatform.common.dal.query.ClusterPodConfigDalQuery;
+import com.jakt.aiplatform.common.framework.enums.BaseEnum;
+import com.jakt.aiplatform.core.model.enums.ClusterPodConfigStatusEnum;
 import com.jakt.aiplatform.core.model.domain.ClusterPodConfig;
 import com.jakt.aiplatform.core.model.param.ClusterPodConfigQueryParam;
 
@@ -30,7 +33,6 @@ public final class ClusterPodConfigConvertor {
         target.setId(source.getId());
         target.setResourceName(source.getResourceName());
         target.setPodName(source.getPodName());
-        target.setVersionNo(source.getVersionNo());
         target.setNamespace(source.getNamespace());
         target.setGitUrl(source.getGitUrl());
         target.setGitBranch(source.getGitBranch());
@@ -38,6 +40,7 @@ public final class ClusterPodConfigConvertor {
         target.setDeployYaml(source.getDeployYaml());
         target.setAutoRefresh(source.getAutoRefresh());
         target.setLastBuiltCommit(source.getLastBuiltCommit());
+        target.setStatus(BaseEnum.fromCode(ClusterPodConfigStatusEnum.class, source.getStatus()));
         target.setCreateBy(source.getCreateBy());
         target.setUpdateBy(source.getUpdateBy());
         target.setRemark(source.getRemark());
@@ -57,7 +60,6 @@ public final class ClusterPodConfigConvertor {
         target.setId(source.getId());
         target.setResourceName(source.getResourceName());
         target.setPodName(source.getPodName());
-        target.setVersionNo(source.getVersionNo());
         target.setNamespace(source.getNamespace());
         target.setGitUrl(source.getGitUrl());
         target.setGitBranch(source.getGitBranch());
@@ -65,6 +67,7 @@ public final class ClusterPodConfigConvertor {
         target.setDeployYaml(source.getDeployYaml());
         target.setAutoRefresh(source.getAutoRefresh());
         target.setLastBuiltCommit(source.getLastBuiltCommit());
+        target.setStatus(ObjectUtil.isNull(source.getStatus()) ? null : source.getStatus().getCode());
         target.setCreateBy(source.getCreateBy());
         target.setUpdateBy(source.getUpdateBy());
         target.setRemark(source.getRemark());
@@ -89,7 +92,6 @@ public final class ClusterPodConfigConvertor {
         target.setId(source.getId());
         target.setResourceName(source.getResourceName());
         target.setPodName(source.getPodName());
-        target.setVersionNo(source.getVersionNo());
         target.setNamespace(source.getNamespace());
         target.setGitUrl(source.getGitUrl());
         target.setGitBranch(source.getGitBranch());
@@ -97,6 +99,7 @@ public final class ClusterPodConfigConvertor {
         target.setDeployYaml(source.getDeployYaml());
         target.setAutoRefresh(source.getAutoRefresh());
         target.setLastBuiltCommit(source.getLastBuiltCommit());
+        target.setStatus(ObjectUtil.isNull(source.getStatus()) ? null : source.getStatus().getCode());
         target.setCreateBy(source.getCreateBy());
         target.setUpdateBy(source.getUpdateBy());
         target.setRemark(source.getRemark());

@@ -22,11 +22,6 @@ public class ClusterPodConfigUpdateRequest extends BaseRequest {
     @Size(max = 64, message = "pod名称长度不能超过 64")
     private String podName;
 
-    /** 配置版本号。 */
-    @NotBlank(message = "配置版本号不能为空")
-    @Size(max = 32, message = "配置版本号长度不能超过 32")
-    private String versionNo;
-
     /** 业务命名空间。 */
     @NotBlank(message = "业务命名空间不能为空")
     @Size(max = 64, message = "业务命名空间长度不能超过 64")

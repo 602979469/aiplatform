@@ -1,6 +1,6 @@
 package com.jakt.aiplatform.web.result;
 
-
+import com.jakt.aiplatform.core.model.enums.ClusterPodConfigStatusEnum;
 import com.jakt.aiplatform.web.result.BaseResult;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,8 +26,8 @@ public class ClusterPodConfigResponse extends BaseResult {
     /** pod名称。 */
     private String podName;
 
-    /** 配置版本号。 */
-    private String versionNo;
+    /** 配置状态。 */
+    private ClusterPodConfigStatusEnum status;
 
     /** 业务命名空间。 */
     private String namespace;

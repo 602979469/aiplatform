@@ -24,8 +24,8 @@ public class ClusterRuntimePodResponse implements Serializable {
     /** pod 名称。 */
     private String podName;
 
-    /** 配置版本号。 */
-    private String versionNo;
+    /** 配置 ID（cluster_pod_config 主键）。 */
+    private Long podConfigId;
 
     /** 命名空间。 */
     private String namespace;

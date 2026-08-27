@@ -67,6 +67,14 @@ public interface K8sClient {
     void deleteByYaml(String yaml);
 
     /**
+     * 按名称删除 Deployment。
+     *
+     * @param namespace 命名空间
+     * @param name      Deployment 名称
+     */
+    void deleteDeployment(String namespace, String name);
+
+    /**
      * 查询 Pod 日志。
      *
      * @param namespace 命名空间

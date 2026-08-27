@@ -47,6 +47,14 @@ public interface ClusterK8sService {
     void start(String namespace, String name, int replicas);
 
     /**
+     * 删除实例：按 Deployment 名称删除对应资源（不删配置行）。
+     *
+     * @param namespace      命名空间
+     * @param deploymentName Deployment 名称
+     */
+    void delete(String namespace, String deploymentName);
+
+    /**
      * 查询 Deployment 下首个 Pod 的日志。
      *
      * @param namespace 命名空间

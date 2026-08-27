@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.model.param;
 import com.jakt.aiplatform.common.framework.param.PageParam;
+import com.jakt.aiplatform.core.model.enums.ClusterPodConfigStatusEnum;
 
 import java.time.LocalDateTime;
 
@@ -22,9 +23,6 @@ public class ClusterPodConfigQueryParam extends PageParam {
     /** pod名称。 */
     private String podName;
 
-    /** 配置版本号。 */
-    private String versionNo;
-
     /** 业务命名空间。 */
     private String namespace;
 
@@ -45,6 +43,9 @@ public class ClusterPodConfigQueryParam extends PageParam {
 
     /** 上次构建commit。 */
     private String lastBuiltCommit;
+
+    /** 配置状态。 */
+    private ClusterPodConfigStatusEnum status;
 
     /** 创建者。 */
     private String createBy;

@@ -52,11 +52,6 @@ tables:
     model_name: ClusterPodConfig
     model_comment: "业务pod配置表"
     generateController: true
-    logicDelete:
-      enable: true
-      column_name: del_flag
-      normal_value: 0
-      delete_value: 2
     columns:
       resource_name:
         comment: "资源名称"
@@ -69,3 +64,14 @@ tables:
       auto_refresh:
         type: Integer
         comment: "自动刷新开关"
+      status:
+        type: enum
+        enum:
+          className: ClusterPodConfigStatusEnum
+          values:
+            - { code: DRAFT, name: DRAFT, desc: "草稿" }
+            - { code: BUILDING, name: BUILDING, desc: "构建中" }
+            - { code: BUILD_FAILED, name: BUILD_FAILED, desc: "构建失败" }
+            - { code: PUBLISHED, name: PUBLISHED, desc: "发布" }
+            - { code: RETIRED, name: RETIRED, desc: "弃用" }
+        comment: "配置状态"

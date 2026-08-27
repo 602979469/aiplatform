@@ -37,11 +37,23 @@ import java.util.Objects;
 @Component
 public class K8sClientImpl implements K8sClient, DisposableBean {
 
-    /** Kubernetes 客户端（in-cluster 或 kubeconfig 自动发现）。 */
+    public static final String TOKEN = "eyJhbGciOiJSUzI1NiIsImtpZCI6IndEdmR6Z1F4cnA5X1dtY3VfaWRFZEhFdmE0di1lSEdpc3hWN18zR0dnSU0ifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImphdmEtY2xpZW50LXNlY3JldCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJqYXZhLWNsaWVudCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6ImU4YjRlMWFlLTllZGUtNDUxYS05OTEyLWE1YWNiMWQ3Y2QwMiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmphdmEtY2xpZW50In0.xw3JaBdRPRpFygQHUHJY4-274vBKCk45bK-RarbExMIZ66AzGs94OsnZrP3yF8NKzeW7wS4BGEaLYJyWrdPaNIBGqe8K08wfcEqNbRc8tzDwsO9fiw_xNmZ7ApYjwRHChmpBa-hNwsQHx7_Rm4QrUzLRZNiPWllF9F6lP-jzboBbhKEZm6-u0sMC_1x2sKs0eYLT2t4KOgq0rpEOcDQIafr2L8nTizaQU9dUTOQh1oHvl9Xi-C27gMVY6KhwOh_rHQGjEI5bmqQygqgdpNwuIQx1BhifqFtpEsToqzF2Y-Xa3_nOoy-deP_bQikMwnd4Y2Kl3EzpXWqxe4BWL8l-Aw";
+
+    /**
+     * Kubernetes 客户端（in-cluster 或 kubeconfig 自动发现）。
+     */
     private final KubernetesClient kubernetesClient;
 
     public K8sClientImpl() {
-        this.kubernetesClient = new KubernetesClientBuilder().build();
+        Config config = new ConfigBuilder()
+                .withMasterUrl("https://192.168.3.131:6443")
+                .withOauthToken(TOKEN)  // 使用你的Token
+                .withTrustCerts(true)   // 跳过SSL证书验证（测试环境）
+                .build();
+
+        this.kubernetesClient = new KubernetesClientBuilder()
+                .withConfig(config)
+                .build();
     }
 
     @Override
@@ -162,6 +174,16 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
             LoggerUtil.info(LogFileEnum.INTEGRATION, "【K8S】delete YAML 成功，长度={}", yaml.length());
         } catch (KubernetesClientException e) {
             throw toIntegrationException("delete YAML 失败", e);
+        }
+    }
+
+    @Override
+    public void deleteDeployment(String namespace, String name) {
+        try {
+            kubernetesClient.apps().deployments().inNamespace(namespace).withName(name).delete();
+            LoggerUtil.info(LogFileEnum.INTEGRATION, "【K8S】delete Deployment 成功 {}/{}", namespace, name);
+        } catch (KubernetesClientException e) {
+            throw toIntegrationException("delete Deployment 失败 namespace={} name={}", e, namespace, name);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.model.domain;
 import com.jakt.aiplatform.common.framework.model.BaseModel;
+import com.jakt.aiplatform.core.model.enums.ClusterPodConfigStatusEnum;
 
 
 import lombok.Data;
@@ -19,9 +20,6 @@ public class ClusterPodConfig extends BaseModel {
 
     /** pod名称。 */
     private String podName;
-
-    /** 配置版本号。 */
-    private String versionNo;
 
     /** 业务命名空间。 */
     private String namespace;
@@ -43,6 +41,9 @@ public class ClusterPodConfig extends BaseModel {
 
     /** 上次构建commit。 */
     private String lastBuiltCommit;
+
+    /** 配置状态。 */
+    private ClusterPodConfigStatusEnum status;
 
     /** 创建者。 */
     private String createBy;

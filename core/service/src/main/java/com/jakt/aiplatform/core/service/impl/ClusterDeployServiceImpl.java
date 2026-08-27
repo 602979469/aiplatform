@@ -14,6 +14,9 @@ import com.jakt.aiplatform.core.model.domain.ClusterPodConfig;
 import com.jakt.aiplatform.core.service.ClusterCiProperties;
 import com.jakt.aiplatform.core.service.ClusterDeployService;
 import com.jakt.aiplatform.core.service.ClusterPodConfigService;
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 /**
  * 业务 pod 部署领域服务实现：远程编排脚本执行，异常统一由集成层记 INTEGRATION 日志。
@@ -60,7 +64,24 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
             maxAttempts = 3,
             backoff = @Backoff(delay = 3000, multiplier = 2))
     public void deploy(ClusterPodConfig config) {
-        String deploymentName = deploymentName(config);
+        try {
+            doDeploy(config);
+            // 构建成功 → 发布
+            clusterPodConfigService.markBuildResult(config.getId(), true);
+        } catch (Exception e) {
+            // 重试耗尽或一次性失败 → 构建失败（BUILD_FAILED）
+            clusterPodConfigService.markBuildResult(config.getId(), false);
+            throw e;
+        }
+    }
+
+    /**
+     * 执行一次部署（构建 + 导入 + apply），失败抛异常由 {@link #deploy} 统一置状态。
+     *
+     * @param config 业务 pod 配置
+     */
+    private void doDeploy(ClusterPodConfig config) {
+        String deploymentName = resolveDeploymentName(config);
         String appDir = ciProperties.getWorkDir() + "/apps/" + config.getId();
 
         // 1. 校验：集群中已有同名 Deployment 则拒绝（PRD：只判断集群里面有没有了）
@@ -87,13 +108,13 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "部署文件准备失败: " + e.getMessage());
         }
 
-        // 3. 拉取源码（API 查 commit + codeload 下载，带 GitHub token 防限流；脚本输出 commit 短哈希）
-        //    传入用户上传的 Dockerfile，脚本拉完源码后用其覆盖仓库 Dockerfile（保证构建用系统配置）
+        // 3. 拉取源码（git 浅克隆，带 GitHub token 防限流；输出 tee 到构建日志）
+        //    log_dir 传 appDir，fetch 输出写 apps/{configId}/fetch.log
         SshResult fetchResult = sshClient.execute(ciProperties.getMasterHost(),
                 "bash " + ciProperties.getWorkDir() + "/bin/fetch_source.sh "
                         + config.getGitUrl() + " " + config.getGitBranch() + " " + remoteSrcDir
-                        + " " + remoteDockerfile,
-                300);
+                        + " " + remoteDockerfile + " " + appDir,
+                600);
         if (!fetchResult.isSuccess()) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
                     "源码拉取失败: " + shortOutput(fetchResult.getOutput()));
@@ -105,7 +126,8 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
         // 5. 触发双架构构建导入（image_tools.sh：master + worker 各自构建）
         SshResult buildResult = sshClient.execute(ciProperties.getMasterHost(),
                 "bash " + ciProperties.getWorkDir() + "/bin/image_tools.sh "
-                        + config.getPodName() + " " + imageTag + " " + remoteSrcDir,
+                        + config.getPodName() + " " + imageTag + " " + remoteSrcDir
+                        + " " + appDir,
                 DEPLOY_TIMEOUT_SECONDS);
         if (!buildResult.isSuccess()) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
@@ -134,14 +156,71 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
                 config.getId(), deploymentName, config.getPodName(), imageTag);
     }
 
+    @Override
+    public String resolveDeploymentName(ClusterPodConfig config) {
+        String fromYaml = parseDeploymentName(config.getDeployYaml());
+        return StrUtil.isNotBlank(fromYaml) ? fromYaml : config.getPodName();
+    }
+
+    @Override
+    public void deleteInstance(ClusterPodConfig config) {
+        AssertUtil.throwErrWhenBlank(config.getDeployYaml(), ErrorCodeEnum.PARAM_INVALID,
+                "Deployment YAML 为空，无法删除实例");
+        // 按配置 deployYaml 删除全部资源（Deployment/Service/Ingress），不删配置行
+        k8sClient.deleteByYaml(config.getDeployYaml());
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "业务pod实例已删除 id={} podName={}",
+                config.getId(), config.getPodName());
+    }
+
+    @Override
+    public String getBuildLog(Long configId) {
+        String appDir = ciProperties.getWorkDir() + "/apps/" + configId;
+        SshResult result = sshClient.execute(ciProperties.getMasterHost(),
+                "ls -t " + appDir + "/fetch.log " + appDir + "/deploy-*.log 2>/dev/null | head -1",
+                60);
+        if (!result.isSuccess() || StrUtil.isBlank(result.getOutput())) {
+            return "";
+        }
+        String latestLog = result.getOutput().trim().split("\\n")[0];
+        SshResult logResult = sshClient.execute(ciProperties.getMasterHost(),
+                "cat " + latestLog, 60);
+        return logResult.isSuccess() ? logResult.getOutput() : "";
+    }
+
     /**
-     * Deployment 命名规则：podName-versionNo（小写）。
+     * 从 deployYaml 解析第一个 Deployment 的 metadata.name（用户 YAML 为准）。
      *
-     * @param config 配置
-     * @return Deployment 名称
+     * @param deployYaml Deployment YAML
+     * @return Deployment 名称；解析失败返回 null
      */
-    private String deploymentName(ClusterPodConfig config) {
-        return (config.getPodName() + "-" + config.getVersionNo()).toLowerCase();
+    @SuppressWarnings("unchecked")
+    private String parseDeploymentName(String deployYaml) {
+        if (StrUtil.isBlank(deployYaml)) {
+            return null;
+        }
+        try {
+            LoaderOptions loaderOptions = new LoaderOptions();
+            loaderOptions.setAllowDuplicateKeys(false);
+            for (Object document : new Yaml(loaderOptions).loadAll(deployYaml)) {
+                if (!(document instanceof Map)) {
+                    continue;
+                }
+                Map<String, Object> root = (Map<String, Object>) document;
+                if (!"Deployment".equals(root.get("kind"))) {
+                    continue;
+                }
+                Object metadata = root.get("metadata");
+                if (metadata instanceof Map) {
+                    Object name = ((Map<String, Object>) metadata).get("name");
+                    if (name != null) {
+                        return String.valueOf(name);
+                    }
+                }
+            }
+        } catch (YAMLException e) {
+            LoggerUtil.warn(LogFileEnum.INTEGRATION, "【部署】deployYaml 解析失败，回退 podName: {}", e.getMessage());
+        }
+        return null;
     }
 
     /**

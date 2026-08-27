@@ -106,6 +106,21 @@ public interface ClusterPodConfigManager {
     void start(Long id);
 
     /**
+     * 弃用配置（仅 PUBLISHED 可弃用）。
+     *
+     * @param id 配置主键
+     */
+    void retire(Long id);
+
+    /**
+     * 复制配置：生成一份相同配置（podName 加 -copy 后缀，状态草稿）。
+     *
+     * @param id 源配置主键
+     * @return 新配置
+     */
+    ClusterPodConfig copyConfig(Long id);
+
+    /**
      * 实时管理列表。
      *
      * @return 实时业务 pod 列表
@@ -113,18 +128,33 @@ public interface ClusterPodConfigManager {
     List<ClusterRuntimePod> listRuntimePods();
 
     /**
-     * 运行 Pod 日志。
+     * 运行 Pod 日志（按配置 ID 定位 Deployment）。
      *
-     * @param podName pod 名称
+     * @param configId 业务pod配置主键
      * @return 日志文本
      */
-    String getPodLogs(String podName);
+    String getPodLogs(Long configId);
 
     /**
-     * 运行事件列表。
+     * 运行事件列表（按配置 ID 定位 Deployment）。
      *
-     * @param podName pod 名称
+     * @param configId 业务pod配置主键
      * @return K8s 事件列表
      */
-    List<ClusterRuntimeEvent> getPodEvents(String podName);
+    List<ClusterRuntimeEvent> getPodEvents(Long configId);
+
+    /**
+     * 删除实例：删除 K8s 资源（Deployment/Service/Ingress），不删配置行。
+     *
+     * @param configId 业务pod配置主键
+     */
+    void deleteInstance(Long configId);
+
+    /**
+     * 读取构建日志。
+     *
+     * @param configId 配置主键
+     * @return 日志内容
+     */
+    String getBuildLog(Long configId);
 }

@@ -12,6 +12,8 @@ import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
+import java.util.List;
+
 /**
  * 业务pod配置表参数检查器。
  */
@@ -49,6 +51,19 @@ public final class ClusterPodConfigParamChecker {
      */
     public static void checkId(Long id) {
         AssertUtil.throwErrWhenNull(id, ErrorCodeEnum.PARAM_INVALID, "业务pod配置表ID不能为空");
+    }
+
+    /**
+     * 检查批量主键参数（批量删除用）。
+     *
+     * @param ids 主键列表
+     */
+    public static void checkIds(List<Long> ids) {
+        AssertUtil.throwErrWhenTrue(ObjectUtil.isNull(ids) || ids.isEmpty(),
+                ErrorCodeEnum.PARAM_INVALID, "业务pod配置表ID不能为空");
+        for (Long id : ids) {
+            checkId(id);
+        }
     }
 
     /**

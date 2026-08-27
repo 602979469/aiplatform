@@ -157,18 +157,20 @@ public class ClusterController {
      * @param id 配置主键
      * @return 统一返回体
      */
-    @DeleteMapping("/pod-config/{id}")
-    public ApiResult<Void> deletePodConfig(@PathVariable Long id) {
-        return ApiTemplate.executeWithoutResult(id, new ApiTemplate.CallbackWithoutResult<Long>() {
+    @DeleteMapping("/pod-config/{ids}")
+    public ApiResult<Void> deletePodConfig(@PathVariable List<Long> ids) {
+        return ApiTemplate.executeWithoutResult(ids, new ApiTemplate.CallbackWithoutResult<List<Long>>() {
 
             @Override
-            public void beforeService(Long param) {
-                ClusterPodConfigParamChecker.checkId(param);
+            public void beforeService(List<Long> param) {
+                ClusterPodConfigParamChecker.checkIds(param);
             }
 
             @Override
-            public void execute(Long param) {
-                clusterPodConfigManager.deleteClusterPodConfig(param);
+            public void execute(List<Long> param) {
+                for (Long id : param) {
+                    clusterPodConfigManager.deleteClusterPodConfig(id);
+                }
             }
         });
     }
@@ -240,6 +242,72 @@ public class ClusterController {
     }
 
     /**
+     * 弃用配置（仅 PUBLISHED 可弃用）。
+     *
+     * @param id 配置主键
+     * @return 统一返回体
+     */
+    @PostMapping("/pod-config/{id}/retire")
+    public ApiResult<Void> retirePodConfig(@PathVariable Long id) {
+        return ApiTemplate.executeWithoutResult(id, new ApiTemplate.CallbackWithoutResult<Long>() {
+
+            @Override
+            public void beforeService(Long param) {
+                ClusterPodConfigParamChecker.checkId(param);
+            }
+
+            @Override
+            public void execute(Long param) {
+                clusterPodConfigManager.retire(param);
+            }
+        });
+    }
+
+    /**
+     * 复制配置：生成一份相同配置（podName 加 -copy 后缀，状态草稿）。
+     *
+     * @param id 源配置主键
+     * @return 新配置
+     */
+    @PostMapping("/pod-config/{id}/copy")
+    public ApiResult<ClusterPodConfigResponse> copyPodConfig(@PathVariable Long id) {
+        return ApiTemplate.execute(id, new ApiTemplate.Callback<Long, ClusterPodConfigResponse>() {
+
+            @Override
+            public void beforeService(Long param) {
+                ClusterPodConfigParamChecker.checkId(param);
+            }
+
+            @Override
+            public ClusterPodConfigResponse execute(Long param) {
+                return ClusterPodConfigAssembler.toResponse(clusterPodConfigManager.copyConfig(param));
+            }
+        });
+    }
+
+    /**
+     * 读取构建日志（构建中状态查看）。
+     *
+     * @param id 配置主键
+     * @return 构建日志
+     */
+    @GetMapping("/pod-config/{id}/build-log")
+    public ApiResult<String> buildLog(@PathVariable Long id) {
+        return ApiTemplate.execute(id, new ApiTemplate.Callback<Long, String>() {
+
+            @Override
+            public void beforeService(Long param) {
+                ClusterPodConfigParamChecker.checkId(param);
+            }
+
+            @Override
+            public String execute(Long param) {
+                return clusterPodConfigManager.getBuildLog(param);
+            }
+        });
+    }
+
+    /**
      * 实时管理列表。
      *
      * @return 实时业务 pod 列表
@@ -261,17 +329,17 @@ public class ClusterController {
      * @param podName pod 名称
      * @return 日志文本
      */
-    @GetMapping("/runtime/{podName}/logs")
-    public ApiResult<String> podLogs(@PathVariable String podName) {
-        return ApiTemplate.execute(podName, new ApiTemplate.Callback<String, String>() {
+    @GetMapping("/runtime/{configId}/logs")
+    public ApiResult<String> podLogs(@PathVariable Long configId) {
+        return ApiTemplate.execute(configId, new ApiTemplate.Callback<Long, String>() {
 
             @Override
-            public void beforeService(String param) {
-                ClusterPodConfigParamChecker.checkPodName(param);
+            public void beforeService(Long param) {
+                ClusterPodConfigParamChecker.checkId(param);
             }
 
             @Override
-            public String execute(String param) {
+            public String execute(Long param) {
                 return clusterPodConfigManager.getPodLogs(param);
             }
         });
@@ -283,18 +351,40 @@ public class ClusterController {
      * @param podName pod 名称
      * @return K8s 事件列表
      */
-    @GetMapping("/runtime/{podName}/events")
-    public ApiResult<List<ClusterRuntimeEventResponse>> podEvents(@PathVariable String podName) {
-        return ApiTemplate.execute(podName, new ApiTemplate.Callback<String, List<ClusterRuntimeEventResponse>>() {
+    @GetMapping("/runtime/{configId}/events")
+    public ApiResult<List<ClusterRuntimeEventResponse>> podEvents(@PathVariable Long configId) {
+        return ApiTemplate.execute(configId, new ApiTemplate.Callback<Long, List<ClusterRuntimeEventResponse>>() {
 
             @Override
-            public void beforeService(String param) {
-                ClusterPodConfigParamChecker.checkPodName(param);
+            public void beforeService(Long param) {
+                ClusterPodConfigParamChecker.checkId(param);
             }
 
             @Override
-            public List<ClusterRuntimeEventResponse> execute(String param) {
+            public List<ClusterRuntimeEventResponse> execute(Long param) {
                 return ConvertUtil.map(clusterPodConfigManager.getPodEvents(param), ClusterPodConfigAssembler::toRuntimeEventResponse);
+            }
+        });
+    }
+
+    /**
+     * 删除实例：删除 K8s 资源（Deployment/Service/Ingress），不删配置行。
+     *
+     * @param configId 业务pod配置主键
+     * @return 统一返回体
+     */
+    @PostMapping("/instance/{configId}/delete")
+    public ApiResult<Void> deleteInstance(@PathVariable Long configId) {
+        return ApiTemplate.executeWithoutResult(configId, new ApiTemplate.CallbackWithoutResult<Long>() {
+
+            @Override
+            public void beforeService(Long param) {
+                ClusterPodConfigParamChecker.checkId(param);
+            }
+
+            @Override
+            public void execute(Long param) {
+                clusterPodConfigManager.deleteInstance(param);
             }
         });
     }

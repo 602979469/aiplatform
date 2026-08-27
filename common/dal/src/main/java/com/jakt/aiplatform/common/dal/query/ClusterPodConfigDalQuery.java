@@ -20,9 +20,6 @@ public class ClusterPodConfigDalQuery extends DalPageQuery {
     /** pod名称。 */
     private String podName;
 
-    /** 配置版本号。 */
-    private String versionNo;
-
     /** 业务命名空间。 */
     private String namespace;
 
@@ -43,6 +40,9 @@ public class ClusterPodConfigDalQuery extends DalPageQuery {
 
     /** 上次构建commit。 */
     private String lastBuiltCommit;
+
+    /** 配置状态。 */
+    private String status;
 
     /** 创建者。 */
     private String createBy;

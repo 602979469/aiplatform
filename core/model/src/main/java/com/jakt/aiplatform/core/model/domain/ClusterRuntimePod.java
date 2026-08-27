@@ -18,8 +18,8 @@ public class ClusterRuntimePod implements Serializable {
     /** pod 名称（配置的 podName）。 */
     private String podName;
 
-    /** 配置版本号。 */
-    private String versionNo;
+    /** 配置 ID（cluster_pod_config 主键，用于日志/事件/启停定位）。 */
+    private Long podConfigId;
 
     /** 命名空间。 */
     private String namespace;

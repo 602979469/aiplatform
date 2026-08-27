@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.web.param;
 
+import com.jakt.aiplatform.core.model.enums.ClusterPodConfigStatusEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -18,8 +19,8 @@ public class ClusterPodConfigQueryRequest extends PageQueryRequest {
     /** pod名称。 */
     private String podName;
 
-    /** 配置版本号。 */
-    private String versionNo;
+    /** 配置状态。 */
+    private ClusterPodConfigStatusEnum status;
 
     /** 业务命名空间。 */
     private String namespace;
