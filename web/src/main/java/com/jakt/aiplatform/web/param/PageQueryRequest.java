@@ -11,8 +11,8 @@ import lombok.EqualsAndHashCode;
 public class PageQueryRequest extends BaseRequest {
 
     /** 页码（缺省走 PageParam 默认值 1）。 */
-    private Integer pageNum;
+    private Integer pageNum = 1;
 
     /** 每页条数（缺省走 PageParam 默认值 10）。 */
-    private Integer pageSize;
+    private Integer pageSize = 10;
 }
