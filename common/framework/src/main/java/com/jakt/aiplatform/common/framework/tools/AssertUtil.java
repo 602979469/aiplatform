@@ -37,6 +37,16 @@ public final class AssertUtil {
         throwErrWhenTrue(!condition, errorCode, message);
     }
 
+    public static void throwErrWhenTrue(boolean condition, String errorCode, String message) {
+        if (condition) {
+            throw new CommonException(errorCode, message);
+        }
+    }
+
+    public static void throwErrWhenFalse(boolean condition, String errorCode, String message) {
+        throwErrWhenTrue(!condition, errorCode, message);
+    }
+
     public static void throwErrWhenNull(Object value, ErrorCode errorCode) {
         throwErrWhenTrue(ObjectUtil.isNull(value), errorCode);
     }
@@ -83,6 +93,30 @@ public final class AssertUtil {
 
     public static void throwErrWhenNotEmpty(Object value, ErrorCode errorCode, String message) {
         throwErrWhenTrue(!isEmpty(value), errorCode, message);
+    }
+
+    public static void throwErrWhenNull(boolean condition, String errorCode, String message) {
+        throwErrWhenTrue(condition, errorCode, message);
+    }
+
+    public static void throwErrWhenNotNull(boolean condition, String errorCode, String message) {
+        throwErrWhenTrue(condition, errorCode, message);
+    }
+
+    public static void throwErrWhenBlank(boolean condition, String errorCode, String message) {
+        throwErrWhenTrue(condition, errorCode, message);
+    }
+
+    public static void throwErrWhenNotBlank(boolean condition, String errorCode, String message) {
+        throwErrWhenTrue(condition, errorCode, message);
+    }
+
+    public static void throwErrWhenEmpty(boolean condition, String errorCode, String message) {
+        throwErrWhenTrue(condition, errorCode, message);
+    }
+
+    public static void throwErrWhenNotEmpty(boolean condition, String errorCode, String message) {
+        throwErrWhenTrue(condition, errorCode, message);
     }
 
     /**

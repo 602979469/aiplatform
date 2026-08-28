@@ -85,17 +85,9 @@ public class ClusterPodConfigRepositoryImpl implements ClusterPodConfigRepositor
 
     @Override
     public int deleteById(Long id) {
-        int affected = deleteByIds(List.of(id));
+        int affected = clusterPodConfigMapper.deleteById(id);
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "ClusterPodConfigRepository.deleteById id={} 影响行数={}",
                 id, affected);
-        return affected;
-    }
-
-    @Override
-    public int deleteByIds(List<Long> ids) {
-        int affected = clusterPodConfigMapper.deleteByIds(ids);
-        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "ClusterPodConfigRepository.deleteByIds ids={} 影响行数={}",
-                ids, affected);
         return affected;
     }
 }

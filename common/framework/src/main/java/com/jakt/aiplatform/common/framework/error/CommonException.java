@@ -19,6 +19,10 @@ public class CommonException extends RuntimeException {
         return new CommonException(errorCode.getCode(), message);
     }
 
+    public static CommonException of(String errorCode, String errorMessage) {
+        return new CommonException(errorCode, errorMessage);
+    }
+
     public String getErrorCode() {
         return errorCode;
     }

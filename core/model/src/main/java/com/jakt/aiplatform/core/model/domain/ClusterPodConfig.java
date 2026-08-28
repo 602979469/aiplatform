@@ -54,4 +54,7 @@ public class ClusterPodConfig extends BaseModel {
     /** 备注。 */
     private String remark;
 
+    public boolean isRuntimeStatus(){
+        return status == ClusterPodConfigStatusEnum.BUILDING;
+    }
 }

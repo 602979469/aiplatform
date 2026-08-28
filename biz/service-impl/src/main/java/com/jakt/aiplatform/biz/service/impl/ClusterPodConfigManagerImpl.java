@@ -1,5 +1,9 @@
 package com.jakt.aiplatform.biz.service.impl;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.common.framework.result.Result;
+import com.jakt.aiplatform.common.framework.template.BizTemplate;
+import com.jakt.aiplatform.common.framework.template.TransactionTemplate;
+import com.jakt.aiplatform.common.util.error.CommonErrorCode;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.hutool.core.util.StrUtil;
@@ -45,11 +49,16 @@ public class ClusterPodConfigManagerImpl implements ClusterPodConfigManager {
     /** 部署领域服务。 */
     private final ClusterDeployService clusterDeployService;
 
+    /** 事务模板。 */
+    private final TransactionTemplate transactionTemplate;
+
     public ClusterPodConfigManagerImpl(ClusterPodConfigService clusterPodConfigService,
                                        ClusterK8sService clusterK8sService,
+                                       TransactionTemplate transactionTemplate,
                                        ClusterDeployService clusterDeployService) {
         this.clusterPodConfigService = clusterPodConfigService;
         this.clusterK8sService = clusterK8sService;
+        this.transactionTemplate = transactionTemplate;
         this.clusterDeployService = clusterDeployService;
     }
 
@@ -92,10 +101,25 @@ public class ClusterPodConfigManagerImpl implements ClusterPodConfigManager {
     }
 
     @Override
-    public int deleteClusterPodConfig(List<Long> ids) {
-        int affected = clusterPodConfigService.deleteClusterPodConfig(ids);
-        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "删除业务pod配置成功 id={} 影响行数={}", ids, affected);
-        return affected;
+    public int deleteClusterPodConfig(Long id) {
+
+        // 验证配置存在且状态允许删除
+        ClusterPodConfig clusterPodConfig = requireConfig(id);
+        AssertUtil.throwErrWhenTrue(clusterPodConfig.isRuntimeStatus(), BizErrorCodeEnum.STATUS_NOT_ALLOWED, "运行中状态不允许删除");
+
+        // 事务执行删除配置和实例
+        Result<Integer> execute = BizTemplate.execute(transactionTemplate, () -> {
+
+            // 删除配置
+            int affected = clusterPodConfigService.deleteClusterPodConfig(id);
+            AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.DELETE_FAILED, "删除业务pod配置失败");
+
+            // 删除实例
+            deleteInstance(id);
+            return affected;
+        });
+        AssertUtil.throwErrWhenFalse(execute.isSuccess(), execute.getErrorCode(),execute.getErrorMessage());
+        return execute.getData();
     }
 
     @Override

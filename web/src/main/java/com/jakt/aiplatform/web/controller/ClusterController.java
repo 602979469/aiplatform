@@ -168,7 +168,9 @@ public class ClusterController {
 
             @Override
             public void execute(List<Long> param) {
-                clusterPodConfigManager.deleteClusterPodConfig(ids);
+                for (Long id : param) {
+                    clusterPodConfigManager.deleteClusterPodConfig(id);
+                }
             }
         });
     }

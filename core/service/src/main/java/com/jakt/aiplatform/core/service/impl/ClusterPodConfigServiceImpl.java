@@ -53,8 +53,8 @@ public class ClusterPodConfigServiceImpl implements ClusterPodConfigService {
     }
 
     @Override
-    public int deleteClusterPodConfig(List<Long> ids) {
-        return clusterPodConfigRepository.deleteByIds(ids);
+    public int deleteClusterPodConfig(Long id) {
+        return clusterPodConfigRepository.deleteById(id);
     }
 
     @Override
