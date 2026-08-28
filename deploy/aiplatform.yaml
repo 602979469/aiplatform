@@ -136,16 +136,6 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: aiplatform.jakt.online
-      http:
-        paths:
-          - path: /prod-api(/|$)(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: aiplatform
-                port:
-                  number: 8080
     - host: www.jakt.online
       http:
         paths:
