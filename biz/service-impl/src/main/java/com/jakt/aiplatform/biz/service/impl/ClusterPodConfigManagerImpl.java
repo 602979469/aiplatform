@@ -115,7 +115,7 @@ public class ClusterPodConfigManagerImpl implements ClusterPodConfigManager {
             AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.DELETE_FAILED, "删除业务pod配置失败");
 
             // 删除实例
-            deleteInstance(id);
+            clusterDeployService.deleteInstance(clusterPodConfig);
             return affected;
         });
         AssertUtil.throwErrWhenFalse(execute.isSuccess(), execute.getErrorCode(),execute.getErrorMessage());
