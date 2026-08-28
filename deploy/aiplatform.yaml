@@ -69,7 +69,7 @@ spec:
             - name: CLUSTER_CI_WORKER_HOST
               value: 192.168.3.217
             - name: LOG_FILE_PATH
-              value: /app/logs
+              value: /app/logs/
             # DeepSeek API Key 从 secret aiplatform-secret 注入（对应 application.yml 的 ${DEEPSEEK_API_KEY:}）
             - name: DEEPSEEK_API_KEY
               valueFrom:
