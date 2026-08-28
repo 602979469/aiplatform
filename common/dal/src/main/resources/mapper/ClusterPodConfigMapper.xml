@@ -164,7 +164,11 @@
         </if>
     </update>
 
-    <delete id="deleteById">
-        DELETE FROM cluster_pod_config WHERE id = #{id}
+    <delete id="deleteByIds">
+        DELETE FROM cluster_pod_config
+        WHERE id IN
+        <foreach item="id" collection="idList" separator="," open="(" close=")">
+            #{id}
+        </foreach>
     </delete>
 </mapper>

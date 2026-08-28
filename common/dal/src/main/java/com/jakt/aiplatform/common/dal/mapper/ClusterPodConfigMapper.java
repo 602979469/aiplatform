@@ -81,8 +81,8 @@ public interface ClusterPodConfigMapper {
     /**
      * 按主键删除，返回受影响行数。
      *
-     * @param id 主键
+     * @param ids 主键
      * @return 受影响行数
      */
-    int deleteById(Long id);
+    int deleteByIds(List<Long> ids);
 }

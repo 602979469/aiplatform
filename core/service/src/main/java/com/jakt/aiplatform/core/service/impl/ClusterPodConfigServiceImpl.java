@@ -53,11 +53,8 @@ public class ClusterPodConfigServiceImpl implements ClusterPodConfigService {
     }
 
     @Override
-    public int deleteClusterPodConfig(Long id) {
-        ClusterPodConfig current = getClusterPodConfig(id);
-        AssertUtil.throwErrWhenNull(current, BizErrorCodeEnum.RESOURCE_NOT_FOUND, "业务pod配置不存在");
-        checkDeleteAllowed(current);
-        return clusterPodConfigRepository.deleteById(id);
+    public int deleteClusterPodConfig(List<Long> ids) {
+        return clusterPodConfigRepository.deleteByIds(ids);
     }
 
     @Override

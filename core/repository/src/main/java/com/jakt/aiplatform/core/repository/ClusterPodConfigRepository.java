@@ -75,4 +75,12 @@ public interface ClusterPodConfigRepository {
      * @return 受影响行数；0 表示未生效，由上层决定
      */
     int deleteById(Long id);
+
+    /**
+     * 按主键列表删除。
+     *
+     * @param ids 主键列表
+     * @return 受影响行数；0 表示未生效，由上层决定
+     */
+    int deleteByIds(List<Long> ids);
 }

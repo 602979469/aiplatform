@@ -65,10 +65,10 @@ public interface ClusterPodConfigManager {
     /**
      * 删除业务pod配置表。
      *
-     * @param id 业务pod配置表主键
+     * @param ids 业务pod配置表主键
      * @return 受影响行数；0 表示未生效，由上层决定
      */
-    int deleteClusterPodConfig(Long id);
+    int deleteClusterPodConfig(List<Long> ids);
 
     /**
      * 集群大盘数据。

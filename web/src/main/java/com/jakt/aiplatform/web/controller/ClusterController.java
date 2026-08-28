@@ -154,7 +154,7 @@ public class ClusterController {
     /**
      * 删除业务pod配置（含 K8s 资源）。
      *
-     * @param id 配置主键
+     * @param ids 配置主键
      * @return 统一返回体
      */
     @DeleteMapping("/pod-config/{ids}")
@@ -168,9 +168,7 @@ public class ClusterController {
 
             @Override
             public void execute(List<Long> param) {
-                for (Long id : param) {
-                    clusterPodConfigManager.deleteClusterPodConfig(id);
-                }
+                clusterPodConfigManager.deleteClusterPodConfig(ids);
             }
         });
     }

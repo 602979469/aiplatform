@@ -92,9 +92,9 @@ public class ClusterPodConfigManagerImpl implements ClusterPodConfigManager {
     }
 
     @Override
-    public int deleteClusterPodConfig(Long id) {
-        int affected = clusterPodConfigService.deleteClusterPodConfig(id);
-        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "删除业务pod配置成功 id={} 影响行数={}", id, affected);
+    public int deleteClusterPodConfig(List<Long> ids) {
+        int affected = clusterPodConfigService.deleteClusterPodConfig(ids);
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "删除业务pod配置成功 id={} 影响行数={}", ids, affected);
         return affected;
     }
 
