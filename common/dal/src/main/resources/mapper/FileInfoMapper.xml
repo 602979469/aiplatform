@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.FileInfoMapper">
+
+    <sql id="selectColumns">
+        id, namespace, original_name, storage_name, file_size, file_type, remark, create_by, update_by, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="namespace != null and namespace != ''">
+                AND namespace = #{namespace}
+            </if>
+            <if test="originalName != null and originalName != ''">
+                AND original_name LIKE CONCAT('%', #{originalName}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
+        SELECT <include refid="selectColumns"/>
+        FROM file_info
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
+        SELECT <include refid="selectColumns"/>
+        FROM file_info
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM file_info
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO file_info (namespace, original_name, storage_name, file_size, file_type, remark, create_by, update_by, create_time, update_time)
+        VALUES (#{namespace}, #{originalName}, #{storageName}, #{fileSize}, #{fileType}, #{remark}, #{createBy}, #{updateBy}, NOW(), NOW())
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
+        UPDATE file_info
+        SET namespace = #{namespace},
+            original_name = #{originalName},
+            storage_name = #{storageName},
+            file_size = #{fileSize},
+            file_type = #{fileType},
+            remark = #{remark},
+            create_by = #{createBy},
+            update_by = #{updateBy}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM file_info WHERE id = #{id}
+    </delete>
+</mapper>

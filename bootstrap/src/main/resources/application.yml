@@ -24,8 +24,9 @@ spring:
           min-idle: 0
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 10MB
+      # 文件管理模块：上传不设业务上限（实际受磁盘空间与部署网关约束）
+      max-file-size: -1
+      max-request-size: -1
 
 # Sa-Token 认证授权配置
 sa-token:
@@ -81,6 +82,8 @@ aiplatform:
   upload:
     # 可用环境变量 AIPLATFORM_AVATAR_DIR 覆盖为绝对路径（生产/容器部署必填）
     avatar-dir: ${AIPLATFORM_AVATAR_DIR:./uploads/avatar}
+    # 文件管理存储根目录：{file-root}/{namespace}/{storageName}，生产用 AIPLATFORM_FILE_ROOT 覆盖为绝对路径
+    file-root: ${AIPLATFORM_FILE_ROOT:./uploads/files}
     username: ${XUANYUAN_USERNAME:}
     password: ${XUANYUAN_PASSWORD:}
     api-timeout-seconds: 30

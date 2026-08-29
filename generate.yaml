@@ -75,3 +75,8 @@ tables:
             - { code: PUBLISHED, name: PUBLISHED, desc: "发布" }
             - { code: RETIRED, name: RETIRED, desc: "弃用" }
         comment: "配置状态"
+
+  - db_table_name: file_info
+    model_name: FileInfo
+    model_comment: "文件信息表"
+    generateController: true

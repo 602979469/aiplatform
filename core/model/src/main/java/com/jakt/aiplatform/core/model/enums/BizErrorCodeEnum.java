@@ -83,6 +83,12 @@ public enum BizErrorCodeEnum implements ErrorCode {
     /** 创建镜像存储目录失败。 */
     MIRROR_DIR_CREATE_FAILED("创建镜像存储目录失败"),
 
+    /** 文件不存在或无权访问。 */
+    FILE_NOT_FOUND("文件不存在"),
+
+    /** 文件名不合法。 */
+    FILE_NAME_INVALID("文件名不合法"),
+
     /** 当前状态不允许该操作。 */
     STATUS_NOT_ALLOWED("当前状态不允许该操作");
 
