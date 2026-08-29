@@ -2,6 +2,7 @@ package com.jakt.aiplatform.web.config;
 
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.router.SaRouter;
+import cn.dev33.satoken.router.SaHttpMethod;
 import cn.dev33.satoken.stp.StpUtil;
 import com.jakt.aiplatform.common.framework.enums.BaseEnum;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
@@ -45,6 +46,7 @@ public class SaTokenConfigure implements WebMvcConfigurer {
         registry.addInterceptor(new SaInterceptor(handler -> SaRouter
                         .match("/**")
                         .notMatch(ANON_URLS)
+                        .notMatch(SaHttpMethod.OPTIONS)
                         .check(r -> StpUtil.checkLogin())))
                 .addPathPatterns("/**");
         registry.addInterceptor(userContextInterceptor).addPathPatterns("/**");
