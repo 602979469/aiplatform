@@ -10,17 +10,17 @@ spec:
   selector:
     matchLabels:
       app: aiplatform
+  # 单副本 + 节点资源紧张：先停旧再起新，避免滚动更新 surge 死锁
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
   template:
     metadata:
       labels:
         app: aiplatform
     spec:
-      # 单副本 + 节点资源紧张：先停旧再起新，避免滚动更新 surge 死锁
-      strategy:
-        type: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 1
-          maxSurge: 0
       affinity:                                        # ← 改动1：新增节点亲和性（钉 master）
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

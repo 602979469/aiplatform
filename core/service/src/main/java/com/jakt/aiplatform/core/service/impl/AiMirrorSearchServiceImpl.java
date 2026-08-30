@@ -581,7 +581,8 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
         for (int i = 0; i < images.size(); i++) {
             JSONObject image = images.getJSONObject(i);
             String arch = image.getString("architecture");
-            if (StrUtil.isBlank(arch)) {
+            // 跳过空值/unknown（registry 对缺少平台信息的条目返回 unknown，展示无意义）
+            if (StrUtil.isBlank(arch) || "unknown".equalsIgnoreCase(arch)) {
                 continue;
             }
             // 保持 registry 原始架构列表（不修剪、不去重，可能很长）
