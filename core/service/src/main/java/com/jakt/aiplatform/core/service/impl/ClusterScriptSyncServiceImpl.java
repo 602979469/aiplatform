@@ -82,7 +82,14 @@ public class ClusterScriptSyncServiceImpl implements ClusterScriptSyncService {
         try {
             tmp = Files.createTempFile("cluster-script-", ".sh");
             Files.write(tmp, content);
-            sshClient.uploadFile(ciProperties.getMasterHost(), tmp.toString(), remotePath);
+            // 先传临时文件再 mv 原子替换：运行中的脚本进程继续读旧 inode，不受影响
+            String tmpRemote = remotePath + ".tmp";
+            sshClient.uploadFile(ciProperties.getMasterHost(), tmp.toString(), tmpRemote);
+            SshResult mvResult = sshClient.execute(ciProperties.getMasterHost(), "mv -f " + tmpRemote + " " + remotePath, 30);
+            if (!mvResult.isSuccess()) {
+                throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
+                        "脚本原子替换失败: " + name + " " + shortOutput(mvResult.getOutput()));
+            }
         } catch (IOException e) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "脚本同步失败: " + name + " " + e.getMessage());
         } finally {
@@ -95,6 +102,16 @@ public class ClusterScriptSyncServiceImpl implements ClusterScriptSyncService {
             }
         }
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "脚本同步完成 name={}", name);
+    }
+
+    /**
+     * 截断 SSH 输出用于异常信息。
+     *
+     * @param output SSH 输出
+     * @return 截断后的输出
+     */
+    private String shortOutput(String output) {
+        return StrUtil.maxLength(output, 200);
     }
 
     /**
