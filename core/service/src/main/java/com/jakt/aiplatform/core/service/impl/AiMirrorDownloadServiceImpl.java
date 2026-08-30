@@ -2,6 +2,8 @@ package com.jakt.aiplatform.core.service.impl;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.integration.xuanyuan.XuanYuanProperties;
 import com.jakt.aiplatform.common.integration.ssh.SshClient;
 import com.jakt.aiplatform.common.integration.ssh.SshResult;
@@ -9,18 +11,21 @@ import com.jakt.aiplatform.common.util.enums.ThreadPoolEnum;
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.common.util.tools.MirrorFileUtil;
 import com.jakt.aiplatform.common.util.tools.ThreadPoolUtil;
+import com.jakt.aiplatform.core.model.domain.FileInfo;
 import com.jakt.aiplatform.core.model.domain.MirrorDownloadTask;
+import com.jakt.aiplatform.core.model.enums.FileNamespaceEnum;
 import com.jakt.aiplatform.core.model.enums.MirrorDownloadStatusEnum;
 import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
+import com.jakt.aiplatform.core.repository.FileInfoRepository;
 import com.jakt.aiplatform.core.service.AiMirrorDownloadService;
+import com.jakt.aiplatform.core.service.FileInfoService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
@@ -54,36 +59,47 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
     /** 远程 docker 主机地址。 */
     private final String sshHost;
 
+    /** 文件信息表仓储（docker_image 命名空间存量判断）。 */
+    private final FileInfoRepository fileInfoRepository;
+
+    /** 文件领域服务（镜像 tar 存入数据库）。 */
+    private final FileInfoService fileInfoService;
+
     private final ThreadPoolUtil threadPoolUtil;
 
     public AiMirrorDownloadServiceImpl(XuanYuanProperties xuanYuanProperties,
                                        SshClient sshClient,
                                        @Value("${ai.mirror.ssh-host:192.168.3.131}") String sshHost,
+                                       FileInfoRepository fileInfoRepository,
+                                       FileInfoService fileInfoService,
                                        ThreadPoolUtil threadPoolUtil) {
         this.xuanYuanProperties = xuanYuanProperties;
         this.sshClient = sshClient;
         this.sshHost = sshHost;
+        this.fileInfoRepository = fileInfoRepository;
+        this.fileInfoService = fileInfoService;
         this.threadPoolUtil = threadPoolUtil;
     }
 
     @Override
     public MirrorDownloadTask generate(String repo, String tag) {
-        ensureImageDir();
         String fileName = MirrorFileUtil.buildFileName(repo, tag);
 
-        // 本地已有文件：直接返回已完成
-        if (MirrorFileUtil.isFileExists(fileName)) {
+        // 库中已有该镜像文件（docker_image 命名空间）：直接返回已完成
+        FileInfo existing = fileInfoRepository.findOne(FileNamespaceEnum.DOCKER_IMAGE.getCode(), fileName);
+        if (ObjectUtil.isNotNull(existing)) {
             MirrorDownloadTask existed = new MirrorDownloadTask();
             existed.setTaskId("local-" + fileName);
             existed.setRepo(repo);
             existed.setTag(tag);
             existed.setFileName(fileName);
+            existed.setFileId(existing.getId());
             existed.setStatus(MirrorDownloadStatusEnum.READY);
             existed.setProgress(100);
-            existed.setProgressMsg("本地已存在，可直接下载");
+            existed.setProgressMsg("库中已存在，可直接下载");
             existed.setCreateTime(LocalDateTime.now());
             existed.setFinishTime(LocalDateTime.now());
-            LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【DOCKER】本地已存在文件: {}", fileName);
+            LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【镜像加速器】【DOCKER】库中已存在文件: {}", fileName);
             return existed;
         }
 
@@ -110,27 +126,14 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
         return task;
     }
 
-    @Override
-    public File getFile(String fileName) {
-        AssertUtil.throwErrWhenFalse(MirrorFileUtil.isValidFileName(fileName), BizErrorCodeEnum.MIRROR_FILE_NAME_INVALID,
-                "非法的文件名");
-        Path path = Paths.get(MirrorFileUtil.IMAGE_DIR).resolve(fileName).normalize();
-        File file = path.toFile();
-        AssertUtil.throwErrWhenFalse(file.exists(), BizErrorCodeEnum.MIRROR_FILE_NOT_FOUND,
-                "本地文件不存在，请重新生成下载链接");
-        AssertUtil.throwErrWhenFalse(file.isFile(), BizErrorCodeEnum.MIRROR_FILE_NOT_REGULAR,
-                "本地文件不存在，请重新生成下载链接");
-        return file;
-    }
-
     /**
-     * 异步执行：远程 docker pull + docker save，产物拉回本地。
+     * 异步执行：远程 docker pull + docker save，产物存入库中（docker_image 命名空间）。
      */
     private void doGenerate(MirrorDownloadTask task, String repo, String tag) {
         String registryHost = resolveRegistryHost();
         String remoteImage = registryHost + "/" + repo + ":" + tag;
-        Path targetFile = Paths.get(MirrorFileUtil.IMAGE_DIR, task.getFileName());
         String remoteTar = REMOTE_DIR + "/" + task.getFileName();
+        Path tempFile = null;
         try {
             // 1. 准备远程目录
             update(task, MirrorDownloadStatusEnum.GENERATING, 5, "准备远程环境");
@@ -171,9 +174,10 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
                 return;
             }
 
-            // 4. 拉回本地（下载接口不变，仍从本地文件流式输出）
+            // 4. 下载到临时文件
             update(task, MirrorDownloadStatusEnum.GENERATING, 80, "下载文件中");
-            sshClient.downloadFile(sshHost, remoteTar, targetFile.toString());
+            tempFile = Files.createTempFile("aiplatform-mirror-", ".tar");
+            sshClient.downloadFile(sshHost, remoteTar, tempFile.toString());
 
             // 5. 清理远程临时 tar（失败不影响主流程）
             SshResult clean = sshClient.execute(sshHost, "rm -f " + remoteTar, 60);
@@ -182,10 +186,17 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
                         "【镜像加速器】【DOCKER】远程临时文件清理失败: {}", remoteTar);
             }
 
+            // 6. 存入文件管理（docker_image 命名空间），前端走 /api/file/{id}/download 流式下载
+            update(task, MirrorDownloadStatusEnum.GENERATING, 90, "存入数据库");
+            byte[] content = Files.readAllBytes(tempFile);
+            FileInfo fileInfo = fileInfoService.upload(FileNamespaceEnum.DOCKER_IMAGE.getCode(),
+                    content, task.getFileName(), repo + ":" + tag);
+            task.setFileId(fileInfo.getId());
+
             update(task, MirrorDownloadStatusEnum.READY, 100, "打包完成，可下载");
             task.setFinishTime(LocalDateTime.now());
             LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
-                    "【镜像加速器】【DOCKER】下载生成完成: {} -> {}", remoteImage, targetFile);
+                    "【镜像加速器】【DOCKER】下载生成完成并入库: {} fileId={}", remoteImage, fileInfo.getId());
         } catch (Exception e) {
             LoggerUtil.error(LogFileEnum.COMMON_ERROR,
                     "【镜像加速器】【DOCKER】下载生成异常: repo={}, tag={}, 错误={}", repo, tag, e.getMessage());
@@ -193,6 +204,10 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
             task.setErrorCode("UNKNOWN");
             task.setErrorMsg(e.getMessage());
             task.setFinishTime(LocalDateTime.now());
+        } finally {
+            if (ObjectUtil.isNotNull(tempFile)) {
+                FileUtil.del(tempFile.toFile());
+            }
         }
     }
 
@@ -236,17 +251,6 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
         task.setStatus(status);
         task.setProgress(progress);
         task.setProgressMsg(progressMsg);
-    }
-
-    /**
- * 确保镜像目录存在。
-     */
-    private void ensureImageDir() {
-        try {
-            MirrorFileUtil.ensureImageDir();
-        } catch (IllegalStateException e) {
-            throw AiPlatformException.ofThrow(BizErrorCodeEnum.MIRROR_DIR_CREATE_FAILED.getCode(), "创建镜像存储目录失败: " + e.getMessage());
-        }
     }
 
     /**

@@ -42,6 +42,17 @@ public class FileInfoRepositoryImpl implements FileInfoRepository {
     }
 
     @Override
+    public FileInfo findOne(String namespace, String originalName) {
+        FileInfoDO row = fileInfoMapper.selectByNamespaceAndName(namespace, originalName);
+        return FileInfoConvertor.toModel(row);
+    }
+
+    @Override
+    public List<String> findOriginalNames(String namespace) {
+        return fileInfoMapper.selectOriginalNamesByNamespace(namespace);
+    }
+
+    @Override
     public PageResult<FileInfo> findPage(FileInfoQueryParam query) {
         FileInfoDalQuery dalQuery = FileInfoConvertor.toDalQuery(query);
         List<FileInfoDO> doList = fileInfoMapper.selectPage(dalQuery);

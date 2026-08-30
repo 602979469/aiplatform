@@ -23,6 +23,9 @@ public class MirrorDownloadTask {
     /** 本地文件名。 */
     private String fileName;
 
+    /** 文件管理中的文件主键（ready 后可用于 /api/file/{id}/download 下载）。 */
+    private Long fileId;
+
     /** 状态：generating 生成中 / ready 已完成 / failed 失败。 */
     private MirrorDownloadStatusEnum status;
 

@@ -38,11 +38,4 @@ public interface AiMirrorManager {
      */
     MirrorDownloadTask getStatus(String taskId);
 
-    /**
-     * 获取本地 tar 文件。
-     *
-     * @param fileName 文件名
-     * @return 文件
-     */
-    File getFile(String fileName);
 }

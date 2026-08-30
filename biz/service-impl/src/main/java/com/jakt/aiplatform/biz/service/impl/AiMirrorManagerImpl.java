@@ -9,8 +9,6 @@ import com.jakt.aiplatform.core.service.AiMirrorDownloadService;
 import com.jakt.aiplatform.core.service.AiMirrorSearchService;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-
 /**
  * 镜像加速器管理实现：用例编排，只依赖 core-service 与 core-model。
  */
@@ -45,8 +43,4 @@ public class AiMirrorManagerImpl implements AiMirrorManager {
         return aiMirrorDownloadService.getStatus(taskId);
     }
 
-    @Override
-    public File getFile(String fileName) {
-        return aiMirrorDownloadService.getFile(fileName);
-    }
 }

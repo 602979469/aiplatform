@@ -38,6 +38,23 @@ public interface FileInfoMapper {
     List<FileInfoDO> selectPage(FileInfoDalQuery query);
 
     /**
+     * 按命名空间 + 原始文件名精确查询（docker_image 等固定命名空间的存量判断）。
+     *
+     * @param namespace    业务命名空间
+     * @param originalName 原始文件名
+     * @return 数据对象；不存在返回 null
+     */
+    FileInfoDO selectByNamespaceAndName(String namespace, String originalName);
+
+    /**
+     * 查询命名空间下全部原始文件名（用于镜像搜索的存量匹配，不加载内容）。
+     *
+     * @param namespace 业务命名空间
+     * @return 原始文件名列表
+     */
+    List<String> selectOriginalNamesByNamespace(String namespace);
+
+    /**
      * 按查询条件统计总条数，用于分页。
      *
      * @param query 查询参数

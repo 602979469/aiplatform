@@ -8,13 +8,17 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.jakt.aiplatform.common.integration.exception.AiIntegrationException;
 import com.jakt.aiplatform.common.integration.xuanyuan.XuanYuanWebClient;
+import com.jakt.aiplatform.common.integration.xuanyuan.XuanYuanProperties;
 import com.jakt.aiplatform.common.util.enums.ThreadPoolEnum;
 import com.jakt.aiplatform.common.util.tools.MirrorFileUtil;
 import com.jakt.aiplatform.common.util.tools.ThreadPoolUtil;
+import com.jakt.aiplatform.core.model.domain.FileInfo;
 import com.jakt.aiplatform.core.model.domain.MirrorImageResult;
 import com.jakt.aiplatform.core.model.domain.MirrorSearchResponse;
+import com.jakt.aiplatform.core.model.enums.FileNamespaceEnum;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
+import com.jakt.aiplatform.core.repository.FileInfoRepository;
 import com.jakt.aiplatform.core.service.AiCapabilityService;
 import com.jakt.aiplatform.core.service.AiMirrorSearchService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -80,19 +84,28 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
 
     private final XuanYuanWebClient xuanYuanWebClient;
 
+    private final XuanYuanProperties xuanYuanProperties;
+
     private final AiCapabilityService aiCapabilityService;
 
     private final ThreadPoolUtil threadPoolUtil;
+
+    /** 文件信息表仓储（docker_image 命名空间存量判断）。 */
+    private final FileInfoRepository fileInfoRepository;
 
     /** AI 版本匹配结果缓存：repo|expectTag -> 命中 tag（空串表示无匹配，避免重复调用）。 */
     private final Map<String, String> aiTagCache = new ConcurrentHashMap<>();
 
     public AiMirrorSearchServiceImpl(XuanYuanWebClient xuanYuanWebClient,
+                                     XuanYuanProperties xuanYuanProperties,
                                      AiCapabilityService aiCapabilityService,
-                                     ThreadPoolUtil threadPoolUtil) {
+                                     ThreadPoolUtil threadPoolUtil,
+                                     FileInfoRepository fileInfoRepository) {
         this.xuanYuanWebClient = xuanYuanWebClient;
+        this.xuanYuanProperties = xuanYuanProperties;
         this.aiCapabilityService = aiCapabilityService;
         this.threadPoolUtil = threadPoolUtil;
+        this.fileInfoRepository = fileInfoRepository;
     }
 
     @Override
@@ -173,26 +186,42 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
     }
 
     /**
-     * 本地已下载文件转搜索结果（阶段 2），厂商用仓库命名空间，架构未知显示多架构。
+     * 已入库镜像文件转搜索结果（阶段 2，查 file_info 的 docker_image 命名空间），
+     * 厂商用仓库命名空间，架构未知显示多架构。
      *
      * @param baseName 镜像名（不含版本）
      * @param tag      期望版本
-     * @return 本地已下载镜像对应的搜索结果
+     * @return 已入库镜像对应的搜索结果
      */
     private List<MirrorImageResult> findExistingResults(String baseName, String tag) {
         long phaseStart = System.currentTimeMillis();
         List<MirrorImageResult> results = new ArrayList<>();
-        for (String[] repoTag : MirrorFileUtil.findExistingImages(baseName, tag)) {
-            String repo = repoTag[0];
-            String fileTag = repoTag[1];
+        String baseSegment = baseName.substring(baseName.lastIndexOf('/') + 1);
+        for (String fileName : fileInfoRepository.findOriginalNames(FileNamespaceEnum.DOCKER_IMAGE.getCode())) {
+            if (ObjectUtil.isNull(fileName) || !fileName.endsWith(".tar")) {
+                continue;
+            }
+            String body = fileName.substring(0, fileName.length() - 4);
+            int idx = body.lastIndexOf('_');
+            if (idx <= 0) {
+                continue;
+            }
+            String repo = body.substring(0, idx).replace('_', '/');
+            String fileTag = body.substring(idx + 1);
+            if (!repo.substring(repo.lastIndexOf('/') + 1).equals(baseSegment)
+                    || !MirrorFileUtil.isTagMatch(fileTag, tag)) {
+                continue;
+            }
             MirrorImageResult result = new MirrorImageResult();
             result.setRepo(repo);
             result.setTag(fileTag);
-            result.setFullName(repo + ":" + fileTag);
+            result.setFullName(prefixedFullName(repo, fileTag));
             result.setVendor(repo.contains("/") ? repo.substring(0, repo.indexOf('/')) : "其他");
             result.setArch("多架构");
-            result.setLocalFileName(MirrorFileUtil.buildFileName(repo, fileTag));
+            result.setLocalFileName(fileName);
             result.setLocalFileExists(true);
+            FileInfo existing = fileInfoRepository.findOne(FileNamespaceEnum.DOCKER_IMAGE.getCode(), fileName);
+            result.setFileId(ObjectUtil.isNull(existing) ? null : existing.getId());
             results.add(result);
         }
         logPhase("本地文件检查", phaseStart, "已存在=%s, 还需查询厂商数=%s",
@@ -517,7 +546,7 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
             MirrorImageResult result = new MirrorImageResult();
             result.setRepo(repo);
             result.setTag(tag);
-            result.setFullName(repo + ":" + tag);
+            result.setFullName(prefixedFullName(repo, tag));
             result.setVendor(namespace);
             result.setArch("支持 " + matchedArch);
             result.setLocalFileName(MirrorFileUtil.buildFileName(repo, tag));
@@ -604,7 +633,34 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
      * 刷新本地文件状态（本地磁盘检查，很快）。
      */
     private void refreshLocalFile(MirrorImageResult result) {
-        result.setLocalFileExists(MirrorFileUtil.isFileExists(result.getLocalFileName()));
+        FileInfo existing = fileInfoRepository.findOne(
+                FileNamespaceEnum.DOCKER_IMAGE.getCode(), result.getLocalFileName());
+        result.setLocalFileExists(!ObjectUtil.isNull(existing));
+        result.setFileId(ObjectUtil.isNull(existing) ? null : existing.getId());
+    }
+
+    /**
+     * 拼接带加速器前缀的镜像完整名称（如 docker.xuanyuan.run/circleci/openjdk:latest）。
+     *
+     * @param repo 仓库路径
+     * @param tag  版本号
+     * @return 完整名称
+     */
+    private String prefixedFullName(String repo, String tag) {
+        return resolveRegistryHost() + "/" + repo + ":" + tag;
+    }
+
+    /**
+     * 解析注册表主机（去协议前缀与尾部斜杠）。
+     *
+     * @return 注册表主机
+     */
+    private String resolveRegistryHost() {
+        String url = xuanYuanProperties.getRegistryUrl();
+        if (StrUtil.isBlank(url)) {
+            return "docker.xuanyuan.run";
+        }
+        return url.replaceFirst("^https?://", "").replaceAll("/+$", "");
     }
 
     /**

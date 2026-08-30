@@ -2,8 +2,6 @@ package com.jakt.aiplatform.core.service;
 
 import com.jakt.aiplatform.core.model.domain.MirrorDownloadTask;
 
-import java.io.File;
-
 /**
  * 镜像下载生成领域服务：docker pull + docker save，任务状态内存维护。
  */
@@ -26,11 +24,4 @@ public interface AiMirrorDownloadService {
      */
     MirrorDownloadTask getStatus(String taskId);
 
-    /**
-     * 获取本地 tar 文件。
-     *
-     * @param fileName 文件名
-     * @return 文件
-     */
-    File getFile(String fileName);
 }

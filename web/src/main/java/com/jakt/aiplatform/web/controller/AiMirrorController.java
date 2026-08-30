@@ -1,6 +1,5 @@
 package com.jakt.aiplatform.web.controller;
 
-import cn.hutool.core.io.IoUtil;
 import com.jakt.aiplatform.biz.service.AiMirrorManager;
 import com.jakt.aiplatform.web.assembler.AiMirrorAssembler;
 import com.jakt.aiplatform.web.checker.AiMirrorParamChecker;
@@ -12,20 +11,12 @@ import com.jakt.aiplatform.web.result.MirrorSearchResponse;
 import com.jakt.aiplatform.web.template.ApiTemplate;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 /**
  * 镜像加速器接口：搜索 / 生成下载 / 进度查询 / 文件下载。
@@ -115,23 +106,4 @@ public class AiMirrorController {
         });
     }
 
-    /**
-     * 下载 tar 文件。
-     *
-     * @param fileName 文件名
-     * @param response HttpServletResponse
-     */
-    @GetMapping("/download/file")
-    public void download(@RequestParam String fileName, HttpServletResponse response) throws Exception {
-        AiMirrorParamChecker.checkFileName(fileName);
-        File file = aiMirrorManager.getFile(fileName);
-        response.setContentType("application/octet-stream");
-        response.setHeader("Content-Disposition",
-                "attachment; filename*=UTF-8''" + URLEncoder.encode(fileName, StandardCharsets.UTF_8));
-        response.setContentLengthLong(file.length());
-        try (InputStream inputStream = new FileInputStream(file); OutputStream outputStream = response.getOutputStream()) {
-            IoUtil.copy(inputStream, outputStream);
-            outputStream.flush();
-        }
-    }
 }

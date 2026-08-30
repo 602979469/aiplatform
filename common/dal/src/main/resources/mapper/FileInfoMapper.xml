@@ -29,6 +29,19 @@
         WHERE id = #{id}
     </select>
 
+    <select id="selectByNamespaceAndName" resultType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
+        SELECT <include refid="selectColumns"/>
+        FROM file_info
+        WHERE namespace = #{namespace} AND original_name = #{originalName}
+        LIMIT 1
+    </select>
+
+    <select id="selectOriginalNamesByNamespace" resultType="string">
+        SELECT original_name
+        FROM file_info
+        WHERE namespace = #{namespace}
+    </select>
+
     <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
         SELECT <include refid="selectColumns"/>
         FROM file_info

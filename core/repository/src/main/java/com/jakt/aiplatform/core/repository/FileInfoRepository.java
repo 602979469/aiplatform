@@ -4,6 +4,8 @@ import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.model.domain.FileInfo;
 import com.jakt.aiplatform.core.model.param.FileInfoQueryParam;
 
+import java.util.List;
+
 /**
  * 文件信息表仓储：封装 Mapper，对外只暴露领域模型，不暴露 DO/DalQuery/DalResult。
  */
@@ -24,6 +26,23 @@ public interface FileInfoRepository {
      * @return 文件内容字节；不存在或内容为空返回 null
      */
     byte[] findContent(Long id);
+
+    /**
+     * 按命名空间 + 原始文件名精确查询（存量判断）。
+     *
+     * @param namespace    业务命名空间
+     * @param originalName 原始文件名
+     * @return 文件信息；不存在返回 null
+     */
+    FileInfo findOne(String namespace, String originalName);
+
+    /**
+     * 查询命名空间下全部原始文件名（不加载内容）。
+     *
+     * @param namespace 业务命名空间
+     * @return 原始文件名列表
+     */
+    List<String> findOriginalNames(String namespace);
 
     /**
      * 分页查询。

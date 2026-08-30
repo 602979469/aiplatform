@@ -43,12 +43,4 @@ public class AiMirrorParamChecker {
         AssertUtil.throwErrWhenBlank(taskId, ErrorCodeEnum.PARAM_INVALID, "任务ID不能为空");
     }
 
-    /**
-     * 检查文件名。
-     *
-     * @param fileName 文件名
-     */
-    public static void checkFileName(String fileName) {
-        AssertUtil.throwErrWhenBlank(fileName, ErrorCodeEnum.PARAM_INVALID, "文件名不能为空");
-    }
 }

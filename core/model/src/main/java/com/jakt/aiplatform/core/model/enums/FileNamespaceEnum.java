@@ -21,6 +21,9 @@ public enum FileNamespaceEnum implements BaseEnum<String> {
 
     /** 用户头像命名空间。 */
     USER_AVATAR("user_avatar", "用户头像命名空间"),
+
+    /** docker 镜像文件命名空间。 */
+    DOCKER_IMAGE("docker_image", "docker 镜像文件命名空间"),
     ;
 
     /** code（命名空间名）。 */
