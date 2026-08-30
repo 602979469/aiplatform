@@ -35,4 +35,13 @@ public interface SshClient {
      * @param remotePath 远程目标路径
      */
     void uploadFile(String host, String localPath, String remotePath);
+
+    /**
+     * 从远程主机下载文件。
+     *
+     * @param host       目标主机（用户@IP）
+     * @param remotePath 远程文件路径
+     * @param localPath  本地目标路径
+     */
+    void downloadFile(String host, String remotePath, String localPath);
 }

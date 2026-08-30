@@ -63,6 +63,9 @@ ai:
   xuanyuan:
     registry-url: https://docker.xuanyuan.run
     web-url: https://xuanyuan.cloud
+  mirror:
+    # 镜像加速器远程 docker 主机（执行 docker pull/save），默认集群 master；生产用 AIPLATFORM_MIRROR_SSH_HOST 覆盖
+    ssh-host: ${AIPLATFORM_MIRROR_SSH_HOST:192.168.3.131}
   ssh:
     # master 主机 SSH（构建/部署脚本执行机）
     username: ${SSH_USERNAME:ubuntu}

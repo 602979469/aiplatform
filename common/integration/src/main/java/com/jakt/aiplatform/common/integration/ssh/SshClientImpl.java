@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.common.integration.ssh;
 
+import cn.hutool.core.io.FileUtil;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.common.integration.exception.AiIntegrationErrorCode;
@@ -146,6 +147,29 @@ public class SshClientImpl implements SshClient {
             LoggerUtil.info(LogFileEnum.INTEGRATION, "【SSH】上传文件成功 host={} {} -> {}", host, localPath, remotePath);
         } catch (Exception e) {
             throw toIntegrationException("SSH 上传文件失败 host={} {} -> {}", e, host, localPath, remotePath);
+        } finally {
+            if (sftp != null) {
+                sftp.disconnect();
+            }
+            if (session != null) {
+                session.disconnect();
+            }
+        }
+    }
+
+    @Override
+    public void downloadFile(String host, String remotePath, String localPath) {
+        Session session = null;
+        ChannelSftp sftp = null;
+        try {
+            FileUtil.mkParentDirs(localPath);
+            session = createSession(host);
+            sftp = (ChannelSftp) session.openChannel("sftp");
+            sftp.connect(connectTimeoutMillis());
+            sftp.get(remotePath, localPath);
+            LoggerUtil.info(LogFileEnum.INTEGRATION, "【SSH】下载文件成功 host={} {} -> {}", host, remotePath, localPath);
+        } catch (Exception e) {
+            throw toIntegrationException("SSH 下载文件失败 host={} {} -> {}", e, host, remotePath, localPath);
         } finally {
             if (sftp != null) {
                 sftp.disconnect();

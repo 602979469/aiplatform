@@ -3,9 +3,10 @@ import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.integration.xuanyuan.XuanYuanProperties;
+import com.jakt.aiplatform.common.integration.ssh.SshClient;
+import com.jakt.aiplatform.common.integration.ssh.SshResult;
 import com.jakt.aiplatform.common.util.enums.ThreadPoolEnum;
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
-import com.jakt.aiplatform.common.util.tools.CommandUtil;
 import com.jakt.aiplatform.common.util.tools.MirrorFileUtil;
 import com.jakt.aiplatform.common.util.tools.ThreadPoolUtil;
 import com.jakt.aiplatform.core.model.domain.MirrorDownloadTask;
@@ -14,13 +15,13 @@ import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.core.service.AiMirrorDownloadService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,11 +29,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 镜像下载生成领域服务实现。
  *
- * <p>docker pull + docker save 为本地命令调用（不用 AI），任务状态内存维护。
+ * <p>docker pull + docker save 通过 SSH 在远程 docker 主机执行，产物拉回本地，任务状态内存维护。
  * 日志统一使用 【镜像加速器】【DOCKER】 关键词便于检索。
  */
 @Service
 public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
+
+    /** 远程 docker 主机上的镜像打包目录。 */
+    private static final String REMOTE_DIR = "/tmp/aiplatform-mirror";
 
     /** 拉取/打包超时（秒）。 */
     private static final long DOCKER_TIMEOUT_SECONDS = 600;
@@ -44,10 +48,21 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
 
     private final XuanYuanProperties xuanYuanProperties;
 
+    /** SSH 客户端（远程 docker 主机执行）。 */
+    private final SshClient sshClient;
+
+    /** 远程 docker 主机地址。 */
+    private final String sshHost;
+
     private final ThreadPoolUtil threadPoolUtil;
 
-    public AiMirrorDownloadServiceImpl(XuanYuanProperties xuanYuanProperties, ThreadPoolUtil threadPoolUtil) {
+    public AiMirrorDownloadServiceImpl(XuanYuanProperties xuanYuanProperties,
+                                       SshClient sshClient,
+                                       @Value("${ai.mirror.ssh-host:192.168.3.131}") String sshHost,
+                                       ThreadPoolUtil threadPoolUtil) {
         this.xuanYuanProperties = xuanYuanProperties;
+        this.sshClient = sshClient;
+        this.sshHost = sshHost;
         this.threadPoolUtil = threadPoolUtil;
     }
 
@@ -109,39 +124,62 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
     }
 
     /**
-     * 异步执行 docker pull + docker save。
+     * 异步执行：远程 docker pull + docker save，产物拉回本地。
      */
     private void doGenerate(MirrorDownloadTask task, String repo, String tag) {
         String registryHost = resolveRegistryHost();
         String remoteImage = registryHost + "/" + repo + ":" + tag;
         Path targetFile = Paths.get(MirrorFileUtil.IMAGE_DIR, task.getFileName());
+        String remoteTar = REMOTE_DIR + "/" + task.getFileName();
         try {
-            update(task, MirrorDownloadStatusEnum.GENERATING, 10, "开始拉取镜像 " + remoteImage);
-            CommandUtil.CommandResult pull = null;
+            // 1. 准备远程目录
+            update(task, MirrorDownloadStatusEnum.GENERATING, 5, "准备远程环境");
+            SshResult mkdir = sshClient.execute(sshHost, "mkdir -p " + REMOTE_DIR, 60);
+            if (!mkdir.isSuccess()) {
+                fail(task, "创建远程目录失败", mkdir);
+                return;
+            }
+
+            // 2. 远程 docker pull（网络抖动/瞬时TLS超时容错，重试 3 次）
+            update(task, MirrorDownloadStatusEnum.GENERATING, 10, "开始远程拉取镜像 " + remoteImage);
+            SshResult pull = null;
             for (int attempt = 1; attempt <= PULL_MAX_RETRY; attempt++) {
-                update(task, MirrorDownloadStatusEnum.GENERATING, 10 + attempt * 5, "拉取镜像中（第 " + attempt + "/" + PULL_MAX_RETRY + " 次）");
-                pull = CommandUtil.execute(Arrays.asList("docker", "pull", remoteImage), DOCKER_TIMEOUT_SECONDS);
+                update(task, MirrorDownloadStatusEnum.GENERATING, 10 + attempt * 5,
+                        "远程拉取镜像中（第 " + attempt + "/" + PULL_MAX_RETRY + " 次）");
+                pull = sshClient.execute(sshHost, "docker pull " + remoteImage, DOCKER_TIMEOUT_SECONDS);
                 if (pull.isSuccess()) {
                     break;
                 }
                 if (attempt < PULL_MAX_RETRY) {
                     LoggerUtil.warn(LogFileEnum.BIZ_SERVICE,
-                            "【镜像加速器】【DOCKER】docker pull 第{}次失败，准备重试: repo={}, tag={}, 退出码={}, 超时={}",
+                            "【镜像加速器】【DOCKER】远程 docker pull 第{}次失败，准备重试: repo={}, tag={}, 退出码={}, 超时={}",
                             attempt, repo, tag, pull.getExitCode(), pull.isTimeout());
                     sleepQuietly(3000L * attempt);
                 }
             }
             if (!pull.isSuccess()) {
-                fail(task, "docker pull 失败（已重试 " + PULL_MAX_RETRY + " 次）", pull);
+                fail(task, "远程 docker pull 失败（已重试 " + PULL_MAX_RETRY + " 次）", pull);
                 return;
             }
 
-            update(task, MirrorDownloadStatusEnum.GENERATING, 60, "拉取完成，开始打包 tar");
-            CommandUtil.CommandResult save = CommandUtil.execute(
-                    Arrays.asList("docker", "save", "-o", targetFile.toString(), remoteImage), DOCKER_TIMEOUT_SECONDS);
+            // 3. 远程打包 tar
+            update(task, MirrorDownloadStatusEnum.GENERATING, 60, "拉取完成，远程打包 tar");
+            SshResult save = sshClient.execute(sshHost,
+                    "docker save -o " + remoteTar + " " + remoteImage, DOCKER_TIMEOUT_SECONDS);
             if (!save.isSuccess()) {
-                fail(task, "docker save 失败", save);
+                fail(task, "远程 docker save 失败", save);
                 return;
+            }
+
+            // 4. 拉回本地（下载接口不变，仍从本地文件流式输出）
+            update(task, MirrorDownloadStatusEnum.GENERATING, 80, "下载文件中");
+            sshClient.downloadFile(sshHost, remoteTar, targetFile.toString());
+
+            // 5. 清理远程临时 tar（失败不影响主流程）
+            SshResult clean = sshClient.execute(sshHost, "rm -f " + remoteTar, 60);
+            if (!clean.isSuccess()) {
+                LoggerUtil.warn(LogFileEnum.BIZ_SERVICE,
+                        "【镜像加速器】【DOCKER】远程临时文件清理失败: {}", remoteTar);
             }
 
             update(task, MirrorDownloadStatusEnum.READY, 100, "打包完成，可下载");
@@ -159,9 +197,9 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
     }
 
     /**
- * 标记任务失败。
+     * 标记任务失败（SSH 执行结果）。
      */
-    private void fail(MirrorDownloadTask task, String phase, CommandUtil.CommandResult result) {
+    private void fail(MirrorDownloadTask task, String phase, SshResult result) {
         String errorCode = result.isTimeout() ? "TIMEOUT" : "UNKNOWN";
         String errorMsg = result.isTimeout() ? "命令执行超时（" + phase + "）" : extractError(result.getOutput());
         LoggerUtil.error(LogFileEnum.COMMON_ERROR,
