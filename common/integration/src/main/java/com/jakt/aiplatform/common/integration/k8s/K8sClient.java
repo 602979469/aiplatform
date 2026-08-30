@@ -1,6 +1,7 @@
 package com.jakt.aiplatform.common.integration.k8s;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Kubernetes 集群基础客户端：只提供最基础的查询/操作能力，业务语义由 core-service domain 层封装。
@@ -23,6 +24,22 @@ public interface K8sClient {
      * @return 节点资源用量列表
      */
     List<K8sNodeMetric> listNodeMetrics();
+
+    /**
+     * 集群全部命名空间。
+     *
+     * @return 命名空间名称列表
+     */
+    List<String> listNamespaces();
+
+    /**
+     * 按 selector 标签查询命名空间下的 Pod。
+     *
+     * @param namespace      命名空间
+     * @param selectorLabels 选择器标签（Deployment 的 spec.selector.matchLabels）
+     * @return Pod 信息列表
+     */
+    List<K8sPodInfo> listPodsBySelector(String namespace, Map<String, String> selectorLabels);
 
     /**
      * 按名称查询 Deployment。

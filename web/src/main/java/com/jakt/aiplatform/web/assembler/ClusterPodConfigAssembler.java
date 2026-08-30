@@ -170,6 +170,10 @@ public final class ClusterPodConfigAssembler {
                 .arch(node.getArch())
                 .status(node.getStatus())
                 .podCountByNamespace(node.getPodCountByNamespace())
+                .cpuTotalMilli(node.getCpuTotalMilli())
+                .cpuUsedMilli(node.getCpuUsedMilli())
+                .memoryTotalBytes(node.getMemoryTotalBytes())
+                .memoryUsedBytes(node.getMemoryUsedBytes())
                 .build();
     }
 

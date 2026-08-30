@@ -132,6 +132,49 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
     }
 
     @Override
+    public List<String> listNamespaces() {
+        try {
+            List<io.fabric8.kubernetes.api.model.Namespace> namespaces =
+                    kubernetesClient.namespaces().list().getItems();
+            List<String> result = new ArrayList<>();
+            if (namespaces == null) {
+                return result;
+            }
+            for (io.fabric8.kubernetes.api.model.Namespace namespace : namespaces) {
+                if (namespace.getMetadata() != null && namespace.getMetadata().getName() != null) {
+                    result.add(namespace.getMetadata().getName());
+                }
+            }
+            return result;
+        } catch (KubernetesClientException e) {
+            throw toIntegrationException("查询命名空间列表失败", e);
+        }
+    }
+
+    @Override
+    public List<K8sPodInfo> listPodsBySelector(String namespace, Map<String, String> selectorLabels) {
+        try {
+            List<Pod> pods = kubernetesClient.pods().inNamespace(namespace)
+                    .withLabels(selectorLabels).list().getItems();
+            List<K8sPodInfo> result = new ArrayList<>();
+            if (pods == null) {
+                return result;
+            }
+            for (Pod pod : pods) {
+                K8sPodInfo info = new K8sPodInfo();
+                info.setNamespace(namespace);
+                info.setPodName(pod.getMetadata() == null ? null : pod.getMetadata().getName());
+                info.setNodeName(pod.getSpec() == null ? null : pod.getSpec().getNodeName());
+                result.add(info);
+            }
+            return result;
+        } catch (KubernetesClientException e) {
+            throw toIntegrationException("按 selector 查询 Pod 失败 namespace={} selector={}", e,
+                    namespace, selectorLabels);
+        }
+    }
+
+    @Override
     public K8sDeploymentInfo getDeployment(String namespace, String name) {
         try {
             Deployment deployment = kubernetesClient.apps().deployments().inNamespace(namespace)
@@ -305,6 +348,9 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
             info.setImage(containers.get(0).getImage());
         }
         info.setLastDeployTime(parseTimestamp(deployment.getMetadata().getCreationTimestamp()));
+        if (deployment.getSpec() != null && deployment.getSpec().getSelector() != null) {
+            info.setSelectorLabels(deployment.getSpec().getSelector().getMatchLabels());
+        }
 
         List<Pod> pods = kubernetesClient.pods().inNamespace(info.getNamespace())
                 .withLabel("app", info.getName()).list().getItems();
@@ -322,7 +368,8 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
     }
 
     /**
-     * 解析 CPU 毫核（支持 4 / 500m 两种格式）。
+     * 解析 CPU 毫核（支持核数 4、毫核 500m、纳核 153646246n 三种格式）。
+     * 节点 capacity 用核数，metrics-server 用量用纳核（fabric8 拆为 amount + format=n）。
      *
      * @param quantity K8s Quantity
      * @return 毫核；解析失败返回 null
@@ -331,11 +378,21 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
         if (quantity == null) {
             return null;
         }
-        String value = quantity.getAmount();
-        if (value.endsWith("m")) {
-            return Long.valueOf(value.substring(0, value.length() - 1));
+        try {
+            String value = quantity.getAmount();
+            String format = quantity.getFormat();
+            if ("n".equals(format)) {
+                return Long.valueOf(value) / 1_000_000L;
+            }
+            if ("m".equals(format) || value.endsWith("m")) {
+                String milli = value.endsWith("m") ? value.substring(0, value.length() - 1) : value;
+                return Long.valueOf(milli);
+            }
+            return Double.valueOf(value).longValue() * 1000L;
+        } catch (NumberFormatException e) {
+            LoggerUtil.warn(LogFileEnum.INTEGRATION, "【K8S】CPU 用量解析失败 value={}", quantity.getAmount());
+            return null;
         }
-        return Double.valueOf(value).longValue() * 1000L;
     }
 
     /**

@@ -3,6 +3,7 @@ package com.jakt.aiplatform.common.integration.k8s;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * Deployment 基础信息（集成层 DTO）。
@@ -36,4 +37,7 @@ public class K8sDeploymentInfo {
 
     /** 最近部署时间。 */
     private LocalDateTime lastDeployTime;
+
+    /** Deployment 的 Pod 选择器标签（用于关联业务 Pod）。 */
+    private Map<String, String> selectorLabels;
 }

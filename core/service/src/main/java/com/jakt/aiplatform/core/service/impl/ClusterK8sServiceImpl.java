@@ -11,6 +11,7 @@ import com.jakt.aiplatform.common.integration.k8s.K8sDeploymentInfo;
 import com.jakt.aiplatform.common.integration.k8s.K8sEventInfo;
 import com.jakt.aiplatform.common.integration.k8s.K8sNodeInfo;
 import com.jakt.aiplatform.common.integration.k8s.K8sNodeMetric;
+import com.jakt.aiplatform.common.integration.k8s.K8sPodInfo;
 import com.jakt.aiplatform.core.model.domain.ClusterDashboard;
 import com.jakt.aiplatform.core.model.domain.ClusterNodeInfo;
 import com.jakt.aiplatform.core.model.domain.ClusterRuntimeEvent;
@@ -50,6 +51,31 @@ public class ClusterK8sServiceImpl implements ClusterK8sService {
             List<K8sNodeInfo> nodeInfos = k8sClient.listNodes();
             List<K8sNodeMetric> nodeMetrics = k8sClient.listNodeMetrics();
 
+            // 统计每个节点上业务 pod（aiplatform-managed 标签的 Deployment 关联的 pod）数量，按命名空间分组
+            Map<String, Map<String, Integer>> podCounts = new HashMap<>();
+            try {
+                for (String namespace : k8sClient.listNamespaces()) {
+                    List<K8sDeploymentInfo> deployments =
+                            k8sClient.listDeploymentsByLabel(namespace, MANAGED_LABEL_KEY, MANAGED_LABEL_VALUE);
+                    for (K8sDeploymentInfo deployment : deployments) {
+                        if (deployment.getSelectorLabels() == null || deployment.getSelectorLabels().isEmpty()) {
+                            continue;
+                        }
+                        List<K8sPodInfo> pods =
+                                k8sClient.listPodsBySelector(namespace, deployment.getSelectorLabels());
+                        for (K8sPodInfo pod : pods) {
+                            if (pod.getNodeName() == null) {
+                                continue;
+                            }
+                            podCounts.computeIfAbsent(pod.getNodeName(), key -> new HashMap<>())
+                                    .merge(pod.getNamespace(), 1, Integer::sum);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                LoggerUtil.warn(LogFileEnum.INTEGRATION, "【K8S】统计业务 pod 数量失败，节点 pod 数置空: {}", e.getMessage());
+            }
+
             List<ClusterNodeInfo> nodes = new ArrayList<>();
             long cpuTotal = 0L;
             long cpuUsed = 0L;
@@ -61,7 +87,7 @@ public class ClusterK8sServiceImpl implements ClusterK8sService {
                 node.setRole(nodeInfo.getRole());
                 node.setArch("arm64".equals(nodeInfo.getArch()) ? "ARM" : "AMD");
                 node.setStatus(nodeInfo.getStatus());
-                node.setPodCountByNamespace(new HashMap<>());
+                node.setPodCountByNamespace(podCounts.getOrDefault(nodeInfo.getNodeName(), new HashMap<>()));
                 nodes.add(node);
 
                 K8sNodeMetric metric = nodeMetrics.stream()
@@ -69,6 +95,10 @@ public class ClusterK8sServiceImpl implements ClusterK8sService {
                         .findFirst()
                         .orElse(null);
                 if (metric != null) {
+                    node.setCpuTotalMilli(metric.getCpuTotalMilli());
+                    node.setCpuUsedMilli(metric.getCpuUsedMilli());
+                    node.setMemoryTotalBytes(metric.getMemoryTotalBytes());
+                    node.setMemoryUsedBytes(metric.getMemoryUsedBytes());
                     cpuTotal += nullToZero(metric.getCpuTotalMilli());
                     cpuUsed += nullToZero(metric.getCpuUsedMilli());
                     memoryTotal += nullToZero(metric.getMemoryTotalBytes());
