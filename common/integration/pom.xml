@@ -56,5 +56,11 @@
             <artifactId>jsch</artifactId>
             <version>0.2.20</version>
         </dependency>
+        <!-- MinIO：对象存储（文件/镜像统一走 MinIO，DB 只存元数据） -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.17</version>
+        </dependency>
     </dependencies>
 </project>

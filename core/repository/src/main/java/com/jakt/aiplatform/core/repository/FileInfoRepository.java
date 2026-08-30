@@ -20,14 +20,6 @@ public interface FileInfoRepository {
     FileInfo findById(Long id);
 
     /**
-     * 按主键查询文件内容（列表查询不加载大字段）。
-     *
-     * @param id 主键
-     * @return 文件内容字节；不存在或内容为空返回 null
-     */
-    byte[] findContent(Long id);
-
-    /**
      * 按命名空间 + 原始文件名精确查询（存量判断）。
      *
      * @param namespace    业务命名空间

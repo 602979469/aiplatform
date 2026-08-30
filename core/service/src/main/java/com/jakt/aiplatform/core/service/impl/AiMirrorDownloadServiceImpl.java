@@ -24,6 +24,7 @@ import com.jakt.aiplatform.core.service.FileInfoService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -186,11 +187,13 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
                         "【镜像加速器】【DOCKER】远程临时文件清理失败: {}", remoteTar);
             }
 
-            // 6. 存入文件管理（docker_image 命名空间），前端走 /api/file/{id}/download 流式下载
-            update(task, MirrorDownloadStatusEnum.GENERATING, 90, "存入数据库");
-            byte[] content = Files.readAllBytes(tempFile);
-            FileInfo fileInfo = fileInfoService.upload(FileNamespaceEnum.DOCKER_IMAGE.getCode(),
-                    content, task.getFileName(), repo + ":" + tag);
+            // 6. 流式推入文件管理（docker_image 命名空间，MinIO 对象存储），前端走 /api/file/{id}/download 流式下载
+            update(task, MirrorDownloadStatusEnum.GENERATING, 90, "存入 MinIO");
+            FileInfo fileInfo;
+            try (InputStream contentStream = Files.newInputStream(tempFile)) {
+                fileInfo = fileInfoService.uploadStream(FileNamespaceEnum.DOCKER_IMAGE.getCode(),
+                        contentStream, Files.size(tempFile), task.getFileName(), repo + ":" + tag);
+            }
             task.setFileId(fileInfo.getId());
 
             update(task, MirrorDownloadStatusEnum.READY, 100, "打包完成，可下载");

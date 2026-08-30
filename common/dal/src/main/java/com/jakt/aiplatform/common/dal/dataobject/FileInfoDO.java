@@ -18,8 +18,8 @@ public class FileInfoDO extends BaseDO {
     /** 原始文件名（含扩展名，展示/下载用）。 */
     private String originalName;
 
-    /** 文件内容（LONGBLOB，直接存数据库，列表查询不加载）。 */
-    private byte[] fileContent;
+    /** MinIO 对象键。 */
+    private String objectKey;
 
     /** 文件大小（字节）。 */
     private Long fileSize;

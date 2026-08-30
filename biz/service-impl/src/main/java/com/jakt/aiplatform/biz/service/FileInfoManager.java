@@ -4,6 +4,7 @@ import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.model.domain.FileInfo;
 import com.jakt.aiplatform.core.model.param.FileInfoQueryParam;
 
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -49,13 +50,22 @@ public interface FileInfoManager {
     FileInfo getFile(Long id, String namespace);
 
     /**
-     * 获取文件内容（含元数据，供下载/展示流式输出）。
+     * 打开文件内容流（从 MinIO 流式读取；调用方负责关闭）。
      *
      * @param id        文件主键
      * @param namespace 业务命名空间
-     * @return 文件信息（含 fileContent）
+     * @return 内容流
      */
-    FileInfo downloadFile(Long id, String namespace);
+    InputStream openContentStream(Long id, String namespace);
+
+    /**
+     * 获取文件内容大小（下载 Content-Length 用）。
+     *
+     * @param id        文件主键
+     * @param namespace 业务命名空间
+     * @return 内容字节数
+     */
+    long getContentSize(Long id, String namespace);
 
     /**
      * 更新文件元信息（改名/备注）。

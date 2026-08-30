@@ -3,7 +3,7 @@
 <mapper namespace="com.jakt.aiplatform.common.dal.mapper.FileInfoMapper">
 
     <sql id="selectColumns">
-        id, namespace, original_name, file_size, file_type, remark, create_by, update_by, create_time, update_time
+        id, namespace, original_name, file_size, file_type, object_key, remark, create_by, update_by, create_time, update_time
     </sql>
 
     <sql id="queryConditions">
@@ -19,12 +19,6 @@
 
     <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
         SELECT <include refid="selectColumns"/>
-        FROM file_info
-        WHERE id = #{id}
-    </select>
-
-    <select id="selectContentById" resultType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
-        SELECT file_content
         FROM file_info
         WHERE id = #{id}
     </select>
@@ -58,8 +52,8 @@
 
     <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO file_info (namespace, original_name, file_size, file_type, file_content, remark, create_by, update_by, create_time, update_time)
-        VALUES (#{namespace}, #{originalName}, #{fileSize}, #{fileType}, #{fileContent}, #{remark}, #{createBy}, #{updateBy}, NOW(), NOW())
+        INSERT INTO file_info (namespace, original_name, file_size, file_type, object_key, remark, create_by, update_by, create_time, update_time)
+        VALUES (#{namespace}, #{originalName}, #{fileSize}, #{fileType}, #{objectKey}, #{remark}, #{createBy}, #{updateBy}, NOW(), NOW())
     </insert>
 
     <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
@@ -68,7 +62,7 @@
             original_name = #{originalName},
             file_size = #{fileSize},
             file_type = #{fileType},
-            file_content = #{fileContent},
+            object_key = #{objectKey},
             remark = #{remark},
             create_by = #{createBy},
             update_by = #{updateBy}, update_time = NOW()

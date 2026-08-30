@@ -1,6 +1,7 @@
 package com.jakt.aiplatform.web.controller;
 
 import cn.dev33.satoken.annotation.SaIgnore;
+import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.biz.service.FileInfoManager;
@@ -30,6 +31,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -132,13 +135,16 @@ public class FileInfoController {
     public void download(@PathVariable Long id, @RequestParam String namespace, HttpServletResponse response) throws Exception {
         FileInfoParamChecker.checkId(id);
         FileInfoParamChecker.checkNamespace(namespace);
-        FileInfo fileInfo = fileInfoManager.downloadFile(id, namespace);
+        FileInfo fileInfo = fileInfoManager.getFile(id, namespace);
         response.setContentType("application/octet-stream");
         response.setHeader("Content-Disposition",
                 "attachment; filename*=UTF-8''" + URLEncoder.encode(fileInfo.getOriginalName(), StandardCharsets.UTF_8));
-        response.setContentLengthLong(fileInfo.getFileContent().length);
-        response.getOutputStream().write(fileInfo.getFileContent());
-        response.getOutputStream().flush();
+        response.setContentLengthLong(fileInfoManager.getContentSize(id, namespace));
+        try (InputStream inputStream = fileInfoManager.openContentStream(id, namespace);
+             OutputStream outputStream = response.getOutputStream()) {
+            IoUtil.copy(inputStream, outputStream);
+            outputStream.flush();
+        }
     }
 
     /**
@@ -153,11 +159,14 @@ public class FileInfoController {
     @SaIgnore
     public void avatar(@PathVariable Long id, HttpServletResponse response) throws Exception {
         FileInfoParamChecker.checkId(id);
-        FileInfo fileInfo = fileInfoManager.downloadFile(id, FileNamespaceEnum.USER_AVATAR.getCode());
+        FileInfo fileInfo = fileInfoManager.getFile(id, FileNamespaceEnum.USER_AVATAR.getCode());
         response.setContentType(resolveImageContentType(fileInfo.getFileType()));
-        response.setContentLengthLong(fileInfo.getFileContent().length);
-        response.getOutputStream().write(fileInfo.getFileContent());
-        response.getOutputStream().flush();
+        response.setContentLengthLong(fileInfoManager.getContentSize(id, FileNamespaceEnum.USER_AVATAR.getCode()));
+        try (InputStream inputStream = fileInfoManager.openContentStream(id, FileNamespaceEnum.USER_AVATAR.getCode());
+             OutputStream outputStream = response.getOutputStream()) {
+            IoUtil.copy(inputStream, outputStream);
+            outputStream.flush();
+        }
     }
 
     /**

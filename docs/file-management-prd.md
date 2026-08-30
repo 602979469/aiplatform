@@ -37,7 +37,7 @@ aiplatform 需要一个通用文件管理模块，供各业务方按 namespace �
 - 不做文件类型白名单、病毒扫描、在线预览（下载一律 `application/octet-stream`）。
 - 不做文件内容版本历史（文件被覆盖后旧内容不可恢复）。
 - 不做逻辑删除（删除即物理删除 DB 行 + 磁盘文件，见 §5.5 与 §11 待确认项）。
-- 不做对象存储（OSS/MinIO）接入，本期本地磁盘，存储能力在 core-service 收敛，后续可替换。
+- 不做对象存储（OSS 等）多后端切换，存储统一走 MinIO（common-integration 收口）。
 
 ## 4. 总体架构
 
@@ -45,7 +45,7 @@ aiplatform 需要一个通用文件管理模块，供各业务方按 namespace �
 
 | 关注点 | 选型 | 说明 |
 |---|---|---|
-| 文件存储 | **直接存数据库**：`file_info.file_content` 用 LONGBLOB，支持大文件 | 不依赖本地磁盘/外部存储，容器重启不丢文件；头像等统一走文件管理 |
+| 文件存储 | **MinIO 对象存储**：内容存桶 `aiplatform`，DB 只存元数据（`object_key` 指向对象） | 支持大文件流式读写，容器重启/多实例不丢文件；头像/简历/镜像统一走文件管理 |
 | 元数据存储 | MySQL 单表 `file_info` | 走代码生成器 + 仓库分层 |
 | 文件操作 | Hutool `FileUtil` + Spring `MultipartFile` 流式写入 | 大文件不整包读内存（transferTo 落盘） |
 | 上传大小 | 业务侧不设上限（Spring multipart 配置为 -1） | 现为 5MB/10MB；无上限实际受磁盘空间与部署网关约束（见 §11） |
@@ -53,10 +53,10 @@ aiplatform 需要一个通用文件管理模块，供各业务方按 namespace �
 
 ### 4.2 存储布局与隔离语义
 
-- 文件内容直接存 `file_info.file_content`（LONGBLOB），DB 记录 namespace 字段做隔离。
+- 文件内容存 MinIO（对象键 `files/{namespace}/{uuid}`），DB 记录 namespace 字段做隔离。
 - namespace 只允许 `[A-Za-z0-9_-]{1,64}`（禁止 `.`，从源头排除 `..` 路径穿越），且必须命中可用命名空间列表；列表校验在 Manager 层统一做（上传必校验、分页查询传了才校验），ParamChecker 不做列表校验。
 - 所有按 id 的操作（下载/更新/删除/替换）必须携带 namespace，并校验记录归属：**namespace 不匹配一律按"文件不存在"处理**（不区分提示，防探测）。
-- 列表/分页查询不加载 file_content 大字段，下载/头像展示时才按 id 单独查内容。
+- 列表/分页查询不碰对象存储，下载/头像展示时才按 id 从 MinIO 流式读取。
 
 ### 4.3 模块边界（对应 AGENTS.md）
 
@@ -120,7 +120,7 @@ DELETE /api/file/{id}?namespace=xxx
 ```text
 POST /api/file/{id}/replace（multipart：namespace + 新 file）
   → 校验文件存在且 namespace 匹配
-  → 更新 DB 行（file_content / original_name / file_size / file_type，remark 不动）
+  → 覆盖写 MinIO 对象 + 更新 DB 行（original_name / file_size / file_type，remark 不动）
 单行 UPDATE，无历史版本，替换后旧内容不可恢复
 ```
 
@@ -198,7 +198,7 @@ POST /api/file/{id}/replace（multipart：namespace + 新 file）
 | original_name | VARCHAR(255) | 原始文件名（含扩展名，展示/下载用） |
 | file_size | BIGINT | 文件大小（字节） |
 | file_type | VARCHAR(64) | 扩展名（小写，不含点，如 pdf） |
-| file_content | LONGBLOB | 文件内容（直接存数据库，列表查询不加载） |
+| object_key | VARCHAR(255) | MinIO 对象键（内容存对象存储，DB 只存元数据） |
 | remark | VARCHAR(500) | 备注 |
 | create_by / create_time / update_by / update_time | - | 审计字段 |
 
@@ -213,7 +213,7 @@ CREATE TABLE `file_info` (
   `original_name` varchar(255) NOT NULL COMMENT '原始文件名（含扩展名）',
   `file_size` bigint NOT NULL COMMENT '文件大小（字节）',
   `file_type` varchar(64) NOT NULL DEFAULT '' COMMENT '扩展名（小写，不含点）',
-  `file_content` longblob NOT NULL COMMENT '文件内容（LONGBLOB，直接存数据库，支持大文件）',
+  `object_key` varchar(255) NOT NULL COMMENT 'MinIO对象键（内容存对象存储，DB只存元数据）',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
@@ -277,7 +277,7 @@ generate.yaml 增加：
 | 1 | "更新"语义 | 已确认：PUT 改元信息 + POST /{id}/replace 换内容，均纳入本期 | 接口范围按 §8 落地 |
 | 2 | 删除语义 | 已确认：物理删除（删 DB 行即删内容），不加 del_flag | 删除后不可恢复 |
 | 3 | 上传大小 | 已确认：业务侧不设上限，multipart 配置 -1；实际受 MySQL `max_allowed_packet`（当前 64MB）与内存约束 | 影响 DB 服务端配置 |
-| 4 | 存储介质 | 已确认：文件内容直接存 MySQL LONGBLOB，无本地磁盘依赖 | 大文件占用 DB 空间，需关注容量 |
+| 4 | 存储介质 | 已确认：文件内容存 MinIO 对象存储，DB 只存元数据；连接信息由 K8s Secret `minio-credentials` 注入 | 依赖 MinIO 服务可用性 |
 | 5 | namespace 管理 | 已确认：环境变量 `AIPLATFORM_FILE_NAMESPACES`（逗号分隔）覆盖，未配置取 `FileNamespaceEnum`（`aiplatform`/`jianli`）；提供下拉列表接口，上传/查询在 Manager 层校验列表归属 | 无 |
 | 6 | 同名文件 | 允许重复，不建唯一约束 | 列表页靠 create_time / id 区分 |
 | 7 | 无上限上传滥用 | DB 膨胀风险靠运维监控；后续如需可加大小/频次限流 | 运维成本 |

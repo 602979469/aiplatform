@@ -1,6 +1,5 @@
 package com.jakt.aiplatform.core.repository.impl;
 
-import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.dal.dataobject.FileInfoDO;
 import com.jakt.aiplatform.common.dal.mapper.FileInfoMapper;
 import com.jakt.aiplatform.common.dal.query.FileInfoDalQuery;
@@ -33,12 +32,6 @@ public class FileInfoRepositoryImpl implements FileInfoRepository {
     public FileInfo findById(Long id) {
         FileInfoDO fileInfoDO = fileInfoMapper.selectById(id);
         return FileInfoConvertor.toModel(fileInfoDO);
-    }
-
-    @Override
-    public byte[] findContent(Long id) {
-        FileInfoDO row = fileInfoMapper.selectContentById(id);
-        return ObjectUtil.isNull(row) ? null : row.getFileContent();
     }
 
     @Override

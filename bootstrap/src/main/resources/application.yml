@@ -66,6 +66,12 @@ ai:
   mirror:
     # 镜像加速器远程 docker 主机（执行 docker pull/save），默认集群 master；生产用 AIPLATFORM_MIRROR_SSH_HOST 覆盖
     ssh-host: ${AIPLATFORM_MIRROR_SSH_HOST:192.168.3.131}
+  minio:
+    # MinIO 对象存储（文件/镜像统一存这里，DB 只存元数据）；生产由 K8s Secret minio-credentials 注入
+    endpoint: ${MINIO_ENDPOINT:http://minio.tsk.svc.cluster.local:9000}
+    access-key: ${MINIO_ACCESS_KEY:}
+    secret-key: ${MINIO_SECRET_KEY:}
+    bucket: ${MINIO_BUCKET:aiplatform}
   ssh:
     # master 主机 SSH（构建/部署脚本执行机）
     username: ${SSH_USERNAME:ubuntu}

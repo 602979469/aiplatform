@@ -22,14 +22,6 @@ public interface FileInfoMapper {
     FileInfoDO selectById(Long id);
 
     /**
-     * 按主键查询文件内容（列表查询不加载大字段）。
-     *
-     * @param id 主键
-     * @return 数据对象（仅 fileContent 有值）；不存在返回 null
-     */
-    FileInfoDO selectContentById(Long id);
-
-    /**
      * 分页查询：SQL 含 LIMIT #{offset}, #{pageSize}，配合 countByQuery 组装分页结果。
      *
      * @param query 查询参数
