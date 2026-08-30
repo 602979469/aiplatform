@@ -89,15 +89,6 @@ cluster:
     work-dir: ${CLUSTER_CI_WORK_DIR}
     master-host: ${CLUSTER_CI_MASTER_HOST}
     worker-host: ${CLUSTER_CI_WORKER_HOST}
-    # 启动时是否同步 cluster-ci 脚本（生产 K8s 注入 CLUSTER_CI_SYNC_ON_STARTUP；本地调试可关）
-    sync-on-startup: ${CLUSTER_CI_SYNC_ON_STARTUP}
-
-# 外部服务账号配置
-aiplatform:
-  upload:
-    username: ${XUANYUAN_USERNAME}
-    password: ${XUANYUAN_PASSWORD}
-    api-timeout-seconds: 30
 
 logging:
   pattern:

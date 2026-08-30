@@ -61,6 +61,8 @@ spec:
                 secretKeyRef:
                   name: redis-secret
                   key: redis-password
+            - name: REDIS_DATABASE
+              value: "0"
             # 集群部署编排 SSH：pod 内挂载的 master 私钥（secret: aiplatform-ssh-key）
             - name: SSH_USERNAME
               value: ubuntu
@@ -72,14 +74,11 @@ spec:
               value: 192.168.3.131
             - name: CLUSTER_CI_WORKER_HOST
               value: 192.168.3.217
-            - name: CLUSTER_CI_SYNC_ON_STARTUP
-              value: "true"
+            # 镜像加速远程 docker 主机（钉在 k8s-master，即 192.168.3.131）
             - name: AIPLATFORM_MIRROR_SSH_HOST
               value: 192.168.3.131
-            - name: XUANYUAN_USERNAME
-              value: ""
-            - name: XUANYUAN_PASSWORD
-              value: ""
+            - name: CLUSTER_CI_SYNC_ON_STARTUP
+              value: "true"
             - name: LOG_FILE_PATH
               value: /app/logs/
             # DeepSeek API Key 从 secret deepseek-api-key 注入（对应 application.yml 的 ${DEEPSEEK_API_KEY:}）

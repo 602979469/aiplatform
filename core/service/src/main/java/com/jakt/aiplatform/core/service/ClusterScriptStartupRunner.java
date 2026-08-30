@@ -27,7 +27,7 @@ public class ClusterScriptStartupRunner implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (!ciProperties.isSyncOnStartup()) {
+        if (Boolean.FALSE.equals(ciProperties.getSyncOnStartup())) {
             LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "启动脚本同步已关闭（cluster.ci.sync-on-startup=false）");
             return;
         }

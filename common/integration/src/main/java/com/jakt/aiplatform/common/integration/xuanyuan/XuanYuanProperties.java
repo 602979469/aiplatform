@@ -16,12 +16,6 @@ public class XuanYuanProperties {
     /** 加速器官网地址（搜索/标签网页接口）。 */
     private String webUrl = "https://xuanyuan.cloud";
 
-    /** 登录账号。 */
-    private String username = "";
-
-    /** 登录密码。 */
-    private String password = "";
-
     /** 接口超时（秒）。 */
     private int apiTimeoutSeconds = 30;
 }
