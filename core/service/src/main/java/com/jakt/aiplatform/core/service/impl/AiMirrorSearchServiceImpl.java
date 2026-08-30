@@ -539,8 +539,8 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
             if (!tag.equals(tagObj.getString("name"))) {
                 continue;
             }
-            String matchedArch = matchArch(tagObj.getJSONArray("images"), userArch);
-            if (ObjectUtil.isNull(matchedArch)) {
+            String supportedArches = collectSupportedArches(tagObj.getJSONArray("images"), userArch);
+            if (ObjectUtil.isNull(supportedArches)) {
                 return null;
             }
             MirrorImageResult result = new MirrorImageResult();
@@ -548,11 +548,11 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
             result.setTag(tag);
             result.setFullName(prefixedFullName(repo, tag));
             result.setVendor(namespace);
-            result.setArch("支持 " + matchedArch);
+            result.setArch(supportedArches);
             result.setLocalFileName(MirrorFileUtil.buildFileName(repo, tag));
             refreshLocalFile(result);
             LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
-                    "【镜像加速器】【搜索】选定镜像: {}:{} , 架构={}", repo, tag, matchedArch);
+                    "【镜像加速器】【搜索】选定镜像: {}:{} , 架构={}", repo, tag, supportedArches);
             return result;
         }
         return null;
@@ -572,26 +572,31 @@ public class AiMirrorSearchServiceImpl implements AiMirrorSearchService {
     /**
      * 架构匹配：优先 linux 系统，同架构下再退而求其次。
      */
-    private String matchArch(JSONArray images, String userArch) {
+    private String collectSupportedArches(JSONArray images, String userArch) {
         if (ObjectUtil.isNull(images)) {
             return null;
         }
-        String anyOs = null;
+        StringBuilder builder = new StringBuilder();
+        boolean matched = false;
         for (int i = 0; i < images.size(); i++) {
             JSONObject image = images.getJSONObject(i);
-            String os = image.getString("os");
             String arch = image.getString("architecture");
-            if (StrUtil.isBlank(arch) || !arch.equalsIgnoreCase(userArch)) {
+            if (StrUtil.isBlank(arch)) {
                 continue;
             }
-            if ("linux".equals(os)) {
-                return arch;
+            // 保持 registry 原始架构列表（不修剪、不去重，可能很长）
+            if (builder.length() > 0) {
+                builder.append(", ");
             }
-            if (ObjectUtil.isNull(anyOs)) {
-                anyOs = arch;
+            builder.append(arch);
+            if (arch.equalsIgnoreCase(userArch)) {
+                matched = true;
             }
         }
-        return anyOs;
+        if (!matched || builder.length() == 0) {
+            return null;
+        }
+        return builder.toString();
     }
 
     /**
