@@ -29,7 +29,7 @@ public final class FileInfoConvertor {
         target.setId(source.getId());
         target.setNamespace(source.getNamespace());
         target.setOriginalName(source.getOriginalName());
-        target.setStorageName(source.getStorageName());
+        target.setFileContent(source.getFileContent());
         target.setFileSize(source.getFileSize());
         target.setFileType(source.getFileType());
         target.setRemark(source.getRemark());
@@ -51,7 +51,7 @@ public final class FileInfoConvertor {
         target.setId(source.getId());
         target.setNamespace(source.getNamespace());
         target.setOriginalName(source.getOriginalName());
-        target.setStorageName(source.getStorageName());
+        target.setFileContent(source.getFileContent());
         target.setFileSize(source.getFileSize());
         target.setFileType(source.getFileType());
         target.setRemark(source.getRemark());

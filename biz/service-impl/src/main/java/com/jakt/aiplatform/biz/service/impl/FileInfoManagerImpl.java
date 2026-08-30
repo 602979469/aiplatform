@@ -13,7 +13,6 @@ import com.jakt.aiplatform.core.service.FileInfoService;
 import cn.hutool.core.util.StrUtil;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -73,8 +72,8 @@ public class FileInfoManagerImpl implements FileInfoManager {
     }
 
     @Override
-    public File downloadFile(Long id, String namespace) {
-        return fileInfoService.resolveFile(id, namespace);
+    public FileInfo downloadFile(Long id, String namespace) {
+        return fileInfoService.getFileContent(id, namespace);
     }
 
     @Override

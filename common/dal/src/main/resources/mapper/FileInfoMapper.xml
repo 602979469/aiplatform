@@ -3,7 +3,7 @@
 <mapper namespace="com.jakt.aiplatform.common.dal.mapper.FileInfoMapper">
 
     <sql id="selectColumns">
-        id, namespace, original_name, storage_name, file_size, file_type, remark, create_by, update_by, create_time, update_time
+        id, namespace, original_name, file_size, file_type, remark, create_by, update_by, create_time, update_time
     </sql>
 
     <sql id="queryConditions">
@@ -19,6 +19,12 @@
 
     <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
         SELECT <include refid="selectColumns"/>
+        FROM file_info
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectContentById" resultType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
+        SELECT file_content
         FROM file_info
         WHERE id = #{id}
     </select>
@@ -39,21 +45,46 @@
 
     <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO file_info (namespace, original_name, storage_name, file_size, file_type, remark, create_by, update_by, create_time, update_time)
-        VALUES (#{namespace}, #{originalName}, #{storageName}, #{fileSize}, #{fileType}, #{remark}, #{createBy}, #{updateBy}, NOW(), NOW())
+        INSERT INTO file_info (namespace, original_name, file_size, file_type, file_content, remark, create_by, update_by, create_time, update_time)
+        VALUES (#{namespace}, #{originalName}, #{fileSize}, #{fileType}, #{fileContent}, #{remark}, #{createBy}, #{updateBy}, NOW(), NOW())
     </insert>
 
     <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
         UPDATE file_info
         SET namespace = #{namespace},
             original_name = #{originalName},
-            storage_name = #{storageName},
             file_size = #{fileSize},
             file_type = #{fileType},
+            file_content = #{fileContent},
             remark = #{remark},
             create_by = #{createBy},
             update_by = #{updateBy}, update_time = NOW()
         WHERE id = #{id}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
+        <if test="originalName != null or fileSize != null or fileType != null or remark != null or updateBy != null">
+            UPDATE file_info
+            <set>
+                <if test="originalName != null">
+                    original_name = #{originalName},
+                </if>
+                <if test="fileSize != null">
+                    file_size = #{fileSize},
+                </if>
+                <if test="fileType != null">
+                    file_type = #{fileType},
+                </if>
+                <if test="remark != null">
+                    remark = #{remark},
+                </if>
+                <if test="updateBy != null">
+                    update_by = #{updateBy},
+                </if>
+                update_time = NOW(),
+            </set>
+            WHERE id = #{id}
+        </if>
     </update>
 
     <delete id="deleteById">

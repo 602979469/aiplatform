@@ -22,6 +22,14 @@ public interface FileInfoMapper {
     FileInfoDO selectById(Long id);
 
     /**
+     * 按主键查询文件内容（列表查询不加载大字段）。
+     *
+     * @param id 主键
+     * @return 数据对象（仅 fileContent 有值）；不存在返回 null
+     */
+    FileInfoDO selectContentById(Long id);
+
+    /**
      * 分页查询：SQL 含 LIMIT #{offset}, #{pageSize}，配合 countByQuery 组装分页结果。
      *
      * @param query 查询参数
@@ -52,6 +60,14 @@ public interface FileInfoMapper {
      * @return 受影响行数
      */
     int update(FileInfoDO fileInfoDO);
+
+    /**
+     * 按条件更新：只更新传入的非空字段（部分更新），用于元信息修改，不更新文件内容。
+     *
+     * @param fileInfoDO 数据对象（含主键）
+     * @return 受影响行数
+     */
+    int updateByCondition(FileInfoDO fileInfoDO);
 
     /**
      * 按主键删除，返回受影响行数。

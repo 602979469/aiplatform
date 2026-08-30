@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.core.repository.impl;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.dal.dataobject.FileInfoDO;
 import com.jakt.aiplatform.common.dal.mapper.FileInfoMapper;
 import com.jakt.aiplatform.common.dal.query.FileInfoDalQuery;
@@ -35,6 +36,12 @@ public class FileInfoRepositoryImpl implements FileInfoRepository {
     }
 
     @Override
+    public byte[] findContent(Long id) {
+        FileInfoDO row = fileInfoMapper.selectContentById(id);
+        return ObjectUtil.isNull(row) ? null : row.getFileContent();
+    }
+
+    @Override
     public PageResult<FileInfo> findPage(FileInfoQueryParam query) {
         FileInfoDalQuery dalQuery = FileInfoConvertor.toDalQuery(query);
         List<FileInfoDO> doList = fileInfoMapper.selectPage(dalQuery);
@@ -57,6 +64,14 @@ public class FileInfoRepositoryImpl implements FileInfoRepository {
         FileInfoDO fileInfoDO = FileInfoConvertor.toDO(fileInfo);
         int affected = fileInfoMapper.update(fileInfoDO);
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "FileInfoRepository.update id={} 影响行数={}",
+                fileInfo.getId(), affected);
+        return affected;
+    }
+
+    @Override
+    public int updateByCondition(FileInfo fileInfo) {
+        int affected = fileInfoMapper.updateByCondition(FileInfoConvertor.toDO(fileInfo));
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "FileInfoRepository.updateByCondition id={} 影响行数={}",
                 fileInfo.getId(), affected);
         return affected;
     }

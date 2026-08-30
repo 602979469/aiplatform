@@ -80,11 +80,9 @@ cluster:
     master-host: ${CLUSTER_CI_MASTER_HOST:192.168.3.131}
     worker-host: ${CLUSTER_CI_WORKER_HOST:192.168.3.217}
 
-# 本地文件上传
+# 外部服务账号配置
 aiplatform:
   upload:
-    # 文件管理存储根目录：{file-root}/{namespace}/{storageName}，生产用 AIPLATFORM_FILE_ROOT 覆盖为绝对路径
-    file-root: ${AIPLATFORM_FILE_ROOT:./uploads/files}
     username: ${XUANYUAN_USERNAME:}
     password: ${XUANYUAN_PASSWORD:}
     api-timeout-seconds: 30

@@ -4,7 +4,6 @@ import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.model.domain.FileInfo;
 import com.jakt.aiplatform.core.model.param.FileInfoQueryParam;
 
-import java.io.File;
 import java.util.List;
 
 /**
@@ -50,13 +49,13 @@ public interface FileInfoManager {
     FileInfo getFile(Long id, String namespace);
 
     /**
-     * 获取文件下载用磁盘文件。
+     * 获取文件内容（含元数据，供下载/展示流式输出）。
      *
      * @param id        文件主键
      * @param namespace 业务命名空间
-     * @return 磁盘文件
+     * @return 文件信息（含 fileContent）
      */
-    File downloadFile(Long id, String namespace);
+    FileInfo downloadFile(Long id, String namespace);
 
     /**
      * 更新文件元信息（改名/备注）。

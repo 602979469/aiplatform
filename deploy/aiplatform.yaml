@@ -55,9 +55,6 @@ spec:
                 secretKeyRef:
                   name: redis-secret
                   key: redis-password
-            # 文件管理存储根目录（头像等文件统一走文件管理，user_avatar 命名空间）
-            - name: AIPLATFORM_FILE_ROOT
-              value: /data/uploads/files
             # 集群部署编排 SSH：pod 内挂载的 master 私钥（secret: aiplatform-ssh-key）
             - name: SSH_USERNAME
               value: ubuntu
@@ -79,8 +76,6 @@ spec:
                   key: DEEPSEEK_API_KEY
                   optional: true
           volumeMounts:
-            - name: uploads
-              mountPath: /data/uploads
             - name: ssh-key
               mountPath: /root/.ssh
           resources:
@@ -101,10 +96,6 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 5
       volumes:
-        - name: uploads
-          hostPath:
-            path: /data/aiplatform-uploads
-            type: DirectoryOrCreate
         - name: ssh-key
           secret:
             secretName: aiplatform-ssh-key

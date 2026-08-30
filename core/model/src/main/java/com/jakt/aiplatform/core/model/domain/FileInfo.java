@@ -20,8 +20,8 @@ public class FileInfo extends BaseModel {
     /** 原始文件名（含扩展名，展示/下载用）。 */
     private String originalName;
 
-    /** 存储文件名（UUID，磁盘实际文件名，不对外暴露）。 */
-    private String storageName;
+    /** 文件内容（直接存数据库，列表查询不加载）。 */
+    private byte[] fileContent;
 
     /** 文件大小（字节）。 */
     private Long fileSize;

@@ -18,6 +18,14 @@ public interface FileInfoRepository {
     FileInfo findById(Long id);
 
     /**
+     * 按主键查询文件内容（列表查询不加载大字段）。
+     *
+     * @param id 主键
+     * @return 文件内容字节；不存在或内容为空返回 null
+     */
+    byte[] findContent(Long id);
+
+    /**
      * 分页查询。
      *
      * @param query 查询参数
@@ -40,6 +48,14 @@ public interface FileInfoRepository {
      * @return 受影响行数；0 表示未生效，由上层决定
      */
     int update(FileInfo fileInfo);
+
+    /**
+     * 按条件更新：只更新传入的非空字段（部分更新），用于元信息修改，不更新文件内容。
+     *
+     * @param fileInfo 文件信息表（含主键）
+     * @return 受影响行数；0 表示未生效，由上层决定
+     */
+    int updateByCondition(FileInfo fileInfo);
 
     /**
      * 按主键删除。

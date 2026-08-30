@@ -4,7 +4,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 文件信息响应 DTO（不暴露 storageName / 磁盘路径）。
+ * 文件信息响应 DTO（不含文件内容大字段）。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)

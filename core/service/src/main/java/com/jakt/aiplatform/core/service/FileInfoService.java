@@ -4,8 +4,6 @@ import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.model.domain.FileInfo;
 import com.jakt.aiplatform.core.model.param.FileInfoQueryParam;
 
-import java.io.File;
-
 /**
  * 文件信息表领域服务：承载文件存储与元数据的业务规则。
  */
@@ -40,13 +38,13 @@ public interface FileInfoService {
     FileInfo getFile(Long id, String namespace);
 
     /**
-     * 解析文件下载用磁盘文件（校验 namespace 归属）。
+     * 获取文件内容（校验 namespace 归属，内容直接来自数据库）。
      *
      * @param id        文件主键
      * @param namespace 业务命名空间
-     * @return 磁盘文件
+     * @return 文件信息（含 fileContent）
      */
-    File resolveFile(Long id, String namespace);
+    FileInfo getFileContent(Long id, String namespace);
 
     /**
      * 更新文件元信息（改名/备注，不迁移 namespace）。

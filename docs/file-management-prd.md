@@ -45,7 +45,7 @@ aiplatform 需要一个通用文件管理模块，供各业务方按 namespace �
 
 | 关注点 | 选型 | 说明 |
 |---|---|---|
-| 文件存储 | 本地磁盘（配置 `aiplatform.upload.file-root`，默认 `./uploads/files`） | 与现有镜像文件存储一致，不引入新依赖；头像等统一走文件管理 |
+| 文件存储 | **直接存数据库**：`file_info.file_content` 用 LONGBLOB，支持大文件 | 不依赖本地磁盘/外部存储，容器重启不丢文件；头像等统一走文件管理 |
 | 元数据存储 | MySQL 单表 `file_info` | 走代码生成器 + 仓库分层 |
 | 文件操作 | Hutool `FileUtil` + Spring `MultipartFile` 流式写入 | 大文件不整包读内存（transferTo 落盘） |
 | 上传大小 | 业务侧不设上限（Spring multipart 配置为 -1） | 现为 5MB/10MB；无上限实际受磁盘空间与部署网关约束（见 §11） |
@@ -53,15 +53,10 @@ aiplatform 需要一个通用文件管理模块，供各业务方按 namespace �
 
 ### 4.2 存储布局与隔离语义
 
-```text
-{fileRoot}/{namespace}/{storageName}
-例：./uploads/files/avatar/7f3c1a2b9d0e4f5a8b6c7d8e9f0a1b2c
-```
-
-- 磁盘按 namespace 分目录，DB 记录 namespace 字段，双重隔离。
+- 文件内容直接存 `file_info.file_content`（LONGBLOB），DB 记录 namespace 字段做隔离。
 - namespace 只允许 `[A-Za-z0-9_-]{1,64}`（禁止 `.`，从源头排除 `..` 路径穿越），且必须命中可用命名空间列表；列表校验在 Manager 层统一做（上传必校验、分页查询传了才校验），ParamChecker 不做列表校验。
 - 所有按 id 的操作（下载/更新/删除/替换）必须携带 namespace，并校验记录归属：**namespace 不匹配一律按"文件不存在"处理**（不区分提示，防探测）。
-- **DB 只存文件元数据，不存文件内容（BLOB）**：文件内容只落本地磁盘，模块自包含，不依赖 OSS 等外部存储服务。
+- 列表/分页查询不加载 file_content 大字段，下载/头像展示时才按 id 单独查内容。
 
 ### 4.3 模块边界（对应 AGENTS.md）
 
@@ -125,10 +120,8 @@ DELETE /api/file/{id}?namespace=xxx
 ```text
 POST /api/file/{id}/replace（multipart：namespace + 新 file）
   → 校验文件存在且 namespace 匹配
-  → 生成新 storageName → 流式落盘
-  → 更新 DB 行（storage_name / original_name / file_size / file_type，remark 不动）
-  → 删除旧磁盘文件（旧文件已不存在视为成功）
-失败兜底：新文件落盘或落库失败 → 删新文件、DB 不动、旧文件保留
+  → 更新 DB 行（file_content / original_name / file_size / file_type，remark 不动）
+单行 UPDATE，无历史版本，替换后旧内容不可恢复
 ```
 
 ## 6. 功能详述
@@ -145,7 +138,7 @@ POST /api/file/{id}/replace（multipart：namespace + 新 file）
 
 - 非空、≤255 字符、不含 `/`、`\` 与控制字符（防 Content-Disposition 头注入）；
 - 原始文件名原样展示，扩展名取小写存入 `file_type`；
-- 同 namespace 允许同名文件（不建唯一约束），storage_name 全局唯一。
+- 同 namespace 允许同名文件（不建唯一约束）。
 
 响应（FileInfoResponse）：id、namespace、originalName、fileSize、fileType、remark、createBy、createTime、updateTime。
 
@@ -201,15 +194,15 @@ POST /api/file/{id}/replace（multipart：namespace + 新 file）
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | id | BIGINT PK | 主键 |
-| namespace | VARCHAR(64) | 业务命名空间（磁盘目录名，双重隔离） |
+| namespace | VARCHAR(64) | 业务命名空间（隔离维度） |
 | original_name | VARCHAR(255) | 原始文件名（含扩展名，展示/下载用） |
-| storage_name | VARCHAR(64) | 存储文件名（UUID，系统生成，磁盘实际文件名，不对外暴露） |
 | file_size | BIGINT | 文件大小（字节） |
 | file_type | VARCHAR(64) | 扩展名（小写，不含点，如 pdf） |
+| file_content | LONGBLOB | 文件内容（直接存数据库，列表查询不加载） |
 | remark | VARCHAR(500) | 备注 |
 | create_by / create_time / update_by / update_time | - | 审计字段 |
 
-唯一约束：`uk_storage_name (storage_name)`；普通索引：`idx_namespace_id (namespace, id)`。无 del_flag（物理删除，见 §5.5）。
+普通索引：`idx_namespace_id (namespace, id)`。无 del_flag（物理删除，见 §5.5）。
 
 DDL：
 
@@ -218,16 +211,15 @@ CREATE TABLE `file_info` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `namespace` varchar(64) NOT NULL COMMENT '业务命名空间',
   `original_name` varchar(255) NOT NULL COMMENT '原始文件名（含扩展名）',
-  `storage_name` varchar(64) NOT NULL COMMENT '存储文件名（UUID，磁盘实际文件名，不对外暴露）',
   `file_size` bigint NOT NULL COMMENT '文件大小（字节）',
   `file_type` varchar(64) NOT NULL DEFAULT '' COMMENT '扩展名（小写，不含点）',
+  `file_content` longblob NOT NULL COMMENT '文件内容（LONGBLOB，直接存数据库，支持大文件）',
   `remark` varchar(500) DEFAULT NULL COMMENT '备注',
   `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT NULL COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_storage_name` (`storage_name`),
   KEY `idx_namespace_id` (`namespace`, `id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='文件信息表';
 ```
@@ -253,12 +245,12 @@ CREATE TABLE `file_info` (
 | 模块 | 内容 |
 |---|---|
 | common-dal | `FileInfoDO`、`FileInfoMapper` + `FileInfoMapper.xml`、`FileInfoDalQuery`（insert 全字段 / update 全量 / findPage / findById / deleteById，按生成器产出修剪） |
-| core-model | `FileInfo` Model、`FileInfoQueryParam`、常量（namespace 正则、默认存储根目录收口 `FileConstants`）、`BizErrorCodeEnum` 新增 `FILE_NOT_FOUND` / `FILE_NAME_INVALID` |
+| core-model | `FileInfo` Model（含 fileContent）、`FileInfoQueryParam`、常量（namespace 正则收口 `FileConstants`）、`BizErrorCodeEnum` 新增 `FILE_NOT_FOUND` / `FILE_NAME_INVALID` |
 | core-repository | `FileInfoRepository(Impl)`、`FileInfoConvertor` |
-| core-service | `FileInfoService` + `FileInfoServiceImpl`（磁盘读写 + 元数据编排，参照头像写入先例）、`FileInfoBizChecker` |
+| core-service | `FileInfoService` + `FileInfoServiceImpl`（内容直接读写数据库 + 元数据编排）、`FileInfoBizChecker` |
 | biz-service-impl | `FileManager` / `FileManagerImpl`（用例编排，输入输出 core-model） |
 | web | `FileController`、`FileQueryRequest` / `FileUpdateRequest` / `FileInfoResponse`、`FileParamChecker`、`FileAssembler` |
-| bootstrap | `application.yml`：新增 `aiplatform.upload.file-root`，multipart 上限设为 -1（不限） |
+| bootstrap | `application.yml`：multipart 上限设为 -1（不限） |
 
 generate.yaml 增加：
 
@@ -271,7 +263,7 @@ generate.yaml 增加：
 
 ## 10. 安全与敏感信息
 
-- namespace 白名单字符集排除 `.`，storage_name 为系统生成 UUID，下载/删除路径全部由服务端拼接，杜绝目录穿越。
+- namespace 白名单字符集排除 `.`，文件定位只用 id + namespace，杜绝目录穿越。
 - 原始文件名禁止控制字符，防 Content-Disposition 响应头注入。
 - 响应不暴露 storage_name / 磁盘路径，前端只认 id。
 - 下载一律 `application/octet-stream`，不 inline 渲染，防存储型 XSS。
@@ -283,9 +275,9 @@ generate.yaml 增加：
 | # | 事项 | 结论 / 建议 | 影响 |
 |---|---|---|---|
 | 1 | "更新"语义 | 已确认：PUT 改元信息 + POST /{id}/replace 换内容，均纳入本期 | 接口范围按 §8 落地 |
-| 2 | 删除语义 | 已确认：物理删除（DB + 磁盘），不加 del_flag | 删除后不可恢复 |
-| 3 | 上传大小 | 已确认：业务侧不设上限，multipart 配置 -1（或按部署网关调）；实际受磁盘空间与网关约束 | 影响 application.yml 与部署 |
-| 4 | 存储介质 | 本地磁盘 + 单机部署；多实例需共享存储（NFS/OSS），本期不处理；DB 仅存元数据，不存 BLOB | 多实例时文件不一致 |
+| 2 | 删除语义 | 已确认：物理删除（删 DB 行即删内容），不加 del_flag | 删除后不可恢复 |
+| 3 | 上传大小 | 已确认：业务侧不设上限，multipart 配置 -1；实际受 MySQL `max_allowed_packet`（当前 64MB）与内存约束 | 影响 DB 服务端配置 |
+| 4 | 存储介质 | 已确认：文件内容直接存 MySQL LONGBLOB，无本地磁盘依赖 | 大文件占用 DB 空间，需关注容量 |
 | 5 | namespace 管理 | 已确认：环境变量 `AIPLATFORM_FILE_NAMESPACES`（逗号分隔）覆盖，未配置取 `FileNamespaceEnum`（`aiplatform`/`jianli`）；提供下拉列表接口，上传/查询在 Manager 层校验列表归属 | 无 |
-| 6 | 同名文件 | 允许重复，storage_name 唯一 | 列表页靠 create_time / id 区分 |
-| 7 | 无上限上传滥用 | 磁盘打满风险靠运维监控；后续如需可加大小/频次限流 | 运维成本 |
+| 6 | 同名文件 | 允许重复，不建唯一约束 | 列表页靠 create_time / id 区分 |
+| 7 | 无上限上传滥用 | DB 膨胀风险靠运维监控；后续如需可加大小/频次限流 | 运维成本 |

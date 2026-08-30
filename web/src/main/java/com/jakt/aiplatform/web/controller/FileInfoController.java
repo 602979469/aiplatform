@@ -1,7 +1,6 @@
 package com.jakt.aiplatform.web.controller;
 
 import cn.dev33.satoken.annotation.SaIgnore;
-import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.biz.service.FileInfoManager;
@@ -31,10 +30,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -137,16 +132,13 @@ public class FileInfoController {
     public void download(@PathVariable Long id, @RequestParam String namespace, HttpServletResponse response) throws Exception {
         FileInfoParamChecker.checkId(id);
         FileInfoParamChecker.checkNamespace(namespace);
-        FileInfo fileInfo = fileInfoManager.getFile(id, namespace);
-        File file = fileInfoManager.downloadFile(id, namespace);
+        FileInfo fileInfo = fileInfoManager.downloadFile(id, namespace);
         response.setContentType("application/octet-stream");
         response.setHeader("Content-Disposition",
                 "attachment; filename*=UTF-8''" + URLEncoder.encode(fileInfo.getOriginalName(), StandardCharsets.UTF_8));
-        response.setContentLengthLong(file.length());
-        try (InputStream inputStream = new FileInputStream(file); OutputStream outputStream = response.getOutputStream()) {
-            IoUtil.copy(inputStream, outputStream);
-            outputStream.flush();
-        }
+        response.setContentLengthLong(fileInfo.getFileContent().length);
+        response.getOutputStream().write(fileInfo.getFileContent());
+        response.getOutputStream().flush();
     }
 
     /**
@@ -161,14 +153,11 @@ public class FileInfoController {
     @SaIgnore
     public void avatar(@PathVariable Long id, HttpServletResponse response) throws Exception {
         FileInfoParamChecker.checkId(id);
-        FileInfo fileInfo = fileInfoManager.getFile(id, FileNamespaceEnum.USER_AVATAR.getCode());
-        File file = fileInfoManager.downloadFile(id, FileNamespaceEnum.USER_AVATAR.getCode());
+        FileInfo fileInfo = fileInfoManager.downloadFile(id, FileNamespaceEnum.USER_AVATAR.getCode());
         response.setContentType(resolveImageContentType(fileInfo.getFileType()));
-        response.setContentLengthLong(file.length());
-        try (InputStream inputStream = new FileInputStream(file); OutputStream outputStream = response.getOutputStream()) {
-            IoUtil.copy(inputStream, outputStream);
-            outputStream.flush();
-        }
+        response.setContentLengthLong(fileInfo.getFileContent().length);
+        response.getOutputStream().write(fileInfo.getFileContent());
+        response.getOutputStream().flush();
     }
 
     /**
