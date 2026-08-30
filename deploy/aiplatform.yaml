@@ -55,8 +55,9 @@ spec:
                 secretKeyRef:
                   name: redis-secret
                   key: redis-password
-            - name: AIPLATFORM_AVATAR_DIR
-              value: /data/uploads
+            # 文件管理存储根目录（头像等文件统一走文件管理，user_avatar 命名空间）
+            - name: AIPLATFORM_FILE_ROOT
+              value: /data/uploads/files
             # 集群部署编排 SSH：pod 内挂载的 master 私钥（secret: aiplatform-ssh-key）
             - name: SSH_USERNAME
               value: ubuntu

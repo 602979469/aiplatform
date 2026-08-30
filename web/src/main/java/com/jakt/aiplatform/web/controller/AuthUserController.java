@@ -18,11 +18,13 @@ import com.jakt.aiplatform.web.param.AuthUserCreateRequest;
 import com.jakt.aiplatform.web.param.AuthUserRoleRequest;
 import com.jakt.aiplatform.web.param.AuthUserStatusRequest;
 import com.jakt.aiplatform.web.param.AuthUserUpdateRequest;
+import com.jakt.aiplatform.web.param.AvatarUploadRequest;
 import com.jakt.aiplatform.web.result.ApiResult;
 import com.jakt.aiplatform.web.result.AuthUserResponse;
 import com.jakt.aiplatform.web.template.ApiTemplate;
 import com.jakt.aiplatform.web.util.MultipartFileUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -338,12 +340,12 @@ public class AuthUserController {
     }
 
     /**
-     * 修改当前用户头像。
+     * 修改当前用户头像（multipart 方式）。
      *
      * @param avatarfile 头像文件
      * @return 统一返回体
      */
-    @PutMapping("/profile/avatar")
+    @PutMapping(value = "/profile/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResult<String> updateAvatar(@RequestParam("avatarfile") MultipartFile avatarfile) {
         return ApiTemplate.execute(avatarfile, new ApiTemplate.Callback<MultipartFile, String>() {
 
@@ -357,6 +359,29 @@ public class AuthUserController {
                 byte[] imageBytes = MultipartFileUtil.readBytes(param);
                 return authUserManager.updateAvatar(StpUtil.getLoginIdAsLong(),
                         imageBytes, param.getOriginalFilename());
+            }
+        });
+    }
+
+    /**
+     * 修改当前用户头像（JSON + base64 方式，兼容前端 JSON 上传）。
+     *
+     * @param request 头像上传请求（avatarfile 为 base64 字符串，filename 为原始文件名）
+     * @return 统一返回体
+     */
+    @PutMapping(value = "/profile/avatar", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ApiResult<String> updateAvatarByJson(@RequestBody AvatarUploadRequest request) {
+        return ApiTemplate.execute(request, new ApiTemplate.Callback<AvatarUploadRequest, String>() {
+
+            @Override
+            public void beforeService(AvatarUploadRequest param) {
+                AuthUserParamChecker.checkAvatarJson(param);
+            }
+
+            @Override
+            public String execute(AvatarUploadRequest param) {
+                return authUserManager.updateAvatar(StpUtil.getLoginIdAsLong(),
+                        param.getAvatarfile(), param.getFilename());
             }
         });
     }

@@ -18,6 +18,9 @@ public enum FileNamespaceEnum implements BaseEnum<String> {
 
     /** jianli 命名空间。 */
     JIANLI("jianli", "jianli 命名空间"),
+
+    /** 用户头像命名空间。 */
+    USER_AVATAR("user_avatar", "用户头像命名空间"),
     ;
 
     /** code（命名空间名）。 */

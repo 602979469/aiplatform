@@ -1,4 +1,6 @@
 package com.jakt.aiplatform.web.checker;
+
+import cn.hutool.core.util.ArrayUtil;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
@@ -6,6 +8,7 @@ import com.jakt.aiplatform.common.framework.tools.ParamValidator;
 import com.jakt.aiplatform.web.param.AuthPasswordRequest;
 import com.jakt.aiplatform.web.param.AuthProfileRequest;
 import com.jakt.aiplatform.web.param.AuthResetPasswordRequest;
+import com.jakt.aiplatform.web.param.AvatarUploadRequest;
 import com.jakt.aiplatform.web.param.AuthUserCreateRequest;
 import com.jakt.aiplatform.web.param.AuthUserQueryRequest;
 import com.jakt.aiplatform.web.param.AuthUserRoleRequest;
@@ -57,6 +60,37 @@ public final class AuthUserParamChecker {
     public static void checkAvatar(MultipartFile file) {
         AssertUtil.throwErrWhenNull(file, ErrorCodeEnum.PARAM_INVALID, "头像文件不能为空");
         AssertUtil.throwErrWhenTrue(file.isEmpty(), ErrorCodeEnum.PARAM_INVALID, "头像文件不能为空");
+        String originalFilename = file.getOriginalFilename();
+        AssertUtil.throwErrWhenBlank(originalFilename, ErrorCodeEnum.PARAM_INVALID, "文件名不能为空");
+        AssertUtil.throwErrWhenTrue(originalFilename.length() > 255,
+                ErrorCodeEnum.PARAM_INVALID, "文件名长度不能超过 255");
+        AssertUtil.throwErrWhenTrue(originalFilename.contains("/") || originalFilename.contains("\\"),
+                ErrorCodeEnum.PARAM_INVALID, "文件名不能包含路径分隔符");
+    }
+
+    /**
+     * 检查 JSON 方式上传头像参数。
+     *
+     * @param request 头像上传请求（base64）
+     */
+    public static void checkAvatarJson(AvatarUploadRequest request) {
+        AssertUtil.throwErrWhenNull(request, ErrorCodeEnum.PARAM_INVALID, "上传参数不能为空");
+        AssertUtil.throwErrWhenTrue(ArrayUtil.isEmpty(request.getAvatarfile()),
+                ErrorCodeEnum.PARAM_INVALID, "头像文件不能为空");
+        checkAvatarFileName(request.getFilename());
+    }
+
+    /**
+     * 检查头像文件名：非空、长度、禁止路径分隔符。
+     *
+     * @param filename 原始文件名
+     */
+    private static void checkAvatarFileName(String filename) {
+        AssertUtil.throwErrWhenBlank(filename, ErrorCodeEnum.PARAM_INVALID, "文件名不能为空");
+        AssertUtil.throwErrWhenTrue(filename.length() > 255,
+                ErrorCodeEnum.PARAM_INVALID, "文件名长度不能超过 255");
+        AssertUtil.throwErrWhenTrue(filename.contains("/") || filename.contains("\\"),
+                ErrorCodeEnum.PARAM_INVALID, "文件名不能包含路径分隔符");
     }
 
     /** 检查分配角色参数。 */

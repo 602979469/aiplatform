@@ -70,12 +70,12 @@ public interface AuthUserManager {
     void updatePassword(Long userId, String oldPassword, String newPassword);
 
     /**
-     * 更新当前用户头像。
+     * 更新当前用户头像（头像文件走文件管理模块，user_avatar 命名空间）。
      *
      * @param userId           用户ID
      * @param imageBytes       图片字节
      * @param originalFilename 原始文件名（用于取扩展名）
-     * @return 头像访问路径
+     * @return 头像访问路径（/api/file/avatar/{id}）
      */
     String updateAvatar(Long userId, byte[] imageBytes, String originalFilename);
 

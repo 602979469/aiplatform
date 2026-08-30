@@ -80,8 +80,6 @@ cluster:
 # 本地文件上传
 aiplatform:
   upload:
-    # 可用环境变量 AIPLATFORM_AVATAR_DIR 覆盖为绝对路径（生产/容器部署必填）
-    avatar-dir: ${AIPLATFORM_AVATAR_DIR:./uploads/avatar}
     # 文件管理存储根目录：{file-root}/{namespace}/{storageName}，生产用 AIPLATFORM_FILE_ROOT 覆盖为绝对路径
     file-root: ${AIPLATFORM_FILE_ROOT:./uploads/files}
     username: ${XUANYUAN_USERNAME:}

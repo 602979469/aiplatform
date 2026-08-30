@@ -11,6 +11,9 @@ public final class FileConstants {
     /** 文件存储根目录默认值（bootstrap 可配置覆盖）。 */
     public static final String DEFAULT_FILE_ROOT = "./uploads/files";
 
+    /** 头像访问路径前缀（对应 FileInfoController 的头像读取接口）。 */
+    public static final String AVATAR_URL_PREFIX = "/api/file/avatar/";
+
     private FileConstants() {
     }
 }

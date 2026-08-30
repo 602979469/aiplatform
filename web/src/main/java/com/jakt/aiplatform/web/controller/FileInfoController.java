@@ -3,10 +3,12 @@ package com.jakt.aiplatform.web.controller;
 import cn.dev33.satoken.annotation.SaIgnore;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.biz.service.FileInfoManager;
 import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.core.model.domain.FileInfo;
+import com.jakt.aiplatform.core.model.enums.FileNamespaceEnum;
 import com.jakt.aiplatform.web.assembler.FileInfoAssembler;
 import com.jakt.aiplatform.web.checker.FileInfoParamChecker;
 import com.jakt.aiplatform.web.param.FileInfoQueryRequest;
@@ -148,6 +150,28 @@ public class FileInfoController {
     }
 
     /**
+     * 读取头像（inline 图片流，公开访问；头像统一存 user_avatar 命名空间）。
+     *
+     * <p>文件流无法包 ApiResult，直接写响应流；无 Content-Disposition attachment，保证浏览器直接渲染。
+     *
+     * @param id       文件主键
+     * @param response HttpServletResponse
+     */
+    @GetMapping("/avatar/{id}")
+    @SaIgnore
+    public void avatar(@PathVariable Long id, HttpServletResponse response) throws Exception {
+        FileInfoParamChecker.checkId(id);
+        FileInfo fileInfo = fileInfoManager.getFile(id, FileNamespaceEnum.USER_AVATAR.getCode());
+        File file = fileInfoManager.downloadFile(id, FileNamespaceEnum.USER_AVATAR.getCode());
+        response.setContentType(resolveImageContentType(fileInfo.getFileType()));
+        response.setContentLengthLong(file.length());
+        try (InputStream inputStream = new FileInputStream(file); OutputStream outputStream = response.getOutputStream()) {
+            IoUtil.copy(inputStream, outputStream);
+            outputStream.flush();
+        }
+    }
+
+    /**
      * 更新文件元信息（改名/备注）。
      *
      * @param id      文件主键
@@ -223,5 +247,28 @@ public class FileInfoController {
                 return FileInfoAssembler.toResponse(fileInfo);
             }
         });
+    }
+
+    /**
+     * 按文件扩展名解析图片 Content-Type。
+     *
+     * @param fileType 文件扩展名（小写，不含点）
+     * @return Content-Type
+     */
+    private String resolveImageContentType(String fileType) {
+        String type = StrUtil.nullToEmpty(fileType).toLowerCase();
+        if ("jpg".equals(type) || "jpeg".equals(type)) {
+            return "image/jpeg";
+        }
+        if ("png".equals(type)) {
+            return "image/png";
+        }
+        if ("gif".equals(type)) {
+            return "image/gif";
+        }
+        if ("webp".equals(type)) {
+            return "image/webp";
+        }
+        return "application/octet-stream";
     }
 }

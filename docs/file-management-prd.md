@@ -45,7 +45,7 @@ aiplatform 需要一个通用文件管理模块，供各业务方按 namespace �
 
 | 关注点 | 选型 | 说明 |
 |---|---|---|
-| 文件存储 | 本地磁盘（配置 `aiplatform.upload.file-root`，默认 `./uploads/files`） | 与现有头像/镜像文件存储一致，不引入新依赖 |
+| 文件存储 | 本地磁盘（配置 `aiplatform.upload.file-root`，默认 `./uploads/files`） | 与现有镜像文件存储一致，不引入新依赖；头像等统一走文件管理 |
 | 元数据存储 | MySQL 单表 `file_info` | 走代码生成器 + 仓库分层 |
 | 文件操作 | Hutool `FileUtil` + Spring `MultipartFile` 流式写入 | 大文件不整包读内存（transferTo 落盘） |
 | 上传大小 | 业务侧不设上限（Spring multipart 配置为 -1） | 现为 5MB/10MB；无上限实际受磁盘空间与部署网关约束（见 §11） |
