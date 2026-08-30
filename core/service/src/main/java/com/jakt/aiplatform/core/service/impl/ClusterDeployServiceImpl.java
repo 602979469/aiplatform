@@ -108,32 +108,23 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "部署文件准备失败: " + e.getMessage());
         }
 
-        // 3. 拉取源码（git 浅克隆，直接用用户填写的 git 地址，私有仓库地址自带 token；输出 tee 到构建日志）
-        //    log_dir 传 appDir，fetch 输出写 apps/{configId}/fetch.log
-        SshResult fetchResult = sshClient.execute(ciProperties.getMasterHost(),
-                "bash " + ciProperties.getWorkDir() + "/bin/fetch_source.sh "
-                        + "'" + config.getGitUrl() + "' " + config.getGitBranch() + " " + remoteSrcDir
-                        + " " + remoteDockerfile + " " + appDir,
-                600);
-        if (!fetchResult.isSuccess()) {
-            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
-                    "源码拉取失败: " + shortOutput(fetchResult.getOutput()));
-        }
-        // 4. 镜像 tag = commit 短哈希（脚本最后一行输出，用户不接触镜像版本号）
-        String imageTag = fetchResult.getOutput().trim();
-        AssertUtil.throwErrWhenBlank(imageTag, ErrorCodeEnum.SYSTEM_ERROR, "镜像 tag 为空");
-
-        // 5. 构建 + 部署一体（build_deploy.sh：双架构构建导入 + apply + set image + rollout，全程 tee 日志）
-        SshResult deployResult = sshClient.execute(ciProperties.getMasterHost(),
-                "bash " + ciProperties.getWorkDir() + "/bin/build_deploy.sh "
-                        + config.getPodName() + " " + imageTag + " " + remoteSrcDir + " "
-                        + appDir + " " + config.getNamespace() + " " + remoteDeployYaml
-                        + " " + ciProperties.getWorkerHost(),
+        // 3. 统一流水线（pipeline.sh）：lock + state 判断（本地 commit 与最新一致则跳过构建）
+        //    → fetch_source（需要时）→ build（master+worker 双架构）→ deploy（资源已最新则跳过）
+        SshResult pipelineResult = sshClient.execute(ciProperties.getMasterHost(),
+                "bash " + ciProperties.getWorkDir() + "/bin/pipeline.sh "
+                        + config.getId() + " " + config.getPodName() + " "
+                        + "'" + config.getGitUrl() + "' " + config.getGitBranch() + " "
+                        + remoteSrcDir + " " + appDir + " " + config.getNamespace() + " "
+                        + remoteDeployYaml + " " + remoteDockerfile + " "
+                        + ciProperties.getWorkerHost(),
                 DEPLOY_TIMEOUT_SECONDS);
-        if (!deployResult.isSuccess()) {
+        if (!pipelineResult.isSuccess()) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
-                    "构建部署失败: " + shortOutput(deployResult.getOutput()));
+                    "构建部署失败: " + shortOutput(pipelineResult.getOutput()));
         }
+        // 4. 镜像 tag = 流水线最后一行输出（commit 短哈希，用户不接触镜像版本号）
+        String imageTag = lastLine(pipelineResult.getOutput());
+        AssertUtil.throwErrWhenBlank(imageTag, ErrorCodeEnum.SYSTEM_ERROR, "镜像 tag 为空");
 
         // 7. 记录本次构建 commit（自动刷新比对用）
         ClusterPodConfig update = new ClusterPodConfig();
@@ -175,6 +166,20 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
         SshResult logResult = sshClient.execute(ciProperties.getMasterHost(),
                 "cat " + latestLog, 60);
         return logResult.isSuccess() ? logResult.getOutput() : "";
+    }
+
+    /**
+     * 取 SSH 输出最后一行（pipeline.sh 约定最后一行输出镜像 tag）。
+     *
+     * @param output 流水线输出
+     * @return 最后一行内容；空输出返回空串
+     */
+    private String lastLine(String output) {
+        if (StrUtil.isBlank(output)) {
+            return "";
+        }
+        String[] lines = output.trim().split("\\n");
+        return lines[lines.length - 1].trim();
     }
 
     /**
