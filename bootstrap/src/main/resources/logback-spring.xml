@@ -47,14 +47,34 @@
         </encoder>
     </appender>
 
+    <!-- 请求摘要日志（ApiTemplate 统一打印 入参/返回值） -->
+    <appender name="COMMON_DIGEST" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/common-digest.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/common-digest.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{traceId}] %logger{40} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
     <logger name="common-error" level="ERROR" additivity="false">
         <appender-ref ref="COMMON_ERROR"/>
+    </logger>
+    <logger name="common-digest" level="INFO" additivity="false">
+        <appender-ref ref="COMMON_DIGEST"/>
     </logger>
     <logger name="biz-service" level="INFO" additivity="false">
         <appender-ref ref="BIZ_SERVICE"/>
     </logger>
     <logger name="async-schedule" level="INFO" additivity="false">
         <appender-ref ref="ASYNC_SCHEDULE"/>
+    </logger>
+    <!-- SSH/镜像等外部集成日志：写入 biz-service.log（保留控制台输出） -->
+    <logger name="integration" level="INFO" additivity="true">
+        <appender-ref ref="BIZ_SERVICE"/>
     </logger>
 
     <root level="INFO">

@@ -11,6 +11,9 @@ public enum LogFileEnum {
     /** 通用错误日志。 */
     COMMON_ERROR("common-error"),
 
+    /** 请求摘要日志（ApiTemplate 统一打印 入参/返回值）。 */
+    COMMON_DIGEST("common-digest"),
+
     /** 业务服务日志。 */
     BIZ_SERVICE("biz-service"),
 

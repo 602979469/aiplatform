@@ -119,10 +119,6 @@ public class SysLogManagerImpl implements SysLogManager {
                 }
 
                 lineCount++;
-
-                if (lineCount >= end && StrUtil.isBlank(keyword)) {
-                    break;
-                }
             }
         } catch (Exception e) {
             throw new RuntimeException("读取日志文件失败: " + e.getMessage());

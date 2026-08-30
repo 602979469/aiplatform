@@ -81,6 +81,10 @@ public final class ApiTemplate {
             LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
                     "请求结束 接口信息={} 时间={} 耗时={}ms 是否成功={} 返回值={}",
                     caller, startTime, cost, success, result);
+            // 请求摘要（common-digest.log）：时间/traceId 由日志 pattern 输出，这里只记基础信息 + 入参 + 最终返回值（非异常）
+            LoggerUtil.info(LogFileEnum.COMMON_DIGEST,
+                    "请求摘要 接口信息={} 时间={} 请求参数={} 返回值={}",
+                    caller, startTime, param, result);
         }
         return result;
     }
