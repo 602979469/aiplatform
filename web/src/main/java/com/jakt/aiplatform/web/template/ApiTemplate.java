@@ -12,9 +12,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * web 层业务模板：统一请求日志、参数校验、异常封装与 Result 包装，Controller 只提供业务回调。
+ * web 层业务模板：统一请求摘要、参数校验、异常封装与 Result 包装，Controller 只提供业务回调。
  *
- * <p>执行流程：请求日志 → beforeService（参数校验）→ execute（业务）→ afterService（finally）→ 结果日志。
+ * <p>执行流程：beforeService（参数校验）→ execute（业务）→ afterService（finally）→ 请求摘要（common-digest）。
+ * 每个请求只写一条 common-digest 摘要（入参/返回值）；真正的系统异常写 common-error；
+ * 业务失败（校验失败/业务异常/数据约束）不再单独打日志，由摘要里的返回值体现，避免重复污染 biz-service。
  */
 public final class ApiTemplate {
 
@@ -25,7 +27,7 @@ public final class ApiTemplate {
     }
 
     /**
-     * 执行 web 用例：请求日志 → beforeService → execute → afterService（finally），统一包装返回结果。
+     * 执行 web 用例：beforeService → execute → afterService（finally），统一包装返回结果。
      *
      * @param param    入参（DTO 或路径参数）
      * @param callback 业务回调
@@ -34,19 +36,15 @@ public final class ApiTemplate {
      * @return 统一返回体
      */
     public static <P, R> ApiResult<R> execute(P param, Callback<P, R> callback) {
-        long start = System.currentTimeMillis();
         String caller = resolveCaller();
         String startTime = LocalDateTime.now().format(TIME_FORMATTER);
         ApiResult<R> result = null;
         R data = null;
 
-        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "请求开始 接口信息={} 时间={} 请求参数={}", caller, startTime, param);
-
         try {
             try {
                 callback.beforeService(param);
             } catch (CommonException | ValidationException e) {
-                LoggerUtil.warn(LogFileEnum.BIZ_SERVICE, "参数校验失败 接口信息={} 原因={}", caller, e.getMessage());
                 result = ApiResult.fail(CommonErrorCode.PARAM_INVALID, e.getMessage());
             } catch (Exception e) {
                 LoggerUtil.error(LogFileEnum.COMMON_ERROR, e, "执行{}校验逻辑时抛出异常", caller);
@@ -58,12 +56,8 @@ public final class ApiTemplate {
                     data = callback.execute(param);
                     result = ApiResult.ok(data);
                 } catch (CommonException e) {
-                    LoggerUtil.warn(LogFileEnum.BIZ_SERVICE, "业务异常 接口信息={} errorCode={} message={}",
-                            caller, e.getErrorCode(), e.getErrorMessage());
                     result = ApiResult.fail(e.getErrorCode(), e.getErrorMessage());
                 } catch (DataIntegrityViolationException e) {
-                    LoggerUtil.warn(LogFileEnum.BIZ_SERVICE, "数据约束异常 接口信息={} message={}",
-                            caller, e.getMessage());
                     result = ApiResult.fail(CommonErrorCode.PARAM_INVALID, "数据不合法：必填字段缺失或违反数据约束");
                 } catch (Exception e) {
                     LoggerUtil.error(LogFileEnum.COMMON_ERROR, e, "执行{}业务逻辑时抛出异常", caller);
@@ -76,11 +70,6 @@ public final class ApiTemplate {
             } catch (Exception e) {
                 LoggerUtil.error(LogFileEnum.COMMON_ERROR, e, "afterService 执行异常 caller={}", caller);
             }
-            boolean success = result != null && result.isSuccess();
-            long cost = System.currentTimeMillis() - start;
-            LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
-                    "请求结束 接口信息={} 时间={} 耗时={}ms 是否成功={} 返回值={}",
-                    caller, startTime, cost, success, result);
             // 请求摘要（common-digest.log）：时间/traceId 由日志 pattern 输出，这里只记基础信息 + 入参 + 最终返回值（非异常）
             LoggerUtil.info(LogFileEnum.COMMON_DIGEST,
                     "请求摘要 接口信息={} 时间={} 请求参数={} 返回值={}",
