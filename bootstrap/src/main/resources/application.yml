@@ -6,16 +6,15 @@ spring:
     name: aiplatform
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:192.168.3.131}:${MYSQL_PORT:30306}/aiplatform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
-    username: ${MYSQL_USERNAME:root}
-    # 仅本地默认值，生产环境必须通过环境变量注入
-    password: ${MYSQL_PASSWORD:123456}
+    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/aiplatform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
   data:
     redis:
-      host: ${REDIS_HOST:192.168.3.131}
-      port: ${REDIS_PORT:30379}
-      password: ${REDIS_PASSWORD:Redis@2026}
-      database: ${REDIS_DATABASE:0}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+      database: ${REDIS_DATABASE}
       timeout: 10s
       lettuce:
         pool:
@@ -52,7 +51,7 @@ springdoc:
 # AI 模块外部服务配置
 ai:
   deepseek:
-    # 优先配置文件，其次环境变量 DEEPSEEK_API_KEY
+    # 可选能力：未配置时为空（唯一保留的空默认，生产 K8s optional secret 注入）
     api-key: ${DEEPSEEK_API_KEY:}
     base-url: https://api.deepseek.com
     model: deepseek-chat
@@ -64,33 +63,40 @@ ai:
     registry-url: https://docker.xuanyuan.run
     web-url: https://xuanyuan.cloud
   mirror:
-    # 镜像加速器远程 docker 主机（执行 docker pull/save），默认集群 master；生产用 AIPLATFORM_MIRROR_SSH_HOST 覆盖
-    ssh-host: ${AIPLATFORM_MIRROR_SSH_HOST:192.168.3.131}
+    # 镜像加速器远程 docker 主机（执行 docker pull/save），生产 K8s 注入 AIPLATFORM_MIRROR_SSH_HOST
+    ssh-host: ${AIPLATFORM_MIRROR_SSH_HOST}
   minio:
-    # MinIO 对象存储（文件/镜像统一存这里，DB 只存元数据）；生产由 K8s Secret minio-credentials 注入
-    endpoint: ${MINIO_ENDPOINT:http://minio.tsk.svc.cluster.local:9000}
-    access-key: ${MINIO_ACCESS_KEY:}
-    secret-key: ${MINIO_SECRET_KEY:}
-    bucket: ${MINIO_BUCKET:aiplatform}
+    # MinIO 对象存储（文件/镜像统一存这里，DB 只存元数据），生产 K8s Secret minio-credentials 注入
+    endpoint: ${MINIO_ENDPOINT}
+    access-key: ${MINIO_ACCESS_KEY}
+    secret-key: ${MINIO_SECRET_KEY}
+    bucket: ${MINIO_BUCKET}
   ssh:
-    # master 主机 SSH（构建/部署脚本执行机）
-    username: ${SSH_USERNAME:ubuntu}
-    private-key-path: ${SSH_PRIVATE_KEY_PATH:/Users/jakt/.ssh/id_ed25519}
+    # master 主机 SSH（构建/部署脚本执行机），生产 K8s 注入 SSH_USERNAME/SSH_PRIVATE_KEY_PATH
+    username: ${SSH_USERNAME}
+    private-key-path: ${SSH_PRIVATE_KEY_PATH}
     timeout-seconds: 900
+
+# 日志目录（生产 K8s 注入 LOG_FILE_PATH；本地默认见 application-dev.yml）
+log:
+  file:
+    path: ${LOG_FILE_PATH}
 
 # 集群管理（cluster-ci）
 cluster:
   ci:
-    # master 上的工作根目录（挂载/脚本目录）
-    work-dir: ${CLUSTER_CI_WORK_DIR:/home/ubuntu/cluster-ci}
-    master-host: ${CLUSTER_CI_MASTER_HOST:192.168.3.131}
-    worker-host: ${CLUSTER_CI_WORKER_HOST:192.168.3.217}
+    # master 上的工作根目录（挂载/脚本目录），生产 K8s 注入
+    work-dir: ${CLUSTER_CI_WORK_DIR}
+    master-host: ${CLUSTER_CI_MASTER_HOST}
+    worker-host: ${CLUSTER_CI_WORKER_HOST}
+    # 启动时是否同步 cluster-ci 脚本（生产 K8s 注入 CLUSTER_CI_SYNC_ON_STARTUP；本地调试可关）
+    sync-on-startup: ${CLUSTER_CI_SYNC_ON_STARTUP}
 
 # 外部服务账号配置
 aiplatform:
   upload:
-    username: ${XUANYUAN_USERNAME:}
-    password: ${XUANYUAN_PASSWORD:}
+    username: ${XUANYUAN_USERNAME}
+    password: ${XUANYUAN_PASSWORD}
     api-timeout-seconds: 30
 
 logging:

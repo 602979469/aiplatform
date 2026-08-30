@@ -21,7 +21,7 @@ import com.jakt.aiplatform.biz.service.SysLogManager;
 @Service
 public class SysLogManagerImpl implements SysLogManager {
 
-    @Value("${log.file.path:/Users/jakt/IdeaProjects/aiplatform/logs/}")
+    @Value("${log.file.path}")
     private String logFileDir;
 
     /**

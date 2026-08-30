@@ -72,6 +72,14 @@ spec:
               value: 192.168.3.131
             - name: CLUSTER_CI_WORKER_HOST
               value: 192.168.3.217
+            - name: CLUSTER_CI_SYNC_ON_STARTUP
+              value: "true"
+            - name: AIPLATFORM_MIRROR_SSH_HOST
+              value: 192.168.3.131
+            - name: XUANYUAN_USERNAME
+              value: ""
+            - name: XUANYUAN_PASSWORD
+              value: ""
             - name: LOG_FILE_PATH
               value: /app/logs/
             # DeepSeek API Key 从 secret deepseek-api-key 注入（对应 application.yml 的 ${DEEPSEEK_API_KEY:}）

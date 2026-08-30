@@ -70,7 +70,7 @@ public class AiMirrorDownloadServiceImpl implements AiMirrorDownloadService {
 
     public AiMirrorDownloadServiceImpl(XuanYuanProperties xuanYuanProperties,
                                        SshClient sshClient,
-                                       @Value("${ai.mirror.ssh-host:192.168.3.131}") String sshHost,
+                                       @Value("${ai.mirror.ssh-host}") String sshHost,
                                        FileInfoRepository fileInfoRepository,
                                        FileInfoService fileInfoService,
                                        ThreadPoolUtil threadPoolUtil) {

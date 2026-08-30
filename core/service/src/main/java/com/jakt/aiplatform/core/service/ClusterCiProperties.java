@@ -18,4 +18,7 @@ public class ClusterCiProperties {
 
     /** worker 主机（SSH 用户@IP）。 */
     private String workerHost = "ubuntu@192.168.3.217";
+
+    /** 启动时是否同步 cluster-ci 脚本（本地调试可关，见 application-dev.yml）。 */
+    private boolean syncOnStartup = true;
 }

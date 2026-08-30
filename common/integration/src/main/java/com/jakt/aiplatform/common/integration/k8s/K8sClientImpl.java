@@ -1,5 +1,6 @@
 package com.jakt.aiplatform.common.integration.k8s;
 
+import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.common.integration.exception.AiIntegrationErrorCode;
@@ -18,7 +19,8 @@ import io.fabric8.kubernetes.client.*;
 import io.fabric8.kubernetes.client.dsl.LogWatch;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -38,30 +40,38 @@ import java.util.Objects;
 @Component
 public class K8sClientImpl implements K8sClient, DisposableBean {
 
-    @Value("${k8s.test:false}")
-    private boolean testEnable;
+    /** Spring 环境（profile 判断：dev 用配置 token，其余 in-cluster 自动发现）。 */
+    private final Environment environment;
 
-    public static final String TOKEN = "eyJhbGciOiJSUzI1NiIsImtpZCI6IndEdmR6Z1F4cnA5X1dtY3VfaWRFZEhFdmE0di1lSEdpc3hWN18zR0dnSU0ifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkZWZhdWx0Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6ImphdmEtY2xpZW50LXNlY3JldCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJqYXZhLWNsaWVudCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50LnVpZCI6ImU4YjRlMWFlLTllZGUtNDUxYS05OTEyLWE1YWNiMWQ3Y2QwMiIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OmphdmEtY2xpZW50In0.xw3JaBdRPRpFygQHUHJY4-274vBKCk45bK-RarbExMIZ66AzGs94OsnZrP3yF8NKzeW7wS4BGEaLYJyWrdPaNIBGqe8K08wfcEqNbRc8tzDwsO9fiw_xNmZ7ApYjwRHChmpBa-hNwsQHx7_Rm4QrUzLRZNiPWllF9F6lP-jzboBbhKEZm6-u0sMC_1x2sKs0eYLT2t4KOgq0rpEOcDQIafr2L8nTizaQU9dUTOQh1oHvl9Xi-C27gMVY6KhwOh_rHQGjEI5bmqQygqgdpNwuIQx1BhifqFtpEsToqzF2Y-Xa3_nOoy-deP_bQikMwnd4Y2Kl3EzpXWqxe4BWL8l-Aw";
-
-    /**
-     * Kubernetes 客户端（in-cluster 或 kubeconfig 自动发现）。
-     */
+    /** Kubernetes 客户端（dev：配置 token 连 API Server；非 dev：in-cluster 自动发现）。 */
     private final KubernetesClient kubernetesClient;
 
-    public K8sClientImpl() {
-        if (testEnable){
-            Config config = new ConfigBuilder()
-                    .withMasterUrl("https://192.168.3.131:6443")
-                    .withOauthToken(TOKEN)  // 使用你的Token
-                    .withTrustCerts(true)   // 跳过SSL证书验证（测试环境）
-                    .build();
+    public K8sClientImpl(Environment environment) {
+        this.environment = environment;
+        this.kubernetesClient = buildClient();
+    }
 
-            this.kubernetesClient = new KubernetesClientBuilder()
-                    .withConfig(config)
+    /**
+     * 构建 Kubernetes 客户端：dev profile 且配置了 master-url/token 时直连外部 API Server，
+     * 否则使用 in-cluster/kubeconfig 自动发现（生产 pod 内默认）。
+     *
+     * @return Kubernetes 客户端
+     */
+    private KubernetesClient buildClient() {
+        String masterUrl = environment.getProperty("k8s.master-url", "");
+        String token = environment.getProperty("k8s.token", "");
+        if (environment.acceptsProfiles(Profiles.of("dev"))
+                && StrUtil.isNotBlank(masterUrl) && StrUtil.isNotBlank(token)) {
+            Config config = new ConfigBuilder()
+                    .withMasterUrl(masterUrl)
+                    .withOauthToken(token)
+                    .withTrustCerts(true)
                     .build();
-            return;
+            LoggerUtil.info(LogFileEnum.INTEGRATION, "【K8S】dev profile：使用配置 token 连接 masterUrl={}", masterUrl);
+            return new KubernetesClientBuilder().withConfig(config).build();
         }
-       this.kubernetesClient = new KubernetesClientBuilder().build();
+        LoggerUtil.info(LogFileEnum.INTEGRATION, "【K8S】非 dev 或未配置 token：使用 in-cluster/kubeconfig 自动发现");
+        return new KubernetesClientBuilder().build();
     }
 
     @Override

@@ -5,6 +5,9 @@ out/
 .DS_Store
 logs/
 
+# 本地开发环境配置（含本机路径/密码，不提交；用 --spring.profiles.active=dev 加载）
+application-dev.yml
+
 # 个人音频资源（非项目代码）
 music/
 
