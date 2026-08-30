@@ -2,13 +2,15 @@ package com.jakt.aiplatform.web.controller;
 
 import cn.dev33.satoken.annotation.SaIgnore;
 import com.jakt.aiplatform.biz.service.SysLogManager;
+import com.jakt.aiplatform.common.framework.error.CommonException;
+import com.jakt.aiplatform.common.util.error.CommonErrorCode;
 import com.jakt.aiplatform.core.model.domain.SysLogFileDetail;
 import com.jakt.aiplatform.core.model.domain.SysLogFileInfo;
 import com.jakt.aiplatform.web.checker.SysLogParamChecker;
 import com.jakt.aiplatform.web.param.SysLogDetailRequest;
 import com.jakt.aiplatform.web.param.SysLogQueryRequest;
 import com.jakt.aiplatform.web.result.ApiResult;
-import com.jakt.aiplatform.web.template.ApiTemplate;
+import jakarta.validation.ValidationException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,7 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * 系统日志
+ * 系统日志。
+ *
+ * <p>本控制器刻意不走 {@code ApiTemplate}：查看日志本身不应产生日志（否则越看越多，污染日志文件）。
+ * 因此直接调用 manager，自行做参数校验与异常封装，全程无 biz-service / common-digest / common-error 输出。
  */
 @RestController
 @RequestMapping("/sys/log")
@@ -29,50 +34,51 @@ public class SysLogController {
     }
 
     /**
-     * 查询日志列表（支持文件名模糊搜索和分页）
+     * 查询日志列表（支持文件名模糊搜索和分页），无日志输出。
+     *
+     * @param request 查询请求
+     * @return 日志文件列表
      */
     @GetMapping("/list")
     @SaIgnore
     public ApiResult<List<SysLogFileInfo>> listLogFiles(SysLogQueryRequest request) {
-        return ApiTemplate.execute(request, new ApiTemplate.Callback<SysLogQueryRequest, List<SysLogFileInfo>>() {
-
-            @Override
-            public void beforeService(SysLogQueryRequest param) {
-                SysLogParamChecker.checkSysLogQueryRequest(param);
+        try {
+            SysLogParamChecker.checkSysLogQueryRequest(request);
+            if (request == null) {
+                request = new SysLogQueryRequest();
             }
-
-            @Override
-            public List<SysLogFileInfo> execute(SysLogQueryRequest param) {
-                if (param == null){
-                    param = new SysLogQueryRequest();
-                }
-                return sysLogManager.getLogFileList(param.getFileName(), param.getPageNum(), param.getPageSize());
-            }
-
-        });
+            List<SysLogFileInfo> list = sysLogManager.getLogFileList(
+                    request.getFileName(), request.getPageNum(), request.getPageSize());
+            return ApiResult.ok(list);
+        } catch (CommonException e) {
+            return ApiResult.fail(e.getErrorCode(), e.getErrorMessage());
+        } catch (ValidationException e) {
+            return ApiResult.fail(CommonErrorCode.PARAM_INVALID, e.getMessage());
+        } catch (Exception e) {
+            return ApiResult.fail(CommonErrorCode.SYSTEM_ERROR, e.getMessage());
+        }
     }
 
     /**
-     * 查询日志详情（支持翻页和关键词搜索）
+     * 查询日志详情（支持翻页和关键词搜索），无日志输出。
+     *
+     * @param request 详情请求
+     * @return 日志详情
      */
     @GetMapping("/detail")
     @SaIgnore
     public ApiResult<SysLogFileDetail> getLogDetail(SysLogDetailRequest request) {
-        return ApiTemplate.execute(request, new ApiTemplate.Callback<SysLogDetailRequest, SysLogFileDetail>() {
-
-            @Override
-            public void beforeService(SysLogDetailRequest param) {
-                SysLogParamChecker.checkSysLogDetailRequest(request);
-            }
-
-            @Override
-            public SysLogFileDetail execute(SysLogDetailRequest param) {
-                String fileName = request.getFileName();
-                int pageNum = request.getPageNum();
-                int pageSize = request.getPageSize();
-                String keyword = request.getKeyword();
-                return sysLogManager.getLogDetail(fileName, pageNum, pageSize, keyword);
-            }
-        });
+        try {
+            SysLogParamChecker.checkSysLogDetailRequest(request);
+            SysLogFileDetail detail = sysLogManager.getLogDetail(
+                    request.getFileName(), request.getPageNum(), request.getPageSize(), request.getKeyword());
+            return ApiResult.ok(detail);
+        } catch (CommonException e) {
+            return ApiResult.fail(e.getErrorCode(), e.getErrorMessage());
+        } catch (ValidationException e) {
+            return ApiResult.fail(CommonErrorCode.PARAM_INVALID, e.getMessage());
+        } catch (Exception e) {
+            return ApiResult.fail(CommonErrorCode.SYSTEM_ERROR, e.getMessage());
+        }
     }
 }
