@@ -23,4 +23,7 @@ public class MirrorImageResult {
     private boolean localFileExists;
     /** 本地文件名。 */
     private String localFileName;
+
+    /** 文件管理中的文件主键（本地已存在时可下载）。 */
+    private Long fileId;
 }

@@ -54,6 +54,7 @@ public final class AiMirrorAssembler {
         response.setArch(source.getArch());
         response.setLocalFileExists(source.isLocalFileExists());
         response.setLocalFileName(source.getLocalFileName());
+        response.setFileId(source.getFileId());
         return response;
     }
 
@@ -72,6 +73,7 @@ public final class AiMirrorAssembler {
         response.setRepo(source.getRepo());
         response.setTag(source.getTag());
         response.setFileName(source.getFileName());
+        response.setFileId(source.getFileId());
         response.setStatus(source.getStatus());
         response.setProgress(source.getProgress());
         response.setProgressMsg(source.getProgressMsg());
