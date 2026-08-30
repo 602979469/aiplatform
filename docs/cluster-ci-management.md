@@ -18,7 +18,7 @@
 | `fetch_source.sh` | git 浅克隆拉源码，stdout 输出 commit 短哈希 |
 | `build.sh` | master + worker 双架构构建导入 |
 | `build_import.sh` | 单节点 docker build → save → ctr import（含节点级 flock） |
-| `deploy.sh` | 幂等部署：镜像一致跳过，否则 apply / set image / rollout |
+| `deploy.sh` | 覆盖部署：总是 apply 用户配置（幂等）+ set image / rollout 滚动更新 |
 
 ### 1.2 同步规则
 

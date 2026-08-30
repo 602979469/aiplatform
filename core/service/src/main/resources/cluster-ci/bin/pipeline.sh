@@ -57,7 +57,7 @@ else
     echo "${TAG}" > "${STATE_FILE}"
 fi
 
-# 3. 部署（deploy.sh 内部幂等：资源已存在且镜像一致则跳过）
+# 3. 部署（deploy.sh 总是 apply 覆盖用户配置 + set image 滚动更新，幂等）
 bash "${BIN_DIR}/deploy.sh" "${NAMESPACE}" "${DEPLOY_YAML}" "${IMAGE}" "${TAG}"
 
 # 4. stdout 最后一行输出镜像 tag（供后端解析）
