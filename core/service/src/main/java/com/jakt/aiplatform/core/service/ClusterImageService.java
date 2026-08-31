@@ -31,6 +31,9 @@ public interface ClusterImageService {
     /** 构建结果回写：成功→PUBLISHED；失败→重试≤3 次。 */
     void markBuildResult(Long id, boolean success);
 
+    /** 构建成功回写：PUBLISHED + harborRef + tarName。 */
+    void saveBuildResult(Long id, String harborRef, String tarName);
+
     /** 查询镜像（校验 PUBLISHED，供 pod 配置绑定）。 */
     ClusterImage checkPublished(Long id);
 

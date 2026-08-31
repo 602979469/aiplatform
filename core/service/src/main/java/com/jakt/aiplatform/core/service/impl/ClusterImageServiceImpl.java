@@ -121,6 +121,17 @@ public class ClusterImageServiceImpl implements ClusterImageService {
     }
 
     @Override
+    public void saveBuildResult(Long id, String harborRef, String tarName) {
+        ClusterImage update = new ClusterImage();
+        update.setId(id);
+        update.setBuildStatus(ClusterImageStatusEnum.PUBLISHED);
+        update.setHarborRef(harborRef);
+        update.setTarName(tarName);
+        update.setBuildRetryCount(0);
+        clusterImageRepository.updateByCondition(update);
+    }
+
+    @Override
     public ClusterImage checkPublished(Long id) {
         ClusterImage current = getClusterImage(id);
         AssertUtil.throwErrWhenNull(current, BizErrorCodeEnum.RESOURCE_NOT_FOUND, "镜像不存在");

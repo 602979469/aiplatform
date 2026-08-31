@@ -122,16 +122,10 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
         if (config.getImageId() != null) {
             ClusterImage image = clusterImageService.checkPublished(config.getImageId());
             String harborRef = image.getHarborRef();
-            // TODO(脚本未定): deploy.sh 将改造为接收完整 harbor 引用
-            //   bash .../deploy.sh <namespace> <deployYaml> <harborRef>
-            // 当前按 deploy.sh <namespace> <yaml> <image> <tag> 约定拆分传入
-            String[] ref = harborRef.split(":");
-            String imageName = ref[0];
-            String imageTag = ref.length > 1 ? ref[1] : image.getVersion();
             SshResult deployResult = sshClient.execute(ciProperties.getMasterHost(),
                     "bash " + ciProperties.getWorkDir() + "/bin/deploy.sh "
                             + config.getNamespace() + " " + remoteDeployYaml + " "
-                            + imageName + " " + imageTag,
+                            + harborRef,
                     DEPLOY_TIMEOUT_SECONDS);
             if (!deployResult.isSuccess()) {
                 throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
