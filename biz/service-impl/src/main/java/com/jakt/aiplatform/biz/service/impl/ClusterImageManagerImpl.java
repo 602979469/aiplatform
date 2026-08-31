@@ -115,6 +115,7 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
             String srcDir = workDir + "/src";
             String dockerfilePath = workDir + "/Dockerfile";
             String logPath = workDir + "/build.log";
+            sshClient.execute(master, "mkdir -p " + workDir, 30);
             markLogPath(id, logPath);
 
             // 1. 拉 git 源码（浅克隆单分支）
@@ -170,6 +171,7 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
             String master = ciProperties.getMasterHost();
             String workDir = ciProperties.getWorkDir() + "/images/" + id;
             String logPath = workDir + "/import.log";
+            sshClient.execute(master, "mkdir -p " + workDir, 30);
             markLogPath(id, logPath);
             SshResult imp = sshClient.execute(master,
                     "bash " + ciProperties.getWorkDir() + "/bin/import_image.sh '"
