@@ -66,20 +66,19 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
         AssertUtil.throwErrWhenNull(image, BizErrorCodeEnum.RESOURCE_NOT_FOUND, "镜像不存在");
         // 已发布镜像：先物理删除（Harbor artifact + 各节点 ctr + MinIO tar），再删记录
         if (image.getBuildStatus() == ClusterImageStatusEnum.PUBLISHED) {
-            String script = ciProperties.getWorkDir() + "/bin/delete.sh";
+            String script = ciProperties.getWorkDir() + "/bin/delete_image.sh";
             SshResult check = sshClient.execute(ciProperties.getMasterHost(),
                     "test -f " + script + " && echo yes || echo no", 30);
             if (check.isSuccess() && "yes".equals(check.getOutput().trim())) {
                 SshResult del = sshClient.execute(ciProperties.getMasterHost(),
-                        "bash " + script + " '" + image.getHarborRef() + "' '"
-                                + image.getTarName() + "' " + ciProperties.getWorkerHost(),
+                        "bash " + script + " '" + image.getImageName() + "' '" + image.getVersion() + "'",
                         600);
                 LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
                         "镜像物理删除脚本执行 id={} success={} output={}",
                         id, del.isSuccess(), shortOutput(del.getOutput()));
             } else {
                 LoggerUtil.warn(LogFileEnum.BIZ_SERVICE,
-                        "delete.sh 未就位，跳过 Harbor/节点/MinIO 清理（TODO） id={}", id);
+                        "delete_image.sh 未就位，跳过 Harbor/节点/MinIO 清理（TODO） id={}", id);
             }
         }
         int affected = clusterImageService.deleteClusterImage(id);
