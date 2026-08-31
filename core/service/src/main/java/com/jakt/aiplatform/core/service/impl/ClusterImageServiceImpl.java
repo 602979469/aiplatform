@@ -79,9 +79,11 @@ public class ClusterImageServiceImpl implements ClusterImageService {
     public void buildClusterImage(Long id) {
         ClusterImage current = getClusterImage(id);
         AssertUtil.throwErrWhenNull(current, BizErrorCodeEnum.RESOURCE_NOT_FOUND, "镜像不存在");
+        // DRAFT/BUILD_FAILED 正常可构建；BUILDING 放行用于"卡死恢复"（进程已死但状态残留时重新触发）
         AssertUtil.throwErrWhenTrue(
                 current.getBuildStatus() != ClusterImageStatusEnum.DRAFT
-                        && current.getBuildStatus() != ClusterImageStatusEnum.BUILD_FAILED,
+                        && current.getBuildStatus() != ClusterImageStatusEnum.BUILD_FAILED
+                        && current.getBuildStatus() != ClusterImageStatusEnum.BUILDING,
                 BizErrorCodeEnum.STATUS_NOT_ALLOWED,
                 "当前状态(" + current.getBuildStatus().getDesc() + ")不允许构建");
         ClusterImage update = new ClusterImage();
