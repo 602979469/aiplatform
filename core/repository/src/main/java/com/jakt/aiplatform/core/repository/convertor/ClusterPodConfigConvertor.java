@@ -38,6 +38,7 @@ public final class ClusterPodConfigConvertor {
         target.setGitBranch(source.getGitBranch());
         target.setDockerfile(source.getDockerfile());
         target.setDeployYaml(source.getDeployYaml());
+        target.setImageId(source.getImageId());
         target.setAutoRefresh(source.getAutoRefresh());
         target.setLastBuiltCommit(source.getLastBuiltCommit());
         target.setStatus(BaseEnum.fromCode(ClusterPodConfigStatusEnum.class, source.getStatus()));
@@ -65,6 +66,7 @@ public final class ClusterPodConfigConvertor {
         target.setGitBranch(source.getGitBranch());
         target.setDockerfile(source.getDockerfile());
         target.setDeployYaml(source.getDeployYaml());
+        target.setImageId(source.getImageId());
         target.setAutoRefresh(source.getAutoRefresh());
         target.setLastBuiltCommit(source.getLastBuiltCommit());
         target.setStatus(ObjectUtil.isNull(source.getStatus()) ? null : source.getStatus().getCode());

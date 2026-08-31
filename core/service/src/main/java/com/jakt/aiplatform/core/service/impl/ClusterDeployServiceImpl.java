@@ -11,7 +11,9 @@ import com.jakt.aiplatform.common.integration.exception.AiIntegrationException;
 import com.jakt.aiplatform.common.integration.ssh.SshClient;
 import com.jakt.aiplatform.common.integration.ssh.SshResult;
 import com.jakt.aiplatform.core.model.domain.ClusterPodConfig;
+import com.jakt.aiplatform.core.model.domain.ClusterImage;
 import com.jakt.aiplatform.core.service.ClusterCiProperties;
+import com.jakt.aiplatform.core.service.ClusterImageService;
 import com.jakt.aiplatform.core.service.ClusterDeployService;
 import com.jakt.aiplatform.core.service.ClusterPodConfigService;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -48,14 +50,19 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
     /** 配置领域服务（更新 last_built_commit）。 */
     private final ClusterPodConfigService clusterPodConfigService;
 
+    /** 镜像领域服务（imageId 部署流程）。 */
+    private final ClusterImageService clusterImageService;
+
     public ClusterDeployServiceImpl(K8sClient k8sClient,
                                     SshClient sshClient,
                                     ClusterCiProperties ciProperties,
-                                    ClusterPodConfigService clusterPodConfigService) {
+                                    ClusterPodConfigService clusterPodConfigService,
+                                    ClusterImageService clusterImageService) {
         this.k8sClient = k8sClient;
         this.sshClient = sshClient;
         this.ciProperties = ciProperties;
         this.clusterPodConfigService = clusterPodConfigService;
+        this.clusterImageService = clusterImageService;
     }
 
     @Override
@@ -98,18 +105,51 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
             Path localDir = Files.createTempDirectory("cluster-deploy-");
             Path localDockerfile = localDir.resolve("Dockerfile");
             Path localDeployYaml = localDir.resolve("deployment.yaml");
-            Files.writeString(localDockerfile, config.getDockerfile(), StandardCharsets.UTF_8);
             Files.writeString(localDeployYaml, config.getDeployYaml(), StandardCharsets.UTF_8);
 
             sshClient.execute(ciProperties.getMasterHost(), "mkdir -p " + appDir + " " + remoteSrcDir, 60);
-            sshClient.uploadFile(ciProperties.getMasterHost(), localDockerfile.toString(), remoteDockerfile);
             sshClient.uploadFile(ciProperties.getMasterHost(), localDeployYaml.toString(), remoteDeployYaml);
+            // 旧 git 流程才需要上传 Dockerfile；镜像流程由镜像管理侧维护
+            if (config.getDockerfile() != null) {
+                Files.writeString(localDockerfile, config.getDockerfile(), StandardCharsets.UTF_8);
+                sshClient.uploadFile(ciProperties.getMasterHost(), localDockerfile.toString(), remoteDockerfile);
+            }
         } catch (IOException e) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "部署文件准备失败: " + e.getMessage());
         }
 
+        // 3a. 镜像流程（新）：绑定 PUBLISHED 镜像 → deploy.sh（脚本 TODO）
+        if (config.getImageId() != null) {
+            ClusterImage image = clusterImageService.checkPublished(config.getImageId());
+            String harborRef = image.getHarborRef();
+            // TODO(脚本未定): deploy.sh 将改造为接收完整 harbor 引用
+            //   bash .../deploy.sh <namespace> <deployYaml> <harborRef>
+            // 当前按 deploy.sh <namespace> <yaml> <image> <tag> 约定拆分传入
+            String[] ref = harborRef.split(":");
+            String imageName = ref[0];
+            String imageTag = ref.length > 1 ? ref[1] : image.getVersion();
+            SshResult deployResult = sshClient.execute(ciProperties.getMasterHost(),
+                    "bash " + ciProperties.getWorkDir() + "/bin/deploy.sh "
+                            + config.getNamespace() + " " + remoteDeployYaml + " "
+                            + imageName + " " + imageTag,
+                    DEPLOY_TIMEOUT_SECONDS);
+            if (!deployResult.isSuccess()) {
+                throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
+                        "镜像部署失败: " + shortOutput(deployResult.getOutput()));
+            }
+            ClusterPodConfig update = new ClusterPodConfig();
+            update.setId(config.getId());
+            update.setLastBuiltCommit(image.getVersion());
+            clusterPodConfigService.updateByCondition(update);
+            LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
+                    "业务pod镜像部署完成 id={} deployment={} image={}",
+                    config.getId(), deploymentName, harborRef);
+            return;
+        }
+
         // 3. 统一流水线（pipeline.sh）：lock + state 判断（本地 commit 与最新一致则跳过构建）
         //    → fetch_source（需要时）→ build（master+worker 双架构）→ deploy（资源已最新则跳过）
+        //    旧 git 流程（deprecated）：新配置请走镜像(image_id)
         SshResult pipelineResult = sshClient.execute(ciProperties.getMasterHost(),
                 "bash " + ciProperties.getWorkDir() + "/bin/pipeline.sh "
                         + config.getId() + " " + config.getPodName() + " "

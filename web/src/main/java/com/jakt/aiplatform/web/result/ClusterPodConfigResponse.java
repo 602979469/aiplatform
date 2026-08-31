@@ -44,6 +44,9 @@ public class ClusterPodConfigResponse extends BaseResult {
     /** Deployment YAML。 */
     private String deployYaml;
 
+    /** 关联 cluster_image.id（部署用）。 */
+    private Long imageId;
+
     /** 自动刷新开关。 */
     private Integer autoRefresh;
 

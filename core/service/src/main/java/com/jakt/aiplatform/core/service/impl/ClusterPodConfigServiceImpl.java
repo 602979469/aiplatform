@@ -10,6 +10,7 @@ import com.jakt.aiplatform.core.model.domain.ClusterPodConfig;
 import com.jakt.aiplatform.core.model.param.ClusterPodConfigQueryParam;
 import com.jakt.aiplatform.core.repository.ClusterPodConfigRepository;
 import com.jakt.aiplatform.core.service.ClusterPodConfigService;
+import com.jakt.aiplatform.core.service.ClusterImageService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,12 +24,18 @@ public class ClusterPodConfigServiceImpl implements ClusterPodConfigService {
     /** 业务pod配置表仓储。 */
     private final ClusterPodConfigRepository clusterPodConfigRepository;
 
-    public ClusterPodConfigServiceImpl(ClusterPodConfigRepository clusterPodConfigRepository) {
+    /** 镜像领域服务（校验 imageId 已发布）。 */
+    private final ClusterImageService clusterImageService;
+
+    public ClusterPodConfigServiceImpl(ClusterPodConfigRepository clusterPodConfigRepository,
+                                       ClusterImageService clusterImageService) {
         this.clusterPodConfigRepository = clusterPodConfigRepository;
+        this.clusterImageService = clusterImageService;
     }
 
     @Override
     public ClusterPodConfig createClusterPodConfig(ClusterPodConfig clusterPodConfig) {
+        validateImageId(clusterPodConfig.getImageId());
         // 创建默认草稿
         clusterPodConfig.setStatus(ClusterPodConfigStatusEnum.DRAFT);
         clusterPodConfig.setCreateBy(UserContext.getUserId().toString());
@@ -41,6 +48,7 @@ public class ClusterPodConfigServiceImpl implements ClusterPodConfigService {
         ClusterPodConfig current = getClusterPodConfig(clusterPodConfig.getId());
         AssertUtil.throwErrWhenNull(current, BizErrorCodeEnum.RESOURCE_NOT_FOUND, "业务pod配置不存在");
         checkUpdateAllowed(current);
+        validateImageId(clusterPodConfig.getImageId());
         // 更新不改变状态，保留当前状态
         clusterPodConfig.setStatus(current.getStatus());
         clusterPodConfig.setUpdateBy(UserContext.getUserId().toString());
@@ -122,5 +130,15 @@ public class ClusterPodConfigServiceImpl implements ClusterPodConfigService {
         update.setId(id);
         update.setStatus(ClusterPodConfigStatusEnum.RETIRED);
         clusterPodConfigRepository.updateByCondition(update);
+    }
+
+    /**
+     * 校验绑定的镜像必须为已发布（PUBLISHED），未绑定则跳过（兼容旧 git 流程）。
+     */
+    private void validateImageId(Long imageId) {
+        if (imageId == null) {
+            return;
+        }
+        clusterImageService.checkPublished(imageId);
     }
 }

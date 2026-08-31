@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.ClusterImageMapper">
+
+    <sql id="selectColumns">
+        id, image_name, version, image_type, git_url, git_branch, dockerfile, external_image,
+        harbor_ref, tar_name, build_status, build_retry_count, build_log_path,
+        create_by, create_time, update_by, update_time, remark
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="imageName != null and imageName != ''">
+                AND image_name LIKE CONCAT('%', #{imageName}, '%')
+            </if>
+            <if test="version != null and version != ''">
+                AND version LIKE CONCAT('%', #{version}, '%')
+            </if>
+            <if test="imageType != null and imageType != ''">
+                AND image_type = #{imageType}
+            </if>
+            <if test="buildStatus != null and buildStatus != ''">
+                AND build_status = #{buildStatus}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.ClusterImageDO">
+        SELECT <include refid="selectColumns"/>
+        FROM cluster_image
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.ClusterImageDO">
+        SELECT <include refid="selectColumns"/>
+        FROM cluster_image
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.ClusterImageDO">
+        SELECT <include refid="selectColumns"/>
+        FROM cluster_image
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM cluster_image
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.ClusterImageDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO cluster_image (image_name, version, image_type, git_url, git_branch, dockerfile,
+                                   external_image, harbor_ref, tar_name, build_status, build_retry_count,
+                                   build_log_path, create_by, update_by, remark)
+        VALUES (#{imageName}, #{version}, #{imageType}, #{gitUrl}, #{gitBranch}, #{dockerfile},
+                #{externalImage}, #{harborRef}, #{tarName}, #{buildStatus}, #{buildRetryCount},
+                #{buildLogPath}, #{createBy}, #{updateBy}, #{remark})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.ClusterImageDO">
+        UPDATE cluster_image
+        SET image_name = #{imageName},
+            version = #{version},
+            image_type = #{imageType},
+            git_url = #{gitUrl},
+            git_branch = #{gitBranch},
+            dockerfile = #{dockerfile},
+            external_image = #{externalImage},
+            harbor_ref = #{harborRef},
+            tar_name = #{tarName},
+            build_status = #{buildStatus},
+            build_retry_count = #{buildRetryCount},
+            build_log_path = #{buildLogPath},
+            update_by = #{updateBy},
+            remark = #{remark}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.ClusterImageDO">
+        <if test="imageName != null or version != null or imageType != null or gitUrl != null or gitBranch != null
+                  or dockerfile != null or externalImage != null or harborRef != null or tarName != null
+                  or buildStatus != null or buildRetryCount != null or buildLogPath != null or remark != null">
+            UPDATE cluster_image
+            <set>
+                <if test="imageName != null">image_name = #{imageName},</if>
+                <if test="version != null">version = #{version},</if>
+                <if test="imageType != null">image_type = #{imageType},</if>
+                <if test="gitUrl != null">git_url = #{gitUrl},</if>
+                <if test="gitBranch != null">git_branch = #{gitBranch},</if>
+                <if test="dockerfile != null">dockerfile = #{dockerfile},</if>
+                <if test="externalImage != null">external_image = #{externalImage},</if>
+                <if test="harborRef != null">harbor_ref = #{harborRef},</if>
+                <if test="tarName != null">tar_name = #{tarName},</if>
+                <if test="buildStatus != null">build_status = #{buildStatus},</if>
+                <if test="buildRetryCount != null">build_retry_count = #{buildRetryCount},</if>
+                <if test="buildLogPath != null">build_log_path = #{buildLogPath},</if>
+                <if test="remark != null">remark = #{remark},</if>
+            </set>
+            WHERE id = #{id}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM cluster_image WHERE id = #{id}
+    </delete>
+</mapper>

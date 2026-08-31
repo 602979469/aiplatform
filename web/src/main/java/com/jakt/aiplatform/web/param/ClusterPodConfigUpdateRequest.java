@@ -47,6 +47,9 @@ public class ClusterPodConfigUpdateRequest extends BaseRequest {
     @Size(max = 16777215, message = "Deployment YAML长度不能超过 16777215")
     private String deployYaml;
 
+    /** 关联 cluster_image.id（部署用，替代 git；可选，旧流程兼容）。 */
+    private Long imageId;
+
     /** 自动刷新开关（0关 1开）。 */
     private Integer autoRefresh;
 

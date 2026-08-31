@@ -44,6 +44,7 @@ public final class ClusterPodConfigAssembler {
         clusterPodConfig.setGitBranch(request.getGitBranch());
         clusterPodConfig.setDockerfile(request.getDockerfile());
         clusterPodConfig.setDeployYaml(request.getDeployYaml());
+        clusterPodConfig.setImageId(request.getImageId());
         clusterPodConfig.setAutoRefresh(request.getAutoRefresh());
         clusterPodConfig.setRemark(request.getRemark());
         return clusterPodConfig;
@@ -69,6 +70,7 @@ public final class ClusterPodConfigAssembler {
         clusterPodConfig.setGitBranch(request.getGitBranch());
         clusterPodConfig.setDockerfile(request.getDockerfile());
         clusterPodConfig.setDeployYaml(request.getDeployYaml());
+        clusterPodConfig.setImageId(request.getImageId());
         clusterPodConfig.setAutoRefresh(request.getAutoRefresh());
         clusterPodConfig.setRemark(request.getRemark());
         return clusterPodConfig;
@@ -120,6 +122,7 @@ public final class ClusterPodConfigAssembler {
         response.setGitBranch(clusterPodConfig.getGitBranch());
         response.setDockerfile(clusterPodConfig.getDockerfile());
         response.setDeployYaml(clusterPodConfig.getDeployYaml());
+        response.setImageId(clusterPodConfig.getImageId());
         response.setAutoRefresh(clusterPodConfig.getAutoRefresh());
         response.setLastBuiltCommit(clusterPodConfig.getLastBuiltCommit());
         response.setCreateBy(clusterPodConfig.getCreateBy());

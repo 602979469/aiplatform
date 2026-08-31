@@ -90,6 +90,8 @@ public enum BizErrorCodeEnum implements ErrorCode {
     FILE_NAME_INVALID("文件名不合法"),
 
     /** 当前状态不允许该操作。 */
+    IMAGE_EXISTS("镜像名+版本已存在"),
+
     STATUS_NOT_ALLOWED("当前状态不允许该操作");
 
     private final String message;
