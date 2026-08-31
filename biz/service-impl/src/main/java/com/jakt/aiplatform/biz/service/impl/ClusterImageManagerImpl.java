@@ -50,6 +50,10 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
         ClusterImage created = clusterImageService.createClusterImage(image);
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "创建镜像成功 id={} image={}:{}",
                 created.getId(), created.getImageName(), created.getVersion());
+        // 现成镜像（EXTERNAL）：创建即自动导入（无需手动构建）
+        if (created.getImageType() == ClusterImageTypeEnum.EXTERNAL) {
+            buildClusterImage(created.getId());
+        }
         return created;
     }
 
@@ -103,15 +107,15 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
                 return;
             }
             if (image.getImageType() == ClusterImageTypeEnum.EXTERNAL) {
-                LoggerUtil.warn(LogFileEnum.BIZ_SERVICE,
-                        "外部镜像导入脚本未接入(TODO)，按构建失败处理 id={}", id);
-                failWithRetry(id);
+                doImport(image);
                 return;
             }
             String master = ciProperties.getMasterHost();
             String workDir = ciProperties.getWorkDir() + "/images/" + id;
             String srcDir = workDir + "/src";
             String dockerfilePath = workDir + "/Dockerfile";
+            String logPath = workDir + "/build.log";
+            markLogPath(id, logPath);
 
             // 1. 拉 git 源码（浅克隆单分支）
             SshResult clone = sshClient.execute(master,
@@ -134,15 +138,16 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
             SshResult build = sshClient.execute(master,
                     "bash " + ciProperties.getWorkDir() + "/bin/build_image.sh '"
                             + image.getImageName() + "' '" + image.getVersion() + "' "
-                            + srcDir + " " + dockerfilePath,
+                            + srcDir + " " + dockerfilePath + " > " + logPath + " 2>&1",
                     1800);
             if (!build.isSuccess()) {
                 failWithRetry(id);
                 return;
             }
 
-            // 4. 回写 PUBLISHED + harborRef + tarName（脚本最后一行输出 harbor_ref）
-            String harborRef = lastLine(build.getOutput());
+            // 4. 回写 PUBLISHED + harborRef + tarName（日志最后一行 = harbor_ref）
+            SshResult tail = sshClient.execute(master, "tail -n 1 " + logPath, 30);
+            String harborRef = lastLine(tail.getOutput());
             if (StrUtil.isBlank(harborRef)) {
                 failWithRetry(id);
                 return;
@@ -154,6 +159,48 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
             LoggerUtil.error(LogFileEnum.COMMON_ERROR, e, "镜像构建失败 id={}", id);
             failWithRetry(id);
         }
+    }
+
+    /**
+     * 现成镜像导入：buildx imagetools 保留多架构 → push Harbor（import_image.sh）。
+     */
+    private void doImport(ClusterImage image) {
+        Long id = image.getId();
+        try {
+            String master = ciProperties.getMasterHost();
+            String workDir = ciProperties.getWorkDir() + "/images/" + id;
+            String logPath = workDir + "/import.log";
+            markLogPath(id, logPath);
+            SshResult imp = sshClient.execute(master,
+                    "bash " + ciProperties.getWorkDir() + "/bin/import_image.sh '"
+                            + image.getImageName() + "' '" + image.getVersion() + "' '"
+                            + image.getExternalImage() + "' > " + logPath + " 2>&1",
+                    1800);
+            if (!imp.isSuccess()) {
+                failWithRetry(id);
+                return;
+            }
+            SshResult tail = sshClient.execute(master, "tail -n 1 " + logPath, 30);
+            String harborRef = lastLine(tail.getOutput());
+            if (StrUtil.isBlank(harborRef)) {
+                failWithRetry(id);
+                return;
+            }
+            // 现成镜像不归档 tar
+            clusterImageService.saveBuildResult(id, harborRef, null);
+            LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "镜像导入成功 id={} harbor={}", id, harborRef);
+        } catch (Exception e) {
+            LoggerUtil.error(LogFileEnum.COMMON_ERROR, e, "镜像导入失败 id={}", id);
+            failWithRetry(id);
+        }
+    }
+
+    /** 构建/导入开始前记录日志路径（BUILDING 期间日志接口即可读）。 */
+    private void markLogPath(Long id, String logPath) {
+        ClusterImage update = new ClusterImage();
+        update.setId(id);
+        update.setBuildLogPath(logPath);
+        clusterImageService.updateByCondition(update);
     }
 
     /** 构建失败：重试≤3 次（markBuildResult 内部计数，重试中保持 BUILDING）。 */
@@ -178,6 +225,17 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
     @Override
     public java.util.List<ClusterImage> listPublishedImages() {
         return clusterImageService.listPublished();
+    }
+
+    @Override
+    public String getBuildLog(Long id) {
+        ClusterImage image = clusterImageService.getClusterImage(id);
+        if (image == null || StrUtil.isBlank(image.getBuildLogPath())) {
+            return "";
+        }
+        SshResult result = sshClient.execute(ciProperties.getMasterHost(),
+                "tail -n 500 '" + image.getBuildLogPath() + "' 2>/dev/null || true", 60);
+        return result.isSuccess() ? result.getOutput() : "";
     }
 
     private String lastLine(String output) {

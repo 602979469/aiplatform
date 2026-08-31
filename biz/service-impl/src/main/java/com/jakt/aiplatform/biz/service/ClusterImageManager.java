@@ -24,4 +24,7 @@ public interface ClusterImageManager {
 
     /** 已发布镜像下拉列表（pod 配置绑定用）。 */
     List<ClusterImage> listPublishedImages();
+
+    /** 构建/导入日志（读 build_log_path，tail 500 行）。 */
+    String getBuildLog(Long id);
 }

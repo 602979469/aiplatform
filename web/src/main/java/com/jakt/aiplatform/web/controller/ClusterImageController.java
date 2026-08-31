@@ -85,6 +85,23 @@ public class ClusterImageController {
         });
     }
 
+    /** 构建/导入日志（tail 500 行）。 */
+    @GetMapping("/{id}/log")
+    public ApiResult<String> log(@PathVariable Long id) {
+        return ApiTemplate.execute(id, new ApiTemplate.Callback<Long, String>() {
+
+            @Override
+            public void beforeService(Long param) {
+                ClusterImageParamChecker.checkId(param);
+            }
+
+            @Override
+            public String execute(Long param) {
+                return clusterImageManager.getBuildLog(param);
+            }
+        });
+    }
+
     /** 创建镜像（草稿）。 */
     @PostMapping
     public ApiResult<ClusterImageResponse> create(@RequestBody ClusterImageCreateRequest request) {
