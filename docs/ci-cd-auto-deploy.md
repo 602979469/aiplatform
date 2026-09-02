@@ -30,7 +30,7 @@ GitHub（api.github.com 查询最新 commit / codeload 下载源码包）
         │    否 → 退出（不重复构建）
         │    是 → 下载源码 → mvn package → docker build → 导入 containerd
         │
-        ├─ 数据库幂等初始化（表不存在才导入 sql/*.sql）
+        ├─ 数据库幂等初始化（建表文件按表缺失导入 + z_init_data.sql 种子数据）
         ├─ 创建/更新 k8s Secret（aiplatform-secret，读本地 secrets.env）
         │
         └─ kubectl apply deploy/aiplatform.yaml（替换镜像 tag 为 commit 短哈希）
@@ -407,14 +407,19 @@ docker save "${IMAGE_NAME}:${SHORT}" -o /tmp/aiplatform-${SHORT}.tar
 sudo ctr -n k8s.io image import /tmp/aiplatform-${SHORT}.tar || { log "镜像导入 containerd 失败"; exit 1; }
 rm -f /tmp/aiplatform-${SHORT}.tar
 
-# 7. 数据库幂等初始化：以每个 SQL 文件的第一张表是否存在为准，缺失才执行该文件
-#    （兼容大写/小写 create table、IF NOT EXISTS 以及带种子数据的多表文件，如 auth_rbac.sql）
+# 7. 数据库幂等初始化：
+#    - 建表文件（sql/*.sql，除 z_init_data.sql）：以第一张表是否存在为准，缺失才执行；
+#    - 种子文件 sql/z_init_data.sql：幂等（INSERT IGNORE/ON DUPLICATE），每次部署显式执行，
+#      保证新增菜单/角色/能力等初始化数据及时生效（纯种子文件无法识别建表语句，不会被循环导入）
 #    注意：导入含中文的 SQL 必须带 --default-character-set=utf8mb4，否则 UTF-8 中文会被
 #    按 latin1 二次编码成乱码（本项目踩过坑，见第 5 节注意事项）
 MYSQL_PW=$(kubectl get secret mysql-secret -n "${NAMESPACE}" -o jsonpath='{.data.root-password}' | base64 -d)
 kubectl exec -n "${NAMESPACE}" "${MYSQL_POD}" -- mysql -uroot -p"${MYSQL_PW}" -e \
     "CREATE DATABASE IF NOT EXISTS aiplatform DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
 for f in "${REPO_DIR}"/sql/*.sql; do
+    if [ "$(basename "${f}")" = "z_init_data.sql" ]; then
+        continue
+    fi
     TABLE=$(sed -nE 's/^[[:space:]]*CREATE TABLE (IF NOT EXISTS )?`?([A-Za-z0-9_]+).*/\2/ip' "${f}" | head -1)
     if [ -z "${TABLE}" ]; then
         log "SQL 文件无法识别建表语句，跳过: $(basename "${f}")"
@@ -428,6 +433,13 @@ for f in "${REPO_DIR}"/sql/*.sql; do
         log "数据库初始化: $(basename "${f}")"
     fi
 done
+
+INIT_SQL="${REPO_DIR}/sql/z_init_data.sql"
+if [ -f "${INIT_SQL}" ]; then
+    kubectl exec -i -n "${NAMESPACE}" "${MYSQL_POD}" -- mysql --default-character-set=utf8mb4 \
+        -uroot -p"${MYSQL_PW}" aiplatform < "${INIT_SQL}" || { log "初始化数据执行失败: z_init_data.sql"; exit 1; }
+    log "初始化数据: z_init_data.sql"
+fi
 
 # 8. 密钥注入：优先读本机 secrets.env，创建/更新 k8s Secret aiplatform-secret
 #    应用侧 application.yml 通过环境变量 DEEPSEEK_API_KEY 读取（${DEEPSEEK_API_KEY:}），无需改 Java

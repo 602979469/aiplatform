@@ -18,18 +18,3 @@ CREATE TABLE `file_info` (
   PRIMARY KEY (`id`),
   KEY `idx_namespace_id` (`namespace`, `id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='文件信息表';
-
-insert into auth_menu (menu_id, menu_name, parent_id, order_num, path, component, menu_type, visible, status, perms, icon, remark)
-values (500, '文件管理', 0, 5, '/file', '', 'M', '0', '0', null, 'el-icon-folder', '文件管理目录'),
-       (501, '文件列表', 500, 1, 'list', 'file/index', 'C', '0', '0', 'file:list', 'el-icon-folder-opened', '文件管理列表')
-    on duplicate key update
-                         menu_name = values(menu_name), parent_id = values(parent_id), order_num = values(order_num),
-                         path = values(path), component = values(component), menu_type = values(menu_type),
-                         visible = values(visible), status = values(status), perms = values(perms),
-                         icon = values(icon), remark = values(remark);
-
--- 授权给所有启用角色（与 cluster_menu.sql 一致）
-insert into auth_role_menu (role_id, menu_id)
-select auth_role.role_id, auth_menu.menu_id from auth_role, auth_menu
-where auth_role.status = '0' and auth_menu.menu_id in (500, 501)
-  and not exists (select 1 from auth_role_menu rm where rm.role_id = auth_role.role_id and rm.menu_id = auth_menu.menu_id);

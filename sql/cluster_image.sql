@@ -23,9 +23,3 @@ CREATE TABLE IF NOT EXISTS `cluster_image` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_image_version` (`image_name`, `version`)
 ) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='镜像表';
-
--- ------------------------------------------------------------------
--- 迁移: cluster_pod_config 增加 image_id（关联 cluster_image.id）
--- ------------------------------------------------------------------
-ALTER TABLE `cluster_pod_config`
-  ADD COLUMN `image_id` BIGINT NULL COMMENT '关联 cluster_image.id（部署用，替代 git）' AFTER `deploy_yaml`;

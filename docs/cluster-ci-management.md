@@ -75,10 +75,9 @@ aiplatform 依赖集群外部能力（SSH 到节点、K8s API、MySQL/Redis/MinI
 
 ### 2.4 MySQL 初始化（aiplatform 库）
 
-- `sql/cluster_pod_config.sql`（业务 pod 配置表，含状态机字段）；
-- `sql/file_info.sql`（文件元数据表，内容存 MinIO）；
-- 菜单 SQL（`cluster_menu.sql`，幂等）——集群管理菜单；
-- 已有旧数据时执行 `sql/cluster_pod_config_migration.sql`。
+- 首次部署：执行 `sql/` 下全部建表文件（每表一个，均是最新完整 DDL，无 ALTER）；
+- 建表完成后执行一次 `sql/z_init_data.sql`（初始化数据：内置用户/角色/全部菜单与授权/AI 能力，幂等可重复执行）；
+- aiplatform-ci 的 pipeline.sh 已按此规则自动初始化：建表文件按“表缺失才导入”，`z_init_data.sql` 每次部署显式执行。
 
 ### 2.5 环境变量（deploy/aiplatform.yaml 已配）
 
