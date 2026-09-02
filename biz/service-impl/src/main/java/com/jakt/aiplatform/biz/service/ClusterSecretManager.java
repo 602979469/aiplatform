@@ -45,7 +45,8 @@ public interface ClusterSecretManager {
      * @param namespace 命名空间
      * @param name      密钥名称
      * @param type      类型（为空则沿用现有或 Opaque）
+     * @param exists    编辑模式：true=仅更新（不存在报错）；false=仅新增（同名报错）；null=宽松 upsert
      * @param keyValues 需要覆盖/新增的键值
      */
-    void upsert(String namespace, String name, String type, Map<String, String> keyValues);
+    void upsert(String namespace, String name, String type, Boolean exists, Map<String, String> keyValues);
 }

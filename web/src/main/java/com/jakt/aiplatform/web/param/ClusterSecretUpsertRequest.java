@@ -31,6 +31,11 @@ public class ClusterSecretUpsertRequest extends BaseRequest {
     @Size(max = 64, message = "类型长度不能超过 64")
     private String type;
 
+    /**
+     * 是否编辑已有 Secret：true=仅更新（不存在报错）；false=仅新增（同名报错）；null=宽松 upsert。
+     */
+    private Boolean exists;
+
     /** 键值列表（提交即覆盖/新增；未提交的键在集群侧原样保留）。 */
     @NotEmpty(message = "至少提交一个键值")
     private List<Item> keys;

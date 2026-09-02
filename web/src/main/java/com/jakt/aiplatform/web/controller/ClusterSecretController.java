@@ -107,7 +107,8 @@ public class ClusterSecretController {
                 for (ClusterSecretUpsertRequest.Item item : param.getKeys()) {
                     keyValues.put(item.getKey(), item.getValue());
                 }
-                clusterSecretManager.upsert(param.getNamespace(), param.getName(), param.getType(), keyValues);
+                clusterSecretManager.upsert(param.getNamespace(), param.getName(), param.getType(),
+                        param.getExists(), keyValues);
                 return null;
             }
         });

@@ -93,25 +93,36 @@ public class ClusterSecretManagerImpl implements ClusterSecretManager {
     }
 
     @Override
-    public void upsert(String namespace, String name, String type, Map<String, String> keyValues) {
+    public void upsert(String namespace, String name, String type, Boolean exists,
+                       Map<String, String> keyValues) {
         checkNamespace(namespace);
         if (keyValues == null || keyValues.isEmpty()) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID, "至少提交一个键值");
         }
-
         // 1. 服务端读取当前 Secret（kubectl -o yaml，SnakeYAML 解析；不存在则新建）
-        Map<String, Object> root;
         String readCmd = "kubectl get secret '" + name + "' -n '" + namespace + "' -o yaml";
         SshResult read = sshClient.execute(ciProperties.getMasterHost(), readCmd, 30);
-        if (read.isSuccess() && StrUtil.isNotBlank(read.getOutput())) {
+        boolean knownExists = read.isSuccess() && StrUtil.isNotBlank(read.getOutput());
+        if (!knownExists && !read.getOutput().contains("NotFound")) {
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
+                    "读取密钥失败: " + safeOutput(read.getOutput()));
+        }
+        if (Boolean.FALSE.equals(exists) && knownExists) {
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID,
+                    "已存在同名 Secret，如需修改请使用编辑操作: " + name);
+        }
+        if (Boolean.TRUE.equals(exists) && !knownExists) {
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID,
+                    "Secret 不存在或已被删除: " + name);
+        }
+
+        Map<String, Object> root;
+        if (knownExists) {
             Object loaded = new Yaml().load(read.getOutput());
             if (!(loaded instanceof Map)) {
                 throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "读取密钥失败: 内容格式异常");
             }
             root = castMap(loaded);
-        } else if (!read.getOutput().contains("NotFound")) {
-            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
-                    "读取密钥失败: " + safeOutput(read.getOutput()));
         } else {
             root = new LinkedHashMap<>();
             root.put("apiVersion", "v1");
