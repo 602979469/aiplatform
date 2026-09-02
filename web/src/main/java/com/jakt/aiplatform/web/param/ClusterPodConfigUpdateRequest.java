@@ -27,18 +27,15 @@ public class ClusterPodConfigUpdateRequest extends BaseRequest {
     @Size(max = 64, message = "业务命名空间长度不能超过 64")
     private String namespace;
 
-    /** git仓库地址（https://github.com/xxx/yyy.git；公开仓库无需 token，私有仓库在地址中携带，如 https://用户名:token@github.com/xxx/yyy.git）。 */
-    @NotBlank(message = "git仓库地址不能为空")
+    /** git仓库地址（已废弃，改用 imageId 绑定已发布镜像；保留兼容旧数据）。 */
     @Size(max = 512, message = "git仓库地址长度不能超过 512")
     private String gitUrl;
 
-    /** git分支。 */
-    @NotBlank(message = "git分支不能为空")
+    /** git分支（已废弃，保留兼容旧数据）。 */
     @Size(max = 128, message = "git分支长度不能超过 128")
     private String gitBranch;
 
-    /** Dockerfile内容。 */
-    @NotBlank(message = "Dockerfile内容不能为空")
+    /** Dockerfile内容（已废弃，保留兼容旧数据）。 */
     @Size(max = 65535, message = "Dockerfile内容长度不能超过 65535")
     private String dockerfile;
 
