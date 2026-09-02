@@ -27,9 +27,6 @@ public class ClusterPodConfigDO extends BaseDO {
     /** 关联 cluster_image.id（部署用，替代 git）。 */
     private Long imageId;
 
-    /** 自动刷新开关。 */
-    private Integer autoRefresh;
-
     /** 上次构建commit。 */
     private String lastBuiltCommit;
 

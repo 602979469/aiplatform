@@ -227,7 +227,6 @@ public class ClusterPodConfigManagerImpl implements ClusterPodConfigManager {
         copy.setNamespace(source.getNamespace());
         copy.setDeployYaml(source.getDeployYaml());
         copy.setImageId(source.getImageId());
-        copy.setAutoRefresh(source.getAutoRefresh());
         copy.setRemark(source.getRemark());
         // 复制配置状态为草稿，不触发部署
         return clusterPodConfigService.createClusterPodConfig(copy);

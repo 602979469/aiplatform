@@ -42,7 +42,6 @@ public final class ClusterPodConfigAssembler {
         clusterPodConfig.setNamespace(request.getNamespace());
         clusterPodConfig.setDeployYaml(request.getDeployYaml());
         clusterPodConfig.setImageId(request.getImageId());
-        clusterPodConfig.setAutoRefresh(request.getAutoRefresh());
         clusterPodConfig.setRemark(request.getRemark());
         return clusterPodConfig;
     }
@@ -65,7 +64,6 @@ public final class ClusterPodConfigAssembler {
         clusterPodConfig.setNamespace(request.getNamespace());
         clusterPodConfig.setDeployYaml(request.getDeployYaml());
         clusterPodConfig.setImageId(request.getImageId());
-        clusterPodConfig.setAutoRefresh(request.getAutoRefresh());
         clusterPodConfig.setRemark(request.getRemark());
         return clusterPodConfig;
     }
@@ -85,7 +83,6 @@ public final class ClusterPodConfigAssembler {
         param.setPodName(request.getPodName());
         param.setStatus(request.getStatus());
         param.setNamespace(request.getNamespace());
-        param.setAutoRefresh(request.getAutoRefresh());
         param.setCreateTimeBegin(request.getCreateTimeBegin());
         param.setCreateTimeEnd(request.getCreateTimeEnd());
         param.setUpdateTimeBegin(request.getUpdateTimeBegin());
@@ -113,7 +110,6 @@ public final class ClusterPodConfigAssembler {
         response.setNamespace(clusterPodConfig.getNamespace());
         response.setDeployYaml(clusterPodConfig.getDeployYaml());
         response.setImageId(clusterPodConfig.getImageId());
-        response.setAutoRefresh(clusterPodConfig.getAutoRefresh());
         response.setLastBuiltCommit(clusterPodConfig.getLastBuiltCommit());
         response.setCreateBy(clusterPodConfig.getCreateBy());
         response.setUpdateBy(clusterPodConfig.getUpdateBy());

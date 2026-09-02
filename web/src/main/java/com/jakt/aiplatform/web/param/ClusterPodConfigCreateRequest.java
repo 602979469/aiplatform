@@ -35,9 +35,6 @@ public class ClusterPodConfigCreateRequest extends BaseRequest {
     /** 关联 cluster_image.id（部署用，替代 git；可选，旧流程兼容）。 */
     private Long imageId;
 
-    /** 自动刷新开关（0关 1开）。 */
-    private Integer autoRefresh;
-
     /** 备注。 */
     @Size(max = 500, message = "备注长度不能超过 500")
     private String remark;

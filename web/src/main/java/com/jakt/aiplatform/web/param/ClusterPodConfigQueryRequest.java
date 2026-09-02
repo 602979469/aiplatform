@@ -25,9 +25,6 @@ public class ClusterPodConfigQueryRequest extends PageQueryRequest {
     /** 业务命名空间。 */
     private String namespace;
 
-    /** 自动刷新开关（0关 1开）。 */
-    private Integer autoRefresh;
-
     /** 创建时间起。 */
     private LocalDateTime createTimeBegin;
 

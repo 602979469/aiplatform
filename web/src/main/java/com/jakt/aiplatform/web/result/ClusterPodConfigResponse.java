@@ -38,9 +38,6 @@ public class ClusterPodConfigResponse extends BaseResult {
     /** 关联 cluster_image.id（部署用）。 */
     private Long imageId;
 
-    /** 自动刷新开关。 */
-    private Integer autoRefresh;
-
     /** 上次构建commit。 */
     private String lastBuiltCommit;
 

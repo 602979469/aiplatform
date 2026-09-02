@@ -8,7 +8,6 @@ CREATE TABLE `cluster_pod_config` (
   `pod_name` varchar(64) NOT NULL COMMENT '业务pod名称（镜像名）',
   `namespace` varchar(64) NOT NULL COMMENT '业务命名空间',
   `deploy_yaml` mediumtext NOT NULL COMMENT 'Deployment YAML',
-  `auto_refresh` tinyint NOT NULL DEFAULT '0' COMMENT '自动刷新开关（0关 1开）',
   `last_built_commit` varchar(64) DEFAULT NULL COMMENT '上次构建commit',
   `status` varchar(20) NOT NULL DEFAULT 'DRAFT' COMMENT '状态（DRAFT草稿/BUILDING构建中/BUILD_FAILED构建失败/PUBLISHED发布/RETIRED弃用）',
   `create_by` varchar(64) DEFAULT '' COMMENT '创建者',

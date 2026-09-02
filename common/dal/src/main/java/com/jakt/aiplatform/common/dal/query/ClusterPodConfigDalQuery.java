@@ -26,9 +26,6 @@ public class ClusterPodConfigDalQuery extends DalPageQuery {
     /** Deployment YAML。 */
     private String deployYaml;
 
-    /** 自动刷新开关。 */
-    private Integer autoRefresh;
-
     /** 上次构建commit。 */
     private String lastBuiltCommit;
 
