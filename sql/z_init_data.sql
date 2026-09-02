@@ -47,7 +47,7 @@ VALUES (1,   'AI 应用',    0, 1, '/ai',        '',                            
        (402, '配置管理',    400, 3, 'config',   'cluster/config/index',        'C', '0', '0', 'cluster:config:list',     'el-icon-s-tools',         '业务pod配置菜单'),
        (403, '实例管理',    400, 4, 'runtime',  'cluster/runtime/index',       'C', '0', '0', 'cluster:runtime:list',    'el-icon-monitor',         '实例管理菜单'),
        (404, '密钥管理',    400, 5, 'secret',   'cluster/secret/index',        'C', '0', '0', 'cluster:secret:list',     'el-icon-lock',            '集群密钥管理菜单'),
-       (500, '文件管理',    200, 4, 'file',     '',                            'M', '0', '0', null,                      'el-icon-folder',          '文件管理目录（系统管理下）'),
+       (500, '文件管理',    200, 4, 'file',     'ParentView',                  'M', '0', '0', null,                      'el-icon-folder',          '文件管理目录（系统管理下）'),
        (501, '文件列表',    500, 1, 'list',     'file/index',                  'C', '0', '0', 'file:list',               'el-icon-folder-opened',   '文件管理列表')
 ON DUPLICATE KEY UPDATE
     menu_name = VALUES(menu_name),
