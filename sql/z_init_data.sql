@@ -28,7 +28,7 @@ ON DUPLICATE KEY UPDATE
 -- 3. 用户-角色
 INSERT IGNORE INTO auth_user_role (user_id, role_id) VALUES (1, 1);
 
--- 4. 菜单（AI 应用 / 系统管理 / 系统监控 / 集群管理 / 文件管理）
+-- 4. 菜单（AI 应用 / 系统管理(含文件管理) / 系统监控 / 集群管理）
 INSERT INTO auth_menu (menu_id, menu_name, parent_id, order_num, path, component, menu_type, visible, status, perms, icon, remark)
 VALUES (1,   'AI 应用',    0, 1, '/ai',        '',                            'M', '0', '0', null,                      'el-icon-menu',           'AI 应用目录'),
        (100, 'AI 对话',    1, 1, 'chat',       'ai/chat/index',               'C', '0', '0', 'ai:chat:query',          'el-icon-chat-dot-round',  'AI 对话菜单'),
@@ -43,10 +43,11 @@ VALUES (1,   'AI 应用',    0, 1, '/ai',        '',                            
        (303, '系统日志',    300, 3, 'syslog',   'monitor/syslog/index',        'C', '0', '0', 'monitor:syslog:list',     'el-icon-tickets',         '系统日志菜单'),
        (400, '集群管理',    0, 4, '/cluster',   '',                            'M', '0', '0', null,                      'el-icon-s-data',          '集群管理目录'),
        (401, '数据大盘',    400, 1, 'dashboard', 'cluster/dashboard/index',    'C', '0', '0', 'cluster:dashboard:list',  'el-icon-data-line',       '集群大盘菜单'),
-       (402, '配置管理',    400, 2, 'config',   'cluster/config/index',        'C', '0', '0', 'cluster:config:list',     'el-icon-s-tools',         '业务pod配置菜单'),
-       (403, '实例管理',    400, 3, 'runtime',  'cluster/runtime/index',       'C', '0', '0', 'cluster:runtime:list',    'el-icon-monitor',         '实例管理菜单'),
-       (404, '密钥管理',    400, 4, 'secret',   'cluster/secret/index',        'C', '0', '0', 'cluster:secret:list',     'el-icon-lock',            '集群密钥管理菜单'),
-       (500, '文件管理',    0, 5, '/file',      '',                            'M', '0', '0', null,                      'el-icon-folder',          '文件管理目录'),
+       (405, '镜像管理',    400, 2, 'image',    'cluster/image/index',         'C', '0', '0', 'cluster:image:list',      'el-icon-picture-outline', '集群镜像管理菜单'),
+       (402, '配置管理',    400, 3, 'config',   'cluster/config/index',        'C', '0', '0', 'cluster:config:list',     'el-icon-s-tools',         '业务pod配置菜单'),
+       (403, '实例管理',    400, 4, 'runtime',  'cluster/runtime/index',       'C', '0', '0', 'cluster:runtime:list',    'el-icon-monitor',         '实例管理菜单'),
+       (404, '密钥管理',    400, 5, 'secret',   'cluster/secret/index',        'C', '0', '0', 'cluster:secret:list',     'el-icon-lock',            '集群密钥管理菜单'),
+       (500, '文件管理',    200, 4, 'file',     '',                            'M', '0', '0', null,                      'el-icon-folder',          '文件管理目录（系统管理下）'),
        (501, '文件列表',    500, 1, 'list',     'file/index',                  'C', '0', '0', 'file:list',               'el-icon-folder-opened',   '文件管理列表')
 ON DUPLICATE KEY UPDATE
     menu_name = VALUES(menu_name),
@@ -70,7 +71,7 @@ SELECT 1, menu_id FROM auth_menu WHERE status = '0';
 INSERT IGNORE INTO auth_role_menu (role_id, menu_id)
 SELECT 2, menu_id FROM auth_menu
 WHERE status = '0'
-  AND menu_id IN (100, 101, 303, 400, 401, 402, 403, 404, 500, 501);
+  AND menu_id IN (100, 101, 303, 400, 401, 402, 403, 404, 405, 500, 501);
 
 -- 6. AI 能力（镜像加速器：版本匹配）
 INSERT INTO sys_ai_capability
