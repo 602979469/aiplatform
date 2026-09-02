@@ -21,15 +21,6 @@ public class ClusterPodConfigDO extends BaseDO {
     /** 业务命名空间。 */
     private String namespace;
 
-    /** git仓库地址（可含token，敏感）。 */
-    private String gitUrl;
-
-    /** git分支。 */
-    private String gitBranch;
-
-    /** Dockerfile内容。 */
-    private String dockerfile;
-
     /** Deployment YAML。 */
     private String deployYaml;
 

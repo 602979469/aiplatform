@@ -25,9 +25,6 @@ public class ClusterPodConfigQueryRequest extends PageQueryRequest {
     /** 业务命名空间。 */
     private String namespace;
 
-    /** git分支。 */
-    private String gitBranch;
-
     /** 自动刷新开关（0关 1开）。 */
     private Integer autoRefresh;
 

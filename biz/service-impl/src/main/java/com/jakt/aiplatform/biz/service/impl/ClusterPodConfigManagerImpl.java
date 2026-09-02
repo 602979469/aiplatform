@@ -225,10 +225,8 @@ public class ClusterPodConfigManagerImpl implements ClusterPodConfigManager {
         copy.setResourceName(source.getResourceName() + "（副本）");
         copy.setPodName(buildCopyPodName(source.getPodName()));
         copy.setNamespace(source.getNamespace());
-        copy.setGitUrl(source.getGitUrl());
-        copy.setGitBranch(source.getGitBranch());
-        copy.setDockerfile(source.getDockerfile());
         copy.setDeployYaml(source.getDeployYaml());
+        copy.setImageId(source.getImageId());
         copy.setAutoRefresh(source.getAutoRefresh());
         copy.setRemark(source.getRemark());
         // 复制配置状态为草稿，不触发部署

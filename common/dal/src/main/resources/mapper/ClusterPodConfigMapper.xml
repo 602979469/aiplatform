@@ -3,7 +3,7 @@
 <mapper namespace="com.jakt.aiplatform.common.dal.mapper.ClusterPodConfigMapper">
 
     <sql id="selectColumns">
-        id, resource_name, pod_name, namespace, git_url, git_branch, dockerfile, deploy_yaml, image_id, auto_refresh, last_built_commit, status, create_by, update_by, remark, create_time, update_time
+        id, resource_name, pod_name, namespace, deploy_yaml, image_id, auto_refresh, last_built_commit, status, create_by, update_by, remark, create_time, update_time
     </sql>
 
     <sql id="queryConditions">
@@ -19,15 +19,6 @@
             </if>
             <if test="namespace != null and namespace != ''">
                 AND namespace = #{namespace}
-            </if>
-            <if test="gitUrl != null and gitUrl != ''">
-                AND git_url = #{gitUrl}
-            </if>
-            <if test="gitBranch != null and gitBranch != ''">
-                AND git_branch = #{gitBranch}
-            </if>
-            <if test="dockerfile != null and dockerfile != ''">
-                AND dockerfile = #{dockerfile}
             </if>
             <if test="deployYaml != null and deployYaml != ''">
                 AND deploy_yaml = #{deployYaml}
@@ -101,8 +92,8 @@
 
     <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO cluster_pod_config (resource_name, pod_name, namespace, git_url, git_branch, dockerfile, deploy_yaml, image_id, auto_refresh, last_built_commit, status, remark, create_time, update_time)
-        VALUES (#{resourceName}, #{podName}, #{namespace}, #{gitUrl}, #{gitBranch}, #{dockerfile}, #{deployYaml}, #{imageId}, #{autoRefresh}, #{lastBuiltCommit}, #{status}, #{remark}, NOW(), NOW())
+        INSERT INTO cluster_pod_config (resource_name, pod_name, namespace, deploy_yaml, image_id, auto_refresh, last_built_commit, status, remark, create_time, update_time)
+        VALUES (#{resourceName}, #{podName}, #{namespace}, #{deployYaml}, #{imageId}, #{autoRefresh}, #{lastBuiltCommit}, #{status}, #{remark}, NOW(), NOW())
     </insert>
 
     <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO">
@@ -110,9 +101,6 @@
         SET resource_name = #{resourceName},
             pod_name = #{podName},
             namespace = #{namespace},
-            git_url = #{gitUrl},
-            git_branch = #{gitBranch},
-            dockerfile = #{dockerfile},
             deploy_yaml = #{deployYaml},
             image_id = #{imageId},
             auto_refresh = #{autoRefresh},
@@ -123,7 +111,7 @@
     </update>
 
     <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO">
-        <if test="resourceName != null or podName != null or namespace != null or gitUrl != null or gitBranch != null or dockerfile != null or deployYaml != null or imageId != null or autoRefresh != null or lastBuiltCommit != null or status != null or remark != null">
+        <if test="resourceName != null or podName != null or namespace != null or deployYaml != null or imageId != null or autoRefresh != null or lastBuiltCommit != null or status != null or remark != null">
             UPDATE cluster_pod_config
         <set>
             <if test="resourceName != null">
@@ -134,15 +122,6 @@
             </if>
             <if test="namespace != null">
                 namespace = #{namespace},
-            </if>
-            <if test="gitUrl != null">
-                git_url = #{gitUrl},
-            </if>
-            <if test="gitBranch != null">
-                git_branch = #{gitBranch},
-            </if>
-            <if test="dockerfile != null">
-                dockerfile = #{dockerfile},
             </if>
             <if test="deployYaml != null">
                 deploy_yaml = #{deployYaml},

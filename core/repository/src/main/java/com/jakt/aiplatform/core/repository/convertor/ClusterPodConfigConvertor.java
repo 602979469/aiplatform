@@ -34,9 +34,6 @@ public final class ClusterPodConfigConvertor {
         target.setResourceName(source.getResourceName());
         target.setPodName(source.getPodName());
         target.setNamespace(source.getNamespace());
-        target.setGitUrl(source.getGitUrl());
-        target.setGitBranch(source.getGitBranch());
-        target.setDockerfile(source.getDockerfile());
         target.setDeployYaml(source.getDeployYaml());
         target.setImageId(source.getImageId());
         target.setAutoRefresh(source.getAutoRefresh());
@@ -62,9 +59,6 @@ public final class ClusterPodConfigConvertor {
         target.setResourceName(source.getResourceName());
         target.setPodName(source.getPodName());
         target.setNamespace(source.getNamespace());
-        target.setGitUrl(source.getGitUrl());
-        target.setGitBranch(source.getGitBranch());
-        target.setDockerfile(source.getDockerfile());
         target.setDeployYaml(source.getDeployYaml());
         target.setImageId(source.getImageId());
         target.setAutoRefresh(source.getAutoRefresh());
@@ -95,9 +89,6 @@ public final class ClusterPodConfigConvertor {
         target.setResourceName(source.getResourceName());
         target.setPodName(source.getPodName());
         target.setNamespace(source.getNamespace());
-        target.setGitUrl(source.getGitUrl());
-        target.setGitBranch(source.getGitBranch());
-        target.setDockerfile(source.getDockerfile());
         target.setDeployYaml(source.getDeployYaml());
         target.setAutoRefresh(source.getAutoRefresh());
         target.setLastBuiltCommit(source.getLastBuiltCommit());

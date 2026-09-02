@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS `cluster_image` (
   `build_retry_count` INT          NOT NULL DEFAULT 0 COMMENT '构建失败已重试次数（≤3）',
   `build_log_path`    VARCHAR(512) DEFAULT NULL COMMENT '构建日志路径',
   `create_by`         VARCHAR(64)  DEFAULT '' COMMENT '创建者',
-  `create_time`       DATETIME     DEFAULT NULL COMMENT '创建时间',
+  `create_time`       DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by`         VARCHAR(64)  DEFAULT '' COMMENT '更新者',
-  `update_time`       DATETIME     DEFAULT NULL COMMENT '更新时间',
+  `update_time`       DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `remark`            VARCHAR(500) DEFAULT NULL COMMENT '备注',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_image_version` (`image_name`, `version`)

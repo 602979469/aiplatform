@@ -40,9 +40,6 @@ public final class ClusterPodConfigAssembler {
         clusterPodConfig.setResourceName(request.getResourceName());
         clusterPodConfig.setPodName(request.getPodName());
         clusterPodConfig.setNamespace(request.getNamespace());
-        clusterPodConfig.setGitUrl(request.getGitUrl());
-        clusterPodConfig.setGitBranch(request.getGitBranch());
-        clusterPodConfig.setDockerfile(request.getDockerfile());
         clusterPodConfig.setDeployYaml(request.getDeployYaml());
         clusterPodConfig.setImageId(request.getImageId());
         clusterPodConfig.setAutoRefresh(request.getAutoRefresh());
@@ -66,9 +63,6 @@ public final class ClusterPodConfigAssembler {
         clusterPodConfig.setResourceName(request.getResourceName());
         clusterPodConfig.setPodName(request.getPodName());
         clusterPodConfig.setNamespace(request.getNamespace());
-        clusterPodConfig.setGitUrl(request.getGitUrl());
-        clusterPodConfig.setGitBranch(request.getGitBranch());
-        clusterPodConfig.setDockerfile(request.getDockerfile());
         clusterPodConfig.setDeployYaml(request.getDeployYaml());
         clusterPodConfig.setImageId(request.getImageId());
         clusterPodConfig.setAutoRefresh(request.getAutoRefresh());
@@ -91,7 +85,6 @@ public final class ClusterPodConfigAssembler {
         param.setPodName(request.getPodName());
         param.setStatus(request.getStatus());
         param.setNamespace(request.getNamespace());
-        param.setGitBranch(request.getGitBranch());
         param.setAutoRefresh(request.getAutoRefresh());
         param.setCreateTimeBegin(request.getCreateTimeBegin());
         param.setCreateTimeEnd(request.getCreateTimeEnd());
@@ -118,9 +111,6 @@ public final class ClusterPodConfigAssembler {
         response.setPodName(clusterPodConfig.getPodName());
         response.setStatus(clusterPodConfig.getStatus());
         response.setNamespace(clusterPodConfig.getNamespace());
-        response.setGitUrl(clusterPodConfig.getGitUrl());
-        response.setGitBranch(clusterPodConfig.getGitBranch());
-        response.setDockerfile(clusterPodConfig.getDockerfile());
         response.setDeployYaml(clusterPodConfig.getDeployYaml());
         response.setImageId(clusterPodConfig.getImageId());
         response.setAutoRefresh(clusterPodConfig.getAutoRefresh());

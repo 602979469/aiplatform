@@ -97,80 +97,47 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
                 ErrorCodeEnum.PARAM_INVALID,
                 "集群中已存在同名 Deployment，请先删除或停用后再部署: " + deploymentName);
 
-        // 2. 准备文件（本地临时目录 → 上传到 master 挂载目录）
-        String remoteDockerfile = appDir + "/Dockerfile";
+        // 2. 仅支持镜像流程：绑定已发布镜像（cluster_image）部署；旧 git 流程已下线
+        AssertUtil.throwErrWhenTrue(config.getImageId() == null,
+                ErrorCodeEnum.PARAM_INVALID,
+                "该配置未绑定已发布镜像（旧 git 流程已下线），请先在配置中选择镜像后部署");
+
+        // 3. 准备文件（本地临时目录 → 上传到 master 挂载目录）
         String remoteDeployYaml = appDir + "/deployment.yaml";
-        String remoteSrcDir = appDir + "/src";
         try {
             Path localDir = Files.createTempDirectory("cluster-deploy-");
-            Path localDockerfile = localDir.resolve("Dockerfile");
             Path localDeployYaml = localDir.resolve("deployment.yaml");
             Files.writeString(localDeployYaml, config.getDeployYaml(), StandardCharsets.UTF_8);
 
-            sshClient.execute(ciProperties.getMasterHost(), "mkdir -p " + appDir + " " + remoteSrcDir, 60);
+            sshClient.execute(ciProperties.getMasterHost(), "mkdir -p " + appDir, 60);
             sshClient.uploadFile(ciProperties.getMasterHost(), localDeployYaml.toString(), remoteDeployYaml);
-            // 旧 git 流程才需要上传 Dockerfile；镜像流程由镜像管理侧维护
-            if (config.getDockerfile() != null) {
-                Files.writeString(localDockerfile, config.getDockerfile(), StandardCharsets.UTF_8);
-                sshClient.uploadFile(ciProperties.getMasterHost(), localDockerfile.toString(), remoteDockerfile);
-            }
         } catch (IOException e) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "部署文件准备失败: " + e.getMessage());
         }
 
-        // 3a. 镜像流程（新）：绑定 PUBLISHED 镜像 → deploy.sh（脚本 TODO）
-        if (config.getImageId() != null) {
-            ClusterImage image = clusterImageService.checkPublished(config.getImageId());
-            String harborRef = image.getHarborRef();
-            // 部署日志落盘：deploy-{时间戳}.log（getBuildLog 读该目录最新日志）
-            String deployLog = appDir + "/deploy-" + System.currentTimeMillis() + ".log";
-            SshResult deployResult = sshClient.execute(ciProperties.getMasterHost(),
-                    "bash " + ciProperties.getWorkDir() + "/bin/deploy.sh "
-                            + config.getNamespace() + " " + remoteDeployYaml + " "
-                            + harborRef + " > " + deployLog + " 2>&1",
-                    DEPLOY_TIMEOUT_SECONDS);
-            if (!deployResult.isSuccess()) {
-                throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
-                        "镜像部署失败: " + shortOutput(deployResult.getOutput()));
-            }
-            ClusterPodConfig update = new ClusterPodConfig();
-            update.setId(config.getId());
-            update.setLastBuiltCommit(image.getVersion());
-            clusterPodConfigService.updateByCondition(update);
-            LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
-                    "业务pod镜像部署完成 id={} deployment={} image={}",
-                    config.getId(), deploymentName, harborRef);
-            return;
-        }
-
-        // 3. 统一流水线（pipeline.sh）：lock + state 判断（本地 commit 与最新一致则跳过构建）
-        //    → fetch_source（需要时）→ build（master+worker 双架构）→ deploy（资源已最新则跳过）
-        //    旧 git 流程（deprecated）：新配置请走镜像(image_id)
-        SshResult pipelineResult = sshClient.execute(ciProperties.getMasterHost(),
-                "bash " + ciProperties.getWorkDir() + "/bin/pipeline.sh "
-                        + config.getId() + " " + config.getPodName() + " "
-                        + "'" + config.getGitUrl() + "' " + config.getGitBranch() + " "
-                        + remoteSrcDir + " " + appDir + " " + config.getNamespace() + " "
-                        + remoteDeployYaml + " " + remoteDockerfile + " "
-                        + ciProperties.getWorkerHost(),
+        // 4. 镜像流程：绑定 PUBLISHED 镜像 → deploy.sh（脚本 TODO）
+        ClusterImage image = clusterImageService.checkPublished(config.getImageId());
+        String harborRef = image.getHarborRef();
+        // 部署日志落盘：deploy-{时间戳}.log（getBuildLog 读该目录最新日志）
+        String deployLog = appDir + "/deploy-" + System.currentTimeMillis() + ".log";
+        SshResult deployResult = sshClient.execute(ciProperties.getMasterHost(),
+                "bash " + ciProperties.getWorkDir() + "/bin/deploy.sh "
+                        + config.getNamespace() + " " + remoteDeployYaml + " "
+                        + harborRef + " > " + deployLog + " 2>&1",
                 DEPLOY_TIMEOUT_SECONDS);
-        if (!pipelineResult.isSuccess()) {
+        if (!deployResult.isSuccess()) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
-                    "构建部署失败: " + shortOutput(pipelineResult.getOutput()));
+                    "镜像部署失败: " + shortOutput(deployResult.getOutput()));
         }
-        // 4. 镜像 tag = 流水线最后一行输出（commit 短哈希，用户不接触镜像版本号）
-        String imageTag = lastLine(pipelineResult.getOutput());
-        AssertUtil.throwErrWhenBlank(imageTag, ErrorCodeEnum.SYSTEM_ERROR, "镜像 tag 为空");
 
-        // 7. 记录本次构建 commit（自动刷新比对用）
+        // 5. 记录本次部署镜像版本（实时管理展示用）
         ClusterPodConfig update = new ClusterPodConfig();
         update.setId(config.getId());
-        update.setLastBuiltCommit(imageTag);
+        update.setLastBuiltCommit(image.getVersion());
         clusterPodConfigService.updateByCondition(update);
-
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE,
-                "业务pod部署完成 id={} deployment={} image={}:{}",
-                config.getId(), deploymentName, config.getPodName(), imageTag);
+                "业务pod镜像部署完成 id={} deployment={} image={}",
+                config.getId(), deploymentName, harborRef);
     }
 
     @Override
