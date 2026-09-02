@@ -71,7 +71,7 @@ SELECT 1, menu_id FROM auth_menu WHERE status = '0';
 INSERT IGNORE INTO auth_role_menu (role_id, menu_id)
 SELECT 2, menu_id FROM auth_menu
 WHERE status = '0'
-  AND menu_id IN (100, 101, 303, 400, 401, 402, 403, 404, 405, 500, 501);
+  AND menu_id IN (100, 101, 200, 303, 400, 401, 402, 403, 404, 405, 500, 501);
 
 -- 6. AI 能力（镜像加速器：版本匹配）
 INSERT INTO sys_ai_capability
