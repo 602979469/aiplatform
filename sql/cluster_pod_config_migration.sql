@@ -24,3 +24,12 @@ ALTER TABLE cluster_pod_config ADD COLUMN status varchar(20) NOT NULL DEFAULT 'D
 
 -- 4. pod_name 唯一
 ALTER TABLE cluster_pod_config ADD UNIQUE KEY uk_pod_name (pod_name);
+
+-- ------------------------------------------------------------------
+-- 5. git/dockerfile 三列改为可空（已废弃：新流程绑定 cluster_image.id）
+--    幂等（MODIFY 可重复执行），用于已有库的原地升级
+-- ------------------------------------------------------------------
+ALTER TABLE cluster_pod_config
+  MODIFY COLUMN git_url VARCHAR(512) NULL COMMENT '废弃（保留兼容旧数据，新流程改用 image_id 绑定已发布镜像）',
+  MODIFY COLUMN git_branch VARCHAR(128) NULL COMMENT '废弃（保留兼容旧数据）',
+  MODIFY COLUMN dockerfile TEXT NULL COMMENT '废弃（保留兼容旧数据）';
