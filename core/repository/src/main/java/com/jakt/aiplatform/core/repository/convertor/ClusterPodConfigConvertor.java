@@ -36,7 +36,6 @@ public final class ClusterPodConfigConvertor {
         target.setNamespace(source.getNamespace());
         target.setDeployYaml(source.getDeployYaml());
         target.setImageId(source.getImageId());
-        target.setAutoRefresh(source.getAutoRefresh());
         target.setLastBuiltCommit(source.getLastBuiltCommit());
         target.setStatus(BaseEnum.fromCode(ClusterPodConfigStatusEnum.class, source.getStatus()));
         target.setCreateBy(source.getCreateBy());
@@ -61,7 +60,6 @@ public final class ClusterPodConfigConvertor {
         target.setNamespace(source.getNamespace());
         target.setDeployYaml(source.getDeployYaml());
         target.setImageId(source.getImageId());
-        target.setAutoRefresh(source.getAutoRefresh());
         target.setLastBuiltCommit(source.getLastBuiltCommit());
         target.setStatus(ObjectUtil.isNull(source.getStatus()) ? null : source.getStatus().getCode());
         target.setCreateBy(source.getCreateBy());
@@ -90,7 +88,6 @@ public final class ClusterPodConfigConvertor {
         target.setPodName(source.getPodName());
         target.setNamespace(source.getNamespace());
         target.setDeployYaml(source.getDeployYaml());
-        target.setAutoRefresh(source.getAutoRefresh());
         target.setLastBuiltCommit(source.getLastBuiltCommit());
         target.setStatus(ObjectUtil.isNull(source.getStatus()) ? null : source.getStatus().getCode());
         target.setCreateBy(source.getCreateBy());
