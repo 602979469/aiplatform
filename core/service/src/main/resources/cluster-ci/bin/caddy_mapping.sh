@@ -35,8 +35,8 @@ case "${ACTION}" in
 esac
 
 if [ "${ACTION}" != "list" ]; then
-  if ! echo "${DOMAIN}" | grep -qE '^[a-z0-9]([a-z0-9-]*[a-z0-9])?\.jakt\.online$'; then
-    echo "域名不合法（只允许 xxxx.jakt.online 形式）: ${DOMAIN}" >&2
+  if ! echo "${DOMAIN}" | grep -qE '^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+jakt\.online$'; then
+    echo "域名不合法（只允许 *.jakt.online，支持多级）: ${DOMAIN}" >&2
     exit 1
   fi
   if ! echo "${UPSTREAM}" | grep -qE '^[A-Za-z0-9._-]+:[0-9]{1,5}$'; then

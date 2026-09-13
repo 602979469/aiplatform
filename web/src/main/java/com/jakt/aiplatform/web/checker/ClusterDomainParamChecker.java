@@ -16,7 +16,7 @@ public final class ClusterDomainParamChecker {
 
     /** 只允许 xxxx.jakt.online。 */
     private static final Pattern DOMAIN_PATTERN =
-            Pattern.compile("^[a-z0-9]([a-z0-9-]*[a-z0-9])?\\.jakt\\.online$");
+            Pattern.compile("^([a-z0-9]([a-z0-9-]*[a-z0-9])?\\.)+jakt\\.online$");
 
     /** 反代上游：host:port（如 127.0.0.1:8080）。 */
     private static final Pattern UPSTREAM_PATTERN =
