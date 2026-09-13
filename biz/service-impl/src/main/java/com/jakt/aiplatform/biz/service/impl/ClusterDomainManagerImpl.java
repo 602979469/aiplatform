@@ -86,6 +86,16 @@ public class ClusterDomainManagerImpl implements ClusterDomainManager {
         }
     }
 
+    @Override
+    public void delete(String domain) {
+        SshResult result = sshClient.execute(ciProperties.getMasterHost(),
+                "bash " + scriptPath() + " delete '" + domain + "'", 120);
+        if (!result.isSuccess()) {
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
+                    "删除公网映射失败: " + StrUtil.maxLength(result.getOutput(), 300));
+        }
+    }
+
     /**
      * 脚本绝对路径。
      *

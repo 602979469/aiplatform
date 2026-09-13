@@ -1,14 +1,14 @@
 #!/bin/bash
-# 公网域名映射（只管理公网 Caddy，不创建/删除集群 Ingress）
+# 公网域名映射（只管理公网 Caddy；集群 Ingress 仅作域名来源，不改动）
 #
-# 数据来源：
-#   - 集群 Ingress 的域名（kubectl 读取，作为「ingress 类型」候选，页面只做 Caddy 开关）
-#   - 公网 Caddy 的站点块（/etc/caddy/Caddyfile 解析，含 upstream）
+# 关闭（disable）采用「注释站点块」实现：域名仍保留在配置文件里（列表能看到、可再次开启），
+# 删除（delete）才会真正把站点块从配置里移除。
 #
 # 用法:
-#   caddy_mapping.sh list                       列出全部域名（集群 Ingress ∪ Caddy 站点，JSON）
-#   caddy_mapping.sh enable <domain> [upstream] 开启/新增公网映射（默认 127.0.0.1:8080）+ reload
-#   caddy_mapping.sh disable <domain>           关闭/删除公网映射 + reload
+#   caddy_mapping.sh list                        列出全部域名（集群 Ingress ∪ Caddy，含已关闭），JSON
+#   caddy_mapping.sh enable <domain> [upstream]  开启/新增（默认 127.0.0.1:8080）+ reload
+#   caddy_mapping.sh disable <domain>            关闭（注释站点块，保留记录）+ reload
+#   caddy_mapping.sh delete <domain>             彻底删除站点块（含已关闭记录）+ reload
 #
 # 前置: master 上存在免密私钥（默认 /home/ubuntu/.ssh/caddy_manage），公钥已加入公网服务器 root
 set -euo pipefail
@@ -24,13 +24,13 @@ DOMAIN="${2:-}"
 UPSTREAM="${3:-${DEFAULT_UPSTREAM}}"
 
 usage() {
-  echo "用法: caddy_mapping.sh <list|enable|disable> [domain] [upstream]" >&2
+  echo "用法: caddy_mapping.sh <list|enable|disable|delete> [domain] [upstream]" >&2
   exit 1
 }
 
 [ -n "${ACTION}" ] || usage
 case "${ACTION}" in
-  list|enable|disable) ;;
+  list|enable|disable|delete) ;;
   *) usage ;;
 esac
 
@@ -39,7 +39,7 @@ if [ "${ACTION}" != "list" ]; then
     echo "域名不合法（只允许 *.jakt.online，支持多级）: ${DOMAIN}" >&2
     exit 1
   fi
-  if ! echo "${UPSTREAM}" | grep -qE '^[A-Za-z0-9._-]+:[0-9]{1,5}$'; then
+  if [ "${ACTION}" = "enable" ] && ! echo "${UPSTREAM}" | grep -qE '^[A-Za-z0-9._-]+:[0-9]{1,5}$'; then
     echo "上游地址不合法（形如 127.0.0.1:8080）: ${UPSTREAM}" >&2
     exit 1
   fi
@@ -53,7 +53,6 @@ d = json.load(sys.stdin)
 out = []
 for it in d.get("items", []):
     ns = it["metadata"]["namespace"]
-    name = it["metadata"]["name"]
     for rule in (it.get("spec", {}) or {}).get("rules", []) or []:
         host = rule.get("host")
         if not host:
@@ -63,7 +62,6 @@ for it in d.get("items", []):
             port = (b.get("port", {}) or {})
             out.append({
                 "domain": host,
-                "ingress": name,
                 "namespace": ns,
                 "service": b.get("name"),
                 "port": port.get("number") or port.get("name"),
@@ -89,53 +87,70 @@ upstream = sys.argv[3] if len(sys.argv) > 3 else '127.0.0.1:8080'
 path = '/etc/caddy/Caddyfile'
 
 
-def read_text():
+def read_lines():
     with open(path, 'r', encoding='utf-8') as f:
-        return f.read()
+        return f.read().splitlines()
 
 
-def find_block(lines, domain):
-    """返回 (start, end) 行号区间；找不到返回 None。"""
+def header_re(domain, disabled):
+    prefix = r'#\s*' if disabled else ''
+    return re.compile(r'^' + prefix + re.escape(domain) + r'\s*\{')
+
+
+def strip_comment(line):
+    if line.startswith('# '):
+        return line[2:]
+    if line.startswith('#'):
+        return line[1:]
+    return line
+
+
+def find_block(lines, domain, disabled=False):
+    """返回 (start, end)；找不到返回 None。disabled=True 时匹配被注释的块。"""
+    rx = header_re(domain, disabled)
     start = None
     for i, line in enumerate(lines):
-        if re.match(r'^' + re.escape(domain) + r'\s*\{', line.strip()):
+        if rx.match(line.strip()):
             start = i
             break
     if start is None:
         return None
     depth = 0
     for j in range(start, len(lines)):
-        depth += lines[j].count('{') - lines[j].count('}')
+        text = strip_comment(lines[j]) if disabled else lines[j]
+        depth += text.count('{') - text.count('}')
         if depth <= 0:
             return start, j
     return None
 
 
-def list_blocks(lines):
-    """解析站点块：返回 [{domain, upstream}]。"""
+def parse_all(lines):
+    """解析全部站点块（含被注释关闭的），返回 [{domain, upstream, caddy}]。"""
     out = []
     i = 0
     while i < len(lines):
         s = lines[i].strip()
-        if s and not s.startswith('#') and re.match(r'^[a-z0-9][a-z0-9.\-]*\s*\{$', s):
-            domain = s.split()[0]
-            rng = find_block(lines, domain)
+        m = re.match(r'^(#\s*)?([a-z0-9][a-z0-9.\-]*)\s*\{\s*$', s)
+        if m and (not s.startswith('#') or m.group(1)):
+            disabled = bool(m.group(1))
+            dom = m.group(2)
+            rng = find_block(lines, dom, disabled)
             end = rng[1] if rng else i
-            body = '\n'.join(lines[i:end + 1])
-            m = re.search(r'reverse_proxy\s+([^\s{]+)', body)
-            out.append({'domain': domain, 'upstream': m.group(1) if m else None})
+            body = '\n'.join(strip_comment(x) if disabled else x for x in lines[i:end + 1])
+            up = re.search(r'reverse_proxy\s+([^\s{]+)', body)
+            out.append({'domain': dom, 'upstream': up.group(1) if up else None, 'caddy': not disabled})
             i = end + 1
             continue
         i += 1
     return out
 
 
-def apply_and_reload(new_text):
+def apply_and_reload(new_lines):
     backup = '{}.bak.{}'.format(path, time.strftime('%Y%m%d%H%M%S'))
     shutil.copy2(path, backup)
     tmp = path + '.tmp'
     with open(tmp, 'w', encoding='utf-8') as f:
-        f.write(new_text)
+        f.write('\n'.join(new_lines).rstrip('\n') + '\n')
     check = subprocess.run(['/usr/local/bin/caddy', 'validate', '--config', tmp],
                            capture_output=True, text=True)
     if check.returncode != 0:
@@ -152,18 +167,25 @@ def apply_and_reload(new_text):
     print('backup=' + backup)
 
 
-text = read_text()
-lines = text.splitlines()
+lines = read_lines()
 
 if action == 'list':
-    print(json.dumps(list_blocks(lines), ensure_ascii=False))
+    print(json.dumps(parse_all(lines), ensure_ascii=False))
     sys.exit(0)
 
 if action == 'enable':
-    if find_block(lines, domain):
-        print('已存在: ' + domain)
+    disabled_rng = find_block(lines, domain, True)
+    if disabled_rng:
+        start, end = disabled_rng
+        for i in range(start, end + 1):
+            lines[i] = strip_comment(lines[i])
+        apply_and_reload(lines)
+        print('已开启: ' + domain)
         sys.exit(0)
-    block = [
+    if find_block(lines, domain, False):
+        print('已开启: ' + domain)
+        sys.exit(0)
+    lines += [
         '',
         domain + ' {',
         '\tencode zstd gzip',
@@ -174,19 +196,35 @@ if action == 'enable':
         '\t}',
         '}',
     ]
-    apply_and_reload(text.rstrip('\n') + '\n' + '\n'.join(block) + '\n')
+    apply_and_reload(lines)
     print('已开启: ' + domain + ' -> ' + upstream)
     sys.exit(0)
 
 if action == 'disable':
-    rng = find_block(lines, domain)
-    if not rng:
+    active = find_block(lines, domain, False)
+    if not active:
+        print('已关闭: ' + domain)
+        sys.exit(0)
+    start, end = active
+    for i in range(start, end + 1):
+        lines[i] = '# ' + lines[i]
+    apply_and_reload(lines)
+    print('已关闭（保留配置，可再次开启）: ' + domain)
+    sys.exit(0)
+
+if action == 'delete':
+    removed = False
+    for disabled in (False, True):
+        rng = find_block(lines, domain, disabled)
+        if rng:
+            start, end = rng
+            del lines[start:end + 1]
+            removed = True
+    if not removed:
         print('不存在: ' + domain)
         sys.exit(0)
-    start, end = rng
-    new_lines = lines[:start] + lines[end + 1:]
-    apply_and_reload('\n'.join(new_lines).rstrip('\n') + '\n')
-    print('已关闭: ' + domain)
+    apply_and_reload(lines)
+    print('已删除: ' + domain)
     sys.exit(0)
 
 print('未知操作: ' + action)
@@ -202,7 +240,6 @@ case "${ACTION}" in
 import json, os
 caddy = {item["domain"]: item for item in json.loads(os.environ["CADDY_JSON"])}
 ingress = json.loads(os.environ["INGRESS_JSON"])
-# 站点主域名：置顶、页面不可删除
 PRIMARY = {"jakt.online", "www.jakt.online"}
 by_domain = {}
 for item in ingress:
@@ -214,11 +251,10 @@ for d in domains:
     cad = caddy.get(d) or {}
     out.append({
         "domain": d,
-        "caddy": d in caddy,
+        "caddy": bool(cad.get("caddy")),
         "primary": d in PRIMARY,
         "type": "ingress" if ing else "custom",
         "upstream": cad.get("upstream"),
-        "ingressName": (ing or {}).get("ingress"),
         "namespace": (ing or {}).get("namespace"),
         "service": (ing or {}).get("service"),
         "port": (ing or {}).get("port"),
@@ -232,5 +268,8 @@ print(json.dumps(out, ensure_ascii=False))
     ;;
   disable)
     caddy_py disable
+    ;;
+  delete)
+    caddy_py delete
     ;;
 esac

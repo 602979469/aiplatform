@@ -4,6 +4,7 @@ import com.jakt.aiplatform.biz.service.ClusterDomainManager;
 import com.jakt.aiplatform.biz.service.ClusterDomainView;
 import com.jakt.aiplatform.web.checker.ClusterDomainParamChecker;
 import com.jakt.aiplatform.web.param.ClusterDomainDisableRequest;
+import com.jakt.aiplatform.web.param.ClusterDomainDeleteRequest;
 import com.jakt.aiplatform.web.param.ClusterDomainEnableRequest;
 import com.jakt.aiplatform.web.result.ApiResult;
 import com.jakt.aiplatform.web.result.ClusterDomainResponse;
@@ -74,6 +75,24 @@ public class ClusterDomainController {
             @Override
             public Void execute(ClusterDomainDisableRequest param) {
                 clusterDomainManager.disable(param.getDomain());
+                return null;
+            }
+        });
+    }
+
+    /** 彻底删除公网映射（移除 Caddy 站点块，含已关闭记录）。 */
+    @PostMapping("/delete")
+    public ApiResult<Void> delete(@RequestBody ClusterDomainDeleteRequest request) {
+        return ApiTemplate.execute(request, new ApiTemplate.Callback<ClusterDomainDeleteRequest, Void>() {
+
+            @Override
+            public void beforeService(ClusterDomainDeleteRequest param) {
+                ClusterDomainParamChecker.checkDeleteRequest(param);
+            }
+
+            @Override
+            public Void execute(ClusterDomainDeleteRequest param) {
+                clusterDomainManager.delete(param.getDomain());
                 return null;
             }
         });

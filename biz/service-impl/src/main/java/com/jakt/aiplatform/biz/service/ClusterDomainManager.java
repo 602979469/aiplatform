@@ -23,9 +23,16 @@ public interface ClusterDomainManager {
     void enable(String domain, String upstream);
 
     /**
-     * 关闭公网映射（删除 Caddy 站点块 + reload），不影响集群 Ingress。
+     * 关闭公网映射（注释 Caddy 站点块 + reload，记录保留，可再次开启），不影响集群 Ingress。
      *
      * @param domain 完整域名
      */
     void disable(String domain);
+
+    /**
+     * 彻底删除公网映射（移除 Caddy 站点块，含已关闭记录）。
+     *
+     * @param domain 完整域名
+     */
+    void delete(String domain);
 }

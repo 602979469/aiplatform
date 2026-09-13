@@ -5,6 +5,7 @@ import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.common.framework.tools.ParamValidator;
 import com.jakt.aiplatform.common.util.error.CommonErrorCode;
 import com.jakt.aiplatform.web.param.ClusterDomainDisableRequest;
+import com.jakt.aiplatform.web.param.ClusterDomainDeleteRequest;
 import com.jakt.aiplatform.web.param.ClusterDomainEnableRequest;
 
 import java.util.regex.Pattern;
@@ -36,6 +37,12 @@ public final class ClusterDomainParamChecker {
     }
 
     public static void checkDisableRequest(ClusterDomainDisableRequest request) {
+        AssertUtil.throwErrWhenNull(request, CommonErrorCode.PARAM_INVALID, "参数不能为空");
+        ParamValidator.validate(request);
+        checkDomain(request.getDomain());
+    }
+
+    public static void checkDeleteRequest(ClusterDomainDeleteRequest request) {
         AssertUtil.throwErrWhenNull(request, CommonErrorCode.PARAM_INVALID, "参数不能为空");
         ParamValidator.validate(request);
         checkDomain(request.getDomain());
