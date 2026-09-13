@@ -175,16 +175,6 @@ spec:
                 name: aiplatform
                 port:
                   number: 8080
-    - host: aiplatform.jakt.online
-      http:
-        paths:
-          - path: /prod-api(/|$)(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: aiplatform
-                port:
-                  number: 8080
     - host: www.aiplatform.jakt.online
       http:
         paths:
@@ -196,30 +186,6 @@ spec:
                 port:
                   number: 8080
     - host: jakt.online
-      http:
-        paths:
-          - path: /prod-api(/|$)(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: aiplatform
-                port:
-                  number: 8080
----
-# 内网专用入口：dashboard.jakt.online 只在内网 hosts 解析，不加入公网 ingress
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: aiplatform-inner
-  namespace: tsk
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: "500m"
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: dashboard.jakt.online
       http:
         paths:
           - path: /prod-api(/|$)(.*)
