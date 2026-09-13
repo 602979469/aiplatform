@@ -51,6 +51,7 @@ public class ClusterDomainManagerImpl implements ClusterDomainManager {
             ClusterDomainView view = new ClusterDomainView();
             view.setDomain(obj.getStr("domain"));
             view.setCaddy(obj.getBool("caddy"));
+            view.setPrimary(obj.getBool("primary"));
             view.setType(obj.getStr("type"));
             view.setUpstream(obj.getStr("upstream"));
             view.setNamespace(obj.getStr("namespace"));

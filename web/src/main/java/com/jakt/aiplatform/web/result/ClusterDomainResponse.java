@@ -14,6 +14,9 @@ public class ClusterDomainResponse {
     /** 是否已配置公网 Caddy 站点块。 */
     private Boolean caddy;
 
+    /** 是否站点主域名（置顶且不可删除）。 */
+    private Boolean primary;
+
     /** 类型：ingress / custom。 */
     private String type;
 

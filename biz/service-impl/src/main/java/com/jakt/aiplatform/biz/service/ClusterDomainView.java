@@ -14,6 +14,9 @@ public class ClusterDomainView {
     /** 是否已配置公网 Caddy 站点块。 */
     private Boolean caddy;
 
+    /** 是否站点主域名（jakt.online / www.jakt.online）：置顶且不可删除。 */
+    private Boolean primary;
+
     /** 类型：ingress（集群已有 Ingress 的域名） / custom（仅公网 Caddy 的自定义域名）。 */
     private String type;
 

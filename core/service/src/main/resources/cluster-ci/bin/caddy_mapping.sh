@@ -202,6 +202,8 @@ case "${ACTION}" in
 import json, os
 caddy = {item["domain"]: item for item in json.loads(os.environ["CADDY_JSON"])}
 ingress = json.loads(os.environ["INGRESS_JSON"])
+# 站点主域名：置顶、页面不可删除
+PRIMARY = {"jakt.online", "www.jakt.online"}
 by_domain = {}
 for item in ingress:
     by_domain.setdefault(item["domain"], item)
@@ -213,6 +215,7 @@ for d in domains:
     out.append({
         "domain": d,
         "caddy": d in caddy,
+        "primary": d in PRIMARY,
         "type": "ingress" if ing else "custom",
         "upstream": cad.get("upstream"),
         "ingressName": (ing or {}).get("ingress"),
@@ -220,6 +223,7 @@ for d in domains:
         "service": (ing or {}).get("service"),
         "port": (ing or {}).get("port"),
     })
+out.sort(key=lambda r: (not r["primary"], r["domain"]))
 print(json.dumps(out, ensure_ascii=False))
 '
     ;;

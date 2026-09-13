@@ -89,6 +89,7 @@ public class ClusterDomainController {
         ClusterDomainResponse response = new ClusterDomainResponse();
         response.setDomain(view.getDomain());
         response.setCaddy(view.getCaddy());
+        response.setPrimary(view.getPrimary());
         response.setType(view.getType());
         response.setUpstream(view.getUpstream());
         response.setNamespace(view.getNamespace());
