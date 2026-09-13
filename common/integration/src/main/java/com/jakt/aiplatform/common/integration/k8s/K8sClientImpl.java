@@ -1,6 +1,8 @@
 package com.jakt.aiplatform.common.integration.k8s;
 
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.common.integration.exception.AiIntegrationErrorCode;
@@ -30,6 +32,7 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -97,12 +100,23 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
     public List<K8sNodeMetric> listNodeMetrics() {
         try {
             List<Node> nodes = kubernetesClient.nodes().list().getItems();
+            Map<String, NodeAllocation> allocations = collectNodeAllocations();
             List<K8sNodeMetric> result = new ArrayList<>();
             for (Node node : nodes) {
+                NodeStatus status = node.getStatus();
                 K8sNodeMetric metric = new K8sNodeMetric();
                 metric.setNodeName(node.getMetadata().getName());
-                metric.setCpuTotalMilli(parseCpuMilli(node.getStatus().getCapacity().get("cpu")));
-                metric.setMemoryTotalBytes(parseMemoryBytes(node.getStatus().getCapacity().get("memory")));
+                metric.setCpuTotalMilli(parseCpuMilli(nodeQuantity(status, false, "cpu")));
+                metric.setMemoryTotalBytes(parseMemoryBytes(nodeQuantity(status, false, "memory")));
+                metric.setCpuAllocatableMilli(parseCpuMilli(nodeQuantity(status, true, "cpu")));
+                metric.setMemoryAllocatableBytes(parseMemoryBytes(nodeQuantity(status, true, "memory")));
+                metric.setPodAllocatable(parseCount(nodeQuantity(status, true, "pods")));
+
+                NodeAllocation allocation = allocations.get(metric.getNodeName());
+                metric.setPodCount(allocation == null ? 0 : allocation.podCount());
+                metric.setCpuRequestMilli(allocation == null ? 0L : allocation.cpuRequestMilli());
+                metric.setMemoryRequestBytes(allocation == null ? 0L : allocation.memoryRequestBytes());
+                fillDiskUsage(metric);
                 result.add(metric);
             }
             // metrics-server 用量：metrics API 不可用（未安装 metrics-server）时降级，仅返回节点容量，不抛异常
@@ -129,6 +143,200 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
         } catch (KubernetesClientException e) {
             throw toIntegrationException("查询节点资源用量失败", e);
         }
+    }
+
+    /**
+     * 汇总每个节点上 pod 的数量与 requests 分配量（已终态 pod 不计入）。
+     *
+     * @return 节点名称 → 分配量
+     */
+    private Map<String, NodeAllocation> collectNodeAllocations() {
+        Map<String, NodeAllocation> allocations = new HashMap<>();
+        try {
+            List<Pod> pods = kubernetesClient.pods().inAnyNamespace().list().getItems();
+            if (pods == null) {
+                return allocations;
+            }
+            for (Pod pod : pods) {
+                if (pod.getSpec() == null || pod.getSpec().getNodeName() == null || isTerminal(pod)) {
+                    continue;
+                }
+                PodRequests requests = resolvePodRequests(pod);
+                allocations.merge(pod.getSpec().getNodeName(),
+                        new NodeAllocation(1, requests.cpuMilli(), requests.memoryBytes()),
+                        NodeAllocation::plus);
+            }
+        } catch (KubernetesClientException e) {
+            LoggerUtil.warn(LogFileEnum.INTEGRATION, "【K8S】统计节点 pod 分配量失败，分配量置空: {}", e.getMessage());
+        }
+        return allocations;
+    }
+
+    /**
+     * 计算单个 pod 的资源 requests：取「容器之和」与「init 容器最大值」的较大者，再加 pod overhead。
+     *
+     * @param pod pod
+     * @return CPU（毫核）与内存（字节）requests
+     */
+    private PodRequests resolvePodRequests(Pod pod) {
+        long cpu = 0L;
+        long memory = 0L;
+        List<Container> containers = pod.getSpec().getContainers();
+        if (containers != null) {
+            for (Container container : containers) {
+                cpu += nullToZero(requestCpuMilli(container));
+                memory += nullToZero(requestMemoryBytes(container));
+            }
+        }
+        long initCpu = 0L;
+        long initMemory = 0L;
+        List<Container> initContainers = pod.getSpec().getInitContainers();
+        if (initContainers != null) {
+            for (Container container : initContainers) {
+                initCpu = Math.max(initCpu, nullToZero(requestCpuMilli(container)));
+                initMemory = Math.max(initMemory, nullToZero(requestMemoryBytes(container)));
+            }
+        }
+        cpu = Math.max(cpu, initCpu);
+        memory = Math.max(memory, initMemory);
+        Map<String, Quantity> overhead = pod.getSpec().getOverhead();
+        if (overhead != null) {
+            cpu += nullToZero(parseCpuMilli(overhead.get("cpu")));
+            memory += nullToZero(parseMemoryBytes(overhead.get("memory")));
+        }
+        return new PodRequests(cpu, memory);
+    }
+
+    /**
+     * 容器 CPU requests（毫核）。
+     *
+     * @param container 容器
+     * @return 毫核；未设置返回 null
+     */
+    private Long requestCpuMilli(Container container) {
+        return container.getResources() == null || container.getResources().getRequests() == null
+                ? null : parseCpuMilli(container.getResources().getRequests().get("cpu"));
+    }
+
+    /**
+     * 容器内存 requests（字节）。
+     *
+     * @param container 容器
+     * @return 字节；未设置返回 null
+     */
+    private Long requestMemoryBytes(Container container) {
+        return container.getResources() == null || container.getResources().getRequests() == null
+                ? null : parseMemoryBytes(container.getResources().getRequests().get("memory"));
+    }
+
+    /**
+     * 节点磁盘用量：走 API Server 代理 kubelet summary 接口（不依赖 metrics-server）。
+     *
+     * @param metric 待填充的节点指标
+     */
+    private void fillDiskUsage(K8sNodeMetric metric) {
+        try {
+            String summary = kubernetesClient.raw("/api/v1/nodes/" + metric.getNodeName() + "/proxy/stats/summary");
+            if (StrUtil.isBlank(summary)) {
+                return;
+            }
+            JSONObject node = JSON.parseObject(summary).getJSONObject("node");
+            if (node == null) {
+                return;
+            }
+            JSONObject fs = node.getJSONObject("fs");
+            if (fs == null) {
+                JSONObject runtime = node.getJSONObject("runtime");
+                fs = runtime == null ? null : runtime.getJSONObject("imageFs");
+            }
+            if (fs == null) {
+                return;
+            }
+            metric.setDiskTotalBytes(fs.getLong("capacityBytes"));
+            metric.setDiskUsedBytes(fs.getLong("usedBytes"));
+        } catch (Exception e) {
+            LoggerUtil.warn(LogFileEnum.INTEGRATION, "【K8S】节点磁盘用量查询失败 node={}: {}",
+                    metric.getNodeName(), e.getMessage());
+        }
+    }
+
+    /**
+     * 节点 capacity/allocatable 中的资源量。
+     *
+     * @param status     节点状态
+     * @param allocatable true 取 allocatable，false 取 capacity
+     * @param key        资源键（cpu/memory/pods）
+     * @return Quantity；不存在返回 null
+     */
+    private Quantity nodeQuantity(NodeStatus status, boolean allocatable, String key) {
+        if (status == null) {
+            return null;
+        }
+        Map<String, Quantity> quantities = allocatable ? status.getAllocatable() : status.getCapacity();
+        return quantities == null ? null : quantities.get(key);
+    }
+
+    /**
+     * pod 是否已终态（Succeeded/Failed 不再占用调度资源）。
+     *
+     * @param pod pod
+     * @return 是否终态
+     */
+    private boolean isTerminal(Pod pod) {
+        String phase = pod.getStatus() == null ? null : pod.getStatus().getPhase();
+        return "Succeeded".equals(phase) || "Failed".equals(phase);
+    }
+
+    /**
+     * 解析整型数量（如 pods 上限）。
+     *
+     * @param quantity K8s Quantity
+     * @return 数量；解析失败返回 null
+     */
+    private Integer parseCount(Quantity quantity) {
+        if (quantity == null || quantity.getAmount() == null) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(quantity.getAmount().trim());
+        } catch (NumberFormatException e) {
+            LoggerUtil.warn(LogFileEnum.INTEGRATION, "【K8S】数量解析失败 value={}", quantity.getAmount());
+            return null;
+        }
+    }
+
+    /**
+     * null 安全转 0。
+     *
+     * @param value 值
+     * @return 非 null 值
+     */
+    private long nullToZero(Long value) {
+        return value == null ? 0L : value;
+    }
+
+    /**
+     * 节点分配量（pod 数 + requests 之和）。
+     */
+    private record NodeAllocation(int podCount, long cpuRequestMilli, long memoryRequestBytes) {
+
+        /**
+         * 累加另一个分配量。
+         *
+         * @param other 另一个分配量
+         * @return 累加结果
+         */
+        private NodeAllocation plus(NodeAllocation other) {
+            return new NodeAllocation(podCount + other.podCount,
+                    cpuRequestMilli + other.cpuRequestMilli,
+                    memoryRequestBytes + other.memoryRequestBytes);
+        }
+    }
+
+    /**
+     * 单个 pod 的 requests。
+     */
+    private record PodRequests(long cpuMilli, long memoryBytes) {
     }
 
     @Override

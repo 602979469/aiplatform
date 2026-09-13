@@ -96,9 +96,17 @@ public class ClusterK8sServiceImpl implements ClusterK8sService {
                         .orElse(null);
                 if (metric != null) {
                     node.setCpuTotalMilli(metric.getCpuTotalMilli());
+                    node.setCpuAllocatableMilli(metric.getCpuAllocatableMilli());
                     node.setCpuUsedMilli(metric.getCpuUsedMilli());
+                    node.setCpuRequestMilli(metric.getCpuRequestMilli());
                     node.setMemoryTotalBytes(metric.getMemoryTotalBytes());
+                    node.setMemoryAllocatableBytes(metric.getMemoryAllocatableBytes());
                     node.setMemoryUsedBytes(metric.getMemoryUsedBytes());
+                    node.setMemoryRequestBytes(metric.getMemoryRequestBytes());
+                    node.setDiskTotalBytes(metric.getDiskTotalBytes());
+                    node.setDiskUsedBytes(metric.getDiskUsedBytes());
+                    node.setPodCount(metric.getPodCount());
+                    node.setPodAllocatable(metric.getPodAllocatable());
                     cpuTotal += nullToZero(metric.getCpuTotalMilli());
                     cpuUsed += nullToZero(metric.getCpuUsedMilli());
                     memoryTotal += nullToZero(metric.getMemoryTotalBytes());
