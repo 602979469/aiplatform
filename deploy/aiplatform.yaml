@@ -112,6 +112,9 @@ spec:
           volumeMounts:
             - name: ssh-key
               mountPath: /root/.ssh
+            # 应用日志落宿主机，供 efk 命名空间的 Filebeat DaemonSet 采集（见 /home/ubuntu/efk）
+            - name: app-logs
+              mountPath: /app/logs
           resources:
             requests:
               cpu: 250m
@@ -134,6 +137,10 @@ spec:
           secret:
             secretName: aiplatform-ssh-key
             defaultMode: 0400
+        - name: app-logs
+          hostPath:
+            path: /home/ubuntu/aiplatform/logs
+            type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
