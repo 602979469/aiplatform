@@ -27,4 +27,6 @@ public class AuthRoleResponse extends BaseResult {
     private String remark;
     /** 创建时间。 */
     private LocalDateTime createTime;
+    /** 是否超级管理员角色：为 true 时前端禁用修改/删除/停用，后端同样拒绝变更。 */
+    private Boolean superAdmin;
 }

@@ -36,6 +36,7 @@ public final class AuthRoleAssembler {
         response.setStatus(role.getStatus());
         response.setRemark(role.getRemark());
         response.setCreateTime(role.getCreateTime());
+        response.setSuperAdmin(role.isSuperAdmin());
         return response;
     }
 

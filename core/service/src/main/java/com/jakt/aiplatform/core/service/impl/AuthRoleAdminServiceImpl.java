@@ -58,7 +58,7 @@ public class AuthRoleAdminServiceImpl implements AuthRoleAdminService {
 
     @Override
     public void updateRole(AuthRole role) {
-        getRole(role.getRoleId());
+        assertNotSuperAdmin(getRole(role.getRoleId()));
         checkRoleKeyUnique(role.getRoleKey(), role.getRoleId());
         int affected = authRoleRepository.updateByCondition(role);
         AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
@@ -66,6 +66,10 @@ public class AuthRoleAdminServiceImpl implements AuthRoleAdminService {
 
     @Override
     public void changeRoleStatus(Long roleId, EnableStatusEnum status) {
+        // 超级管理员角色一旦停用，绑定该角色的账号会失去全部菜单与权限（页面全 404），因此禁止停用
+        if (status == EnableStatusEnum.DISABLE) {
+            assertNotSuperAdmin(getRole(roleId));
+        }
         AuthRole update = new AuthRole();
         update.setRoleId(roleId);
         update.setStatus(status);
@@ -87,7 +91,7 @@ public class AuthRoleAdminServiceImpl implements AuthRoleAdminService {
 
     @Override
     public void deleteRole(Long roleId) {
-        getRole(roleId);
+        assertNotSuperAdmin(getRole(roleId));
         checkResult(BizTemplate.executeWithoutResult(transactionTemplate,
                 () -> {
                     authRoleRepository.clearRoleBindings(roleId);
@@ -102,6 +106,16 @@ public class AuthRoleAdminServiceImpl implements AuthRoleAdminService {
         AuthRole exists = authRoleRepository.findOne(query);
         AssertUtil.throwErrWhenTrue(exists != null && !Objects.equals(exists.getRoleId(), excludeRoleId),
                 BizErrorCodeEnum.ROLE_KEY_EXISTS, "角色标识已存在");
+    }
+
+    /**
+     * 超级管理员角色不可变更：拒绝修改、停用与删除。
+     *
+     * @param role 角色
+     */
+    private void assertNotSuperAdmin(AuthRole role) {
+        AssertUtil.throwErrWhenTrue(role != null && role.isSuperAdmin(),
+                BizErrorCodeEnum.SUPER_ADMIN_IMMUTABLE, "超级管理员角色不允许变更");
     }
 
     /** 校验事务结果，失败抛业务异常。 */
