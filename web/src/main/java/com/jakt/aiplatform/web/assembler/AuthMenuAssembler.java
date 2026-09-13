@@ -110,7 +110,7 @@ public final class AuthMenuAssembler {
         menu.setMenuName(request.getMenuName());
         menu.setParentId(request.getParentId());
         menu.setOrderNum(request.getOrderNum());
-        menu.setPath(request.getPath());
+        menu.setPath(normalizeFramePath(request.getPath(), request.getIsFrame()));
         menu.setComponent(request.getComponent());
         menu.setIsFrame(request.getIsFrame());
         menu.setMenuType(request.getMenuType());
@@ -120,6 +120,25 @@ public final class AuthMenuAssembler {
         menu.setIcon(request.getIcon());
         menu.setRemark(request.getRemark());
         return menu;
+    }
+
+    /**
+     * 外链菜单地址规范化：去空格；没写协议时补 https://。
+     * 否则前端 iframe 会把域名当相对路径，拼到当前站点后面导致 404。
+     *
+     * @param path    路由地址
+     * @param isFrame 是否外链（0是 1否）
+     * @return 规范化后的地址
+     */
+    private static String normalizeFramePath(String path, String isFrame) {
+        if (path == null) {
+            return null;
+        }
+        String trimmed = path.trim();
+        if (!"0".equals(isFrame) || trimmed.isEmpty() || trimmed.matches("(?i)^https?://.*")) {
+            return trimmed;
+        }
+        return "https://" + trimmed;
     }
 
     /**
