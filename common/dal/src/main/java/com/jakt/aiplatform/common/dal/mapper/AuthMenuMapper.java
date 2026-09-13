@@ -37,6 +37,13 @@ public interface AuthMenuMapper {
     List<AuthMenuDO> selectMenusByUserId(Long userId);
 
     /**
+     * 查询全部可见路由（M目录/C菜单，不按角色过滤，超级管理员专用）。
+     *
+     * @return 菜单数据列表
+     */
+    List<AuthMenuDO> selectAllVisibleMenus();
+
+    /**
      * 分页查询：SQL 含 LIMIT #{offset}, #{pageSize}，配合 countByQuery 组装分页结果。
      *
      * @param query 查询参数

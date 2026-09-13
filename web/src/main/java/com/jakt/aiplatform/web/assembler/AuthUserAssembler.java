@@ -25,6 +25,17 @@ public final class AuthUserAssembler {
      * @return 用户响应
      */
     public static AuthUserResponse toUserResponse(AuthUser user) {
+        return toUserResponse(user, false);
+    }
+
+    /**
+     * 用户 → 用户响应（不含密码），并标记超级管理员。
+     *
+     * @param user       用户；为空返回 null
+     * @param superAdmin 是否超级管理员
+     * @return 用户响应
+     */
+    public static AuthUserResponse toUserResponse(AuthUser user, boolean superAdmin) {
         if (user == null) {
             return null;
         }
@@ -37,6 +48,7 @@ public final class AuthUserAssembler {
         response.setStatus(user.getStatus());
         response.setRemark(user.getRemark());
         response.setCreateTime(user.getCreateTime());
+        response.setSuperAdmin(superAdmin);
         return response;
     }
 

@@ -7,6 +7,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.AuthUser;
+import com.jakt.aiplatform.core.model.domain.AuthRole;
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
 import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 import com.jakt.aiplatform.core.model.param.AuthUserQueryParam;
@@ -15,6 +16,7 @@ import com.jakt.aiplatform.common.framework.result.Result;
 import com.jakt.aiplatform.common.framework.template.BizTemplate;
 import com.jakt.aiplatform.common.framework.template.TransactionTemplate;
 import com.jakt.aiplatform.core.repository.AuthUserRepository;
+import com.jakt.aiplatform.core.repository.AuthRoleRepository;
 import com.jakt.aiplatform.core.service.AuthUserAdminService;
 import org.springframework.stereotype.Service;
 
@@ -28,11 +30,15 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
 
     private final AuthUserRepository authUserRepository;
 
+    private final AuthRoleRepository authRoleRepository;
+
     private final TransactionTemplate transactionTemplate;
 
     public AuthUserAdminServiceImpl(AuthUserRepository authUserRepository,
+                                    AuthRoleRepository authRoleRepository,
                                     TransactionTemplate transactionTemplate) {
         this.authUserRepository = authUserRepository;
+        this.authRoleRepository = authRoleRepository;
         this.transactionTemplate = transactionTemplate;
     }
 
@@ -46,6 +52,14 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
         AuthUser user = authUserRepository.findById(userId);
         AssertUtil.throwErrWhenNull(user, BizErrorCodeEnum.RESOURCE_NOT_FOUND, "用户不存在");
         return user;
+    }
+
+    @Override
+    public boolean isSuperAdminUser(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        return AuthRole.containsSuperAdmin(authRoleRepository.findRoleKeysByUserId(userId));
     }
 
     @Override
@@ -72,12 +86,14 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
 
     @Override
     public void updateUser(AuthUser user) {
+        assertNotSuperAdmin(user == null ? null : user.getUserId());
         int affected = authUserRepository.updateByCondition(user);
         AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
     }
 
     @Override
     public void changeUserStatus(Long userId, EnableStatusEnum status) {
+        assertNotSuperAdmin(userId);
         AuthUser update = new AuthUser();
         update.setUserId(userId);
         update.setStatus(status);
@@ -132,6 +148,7 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
     @Override
     public void assignUserRoles(Long userId, List<Long> roleIds) {
         getUser(userId);
+        assertNotSuperAdmin(userId);
         checkResult(BizTemplate.executeWithoutResult(transactionTemplate,
                 () -> authUserRepository.replaceRoles(userId, roleIds)));
     }
@@ -145,12 +162,22 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
     @Override
     public void deleteUser(Long userId) {
         getUser(userId);
+        assertNotSuperAdmin(userId);
         checkResult(BizTemplate.executeWithoutResult(transactionTemplate,
                 () -> {
                     authUserRepository.clearUserRoles(userId);
                     authUserRepository.deleteById(userId);
                 }));
         StpUtil.logout(userId);
+    }
+
+    /**
+     * 超级管理员账号不可变更：拒绝修改资料/状态/角色与删除。
+     *
+     * @param userId 用户ID
+     */
+    private void assertNotSuperAdmin(Long userId) {
+        AssertUtil.throwErrWhenTrue(isSuperAdminUser(userId), BizErrorCodeEnum.SUPER_ADMIN_IMMUTABLE);
     }
 
     /** 校验事务结果，失败抛业务异常。 */

@@ -41,6 +41,9 @@ public enum BizErrorCodeEnum implements ErrorCode {
     /** 无权限访问（HTTP 403）。 */
     NO_PERMISSION("无权限访问"),
 
+    /** 超级管理员账号不允许变更（不可改资料/状态/角色/删除）。 */
+    SUPER_ADMIN_IMMUTABLE("超级管理员账号不允许变更"),
+
     /** 用户名已存在。 */
     USERNAME_EXISTS("用户名已存在"),
 

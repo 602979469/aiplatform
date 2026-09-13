@@ -29,4 +29,6 @@ public class AuthUserResponse extends BaseResult {
     private String remark;
     /** 创建时间。 */
     private LocalDateTime createTime;
+    /** 是否超级管理员账号：为 true 时前端禁用修改/删除/状态切换，后端同样拒绝变更。 */
+    private Boolean superAdmin;
 }

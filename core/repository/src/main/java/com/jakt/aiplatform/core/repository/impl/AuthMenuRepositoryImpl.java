@@ -94,6 +94,12 @@ public class AuthMenuRepositoryImpl implements AuthMenuRepository {
     }
 
     @Override
+    public List<AuthMenu> findAllVisibleMenus() {
+        List<AuthMenuDO> sourceList = authMenuMapper.selectAllVisibleMenus();
+        return ConvertUtil.map(sourceList, AuthMenuConvertor::toModel);
+    }
+
+    @Override
     public List<String> findPermsByUserId(Long userId) {
         return authMenuMapper.selectPermsByUserId(userId);
     }

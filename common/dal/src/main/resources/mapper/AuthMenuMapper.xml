@@ -98,6 +98,17 @@
         ORDER BY m.parent_id, m.order_num
     </select>
 
+    <select id="selectAllVisibleMenus" resultType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO">
+        SELECT m.menu_id, m.menu_name, m.parent_id, m.order_num, m.path, m.component, m.is_frame,
+               m.menu_type, m.visible, m.status, m.perms, m.icon, m.remark, m.create_time, m.update_time
+        FROM auth_menu m
+        WHERE m.menu_type IN ('M', 'C')
+          AND m.visible = '0'
+          AND m.status = '0'
+          AND m.del_flag = '0'
+        ORDER BY m.parent_id, m.order_num
+    </select>
+
     <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.AuthMenuDO">
         SELECT <include refid="selectColumns"/>
         FROM auth_menu

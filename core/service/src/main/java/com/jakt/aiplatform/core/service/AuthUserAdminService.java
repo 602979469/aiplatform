@@ -29,6 +29,14 @@ public interface AuthUserAdminService {
     AuthUser getUser(Long userId);
 
     /**
+     * 是否超级管理员账号（角色名称/权限字符串为 admin）：不可修改、不可停用、不可删除。
+     *
+     * @param userId 用户ID
+     * @return 是否超级管理员
+     */
+    boolean isSuperAdminUser(Long userId);
+
+    /**
      * 新增用户并绑定角色。
      *
      * @param user    用户（含明文密码）

@@ -82,6 +82,13 @@ public interface AuthMenuRepository {
     List<AuthMenu> findMenusByUserId(Long userId);
 
     /**
+     * 查询全部可见路由菜单（不按角色过滤，超级管理员专用）。
+     *
+     * @return 菜单列表
+     */
+    List<AuthMenu> findAllVisibleMenus();
+
+    /**
      * 查询用户权限码集合。
      *
      * @param userId 用户ID

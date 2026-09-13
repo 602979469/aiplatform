@@ -44,6 +44,11 @@ public class AuthUserManagerImpl implements AuthUserManager {
     }
 
     @Override
+    public boolean isSuperAdminUser(Long userId) {
+        return authUserAdminService.isSuperAdminUser(userId);
+    }
+
+    @Override
     public AuthUser createUser(AuthUser user, List<Long> roleIds) {
         return authUserAdminService.createUser(user, roleIds);
     }

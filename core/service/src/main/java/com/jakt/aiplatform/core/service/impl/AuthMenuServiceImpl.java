@@ -1,7 +1,9 @@
 package com.jakt.aiplatform.core.service.impl;
 
 import com.jakt.aiplatform.core.model.domain.AuthMenu;
+import com.jakt.aiplatform.core.model.domain.AuthRole;
 import com.jakt.aiplatform.core.repository.AuthMenuRepository;
+import com.jakt.aiplatform.core.repository.AuthRoleRepository;
 import com.jakt.aiplatform.core.service.AuthMenuService;
 import org.springframework.stereotype.Service;
 
@@ -18,13 +20,21 @@ public class AuthMenuServiceImpl implements AuthMenuService {
 
     private final AuthMenuRepository authMenuRepository;
 
-    public AuthMenuServiceImpl(AuthMenuRepository authMenuRepository) {
+    private final AuthRoleRepository authRoleRepository;
+
+    public AuthMenuServiceImpl(AuthMenuRepository authMenuRepository, AuthRoleRepository authRoleRepository) {
         this.authMenuRepository = authMenuRepository;
+        this.authRoleRepository = authRoleRepository;
     }
 
     @Override
     public List<AuthMenu> getRouters(Long userId) {
-        return buildTree(authMenuRepository.findMenusByUserId(userId));
+        // 超级管理员权限拉满：不走角色菜单授权，始终可见全部已配置菜单
+        boolean superAdmin = AuthRole.containsSuperAdmin(authRoleRepository.findRoleKeysByUserId(userId));
+        List<AuthMenu> menus = superAdmin
+                ? authMenuRepository.findAllVisibleMenus()
+                : authMenuRepository.findMenusByUserId(userId);
+        return buildTree(menus);
     }
 
     /** 按 parentId 分组组装菜单树。 */

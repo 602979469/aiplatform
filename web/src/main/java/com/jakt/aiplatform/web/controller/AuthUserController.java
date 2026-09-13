@@ -71,7 +71,8 @@ public class AuthUserController {
             public PageResult<AuthUserResponse> execute(AuthUserQueryRequest param) {
                 AuthUserQueryParam query = AuthUserAssembler.toQueryParam(param);
                 PageResult<AuthUser> page = authUserManager.pageUser(query);
-                return ConvertUtil.mapPage(page, AuthUserAssembler::toUserResponse);
+                return ConvertUtil.mapPage(page,
+                        user -> AuthUserAssembler.toUserResponse(user, authUserManager.isSuperAdminUser(user.getUserId())));
             }
         });
     }
@@ -95,7 +96,7 @@ public class AuthUserController {
             @Override
             public AuthUserResponse execute(Long param) {
                 AuthUser user = authUserManager.getUser(param);
-                return AuthUserAssembler.toUserResponse(user);
+                return AuthUserAssembler.toUserResponse(user, authUserManager.isSuperAdminUser(param));
             }
         });
     }
