@@ -3,8 +3,8 @@ package com.jakt.aiplatform.web.controller;
 import com.jakt.aiplatform.biz.service.ClusterDomainManager;
 import com.jakt.aiplatform.biz.service.ClusterDomainView;
 import com.jakt.aiplatform.web.checker.ClusterDomainParamChecker;
-import com.jakt.aiplatform.web.param.ClusterDomainAddRequest;
-import com.jakt.aiplatform.web.param.ClusterDomainRemoveRequest;
+import com.jakt.aiplatform.web.param.ClusterDomainDisableRequest;
+import com.jakt.aiplatform.web.param.ClusterDomainEnableRequest;
 import com.jakt.aiplatform.web.result.ApiResult;
 import com.jakt.aiplatform.web.result.ClusterDomainResponse;
 import com.jakt.aiplatform.web.template.ApiTemplate;
@@ -43,38 +43,37 @@ public class ClusterDomainController {
         });
     }
 
-    /** 新增域名映射（可选同时创建 Ingress）。 */
-    @PostMapping("/add")
-    public ApiResult<Void> add(@RequestBody ClusterDomainAddRequest request) {
-        return ApiTemplate.execute(request, new ApiTemplate.Callback<ClusterDomainAddRequest, Void>() {
+    /** 开启公网映射（新增 Caddy 站点块；已存在则保持不变）。 */
+    @PostMapping("/enable")
+    public ApiResult<Void> enable(@RequestBody ClusterDomainEnableRequest request) {
+        return ApiTemplate.execute(request, new ApiTemplate.Callback<ClusterDomainEnableRequest, Void>() {
 
             @Override
-            public void beforeService(ClusterDomainAddRequest param) {
-                ClusterDomainParamChecker.checkAddRequest(param);
+            public void beforeService(ClusterDomainEnableRequest param) {
+                ClusterDomainParamChecker.checkEnableRequest(param);
             }
 
             @Override
-            public Void execute(ClusterDomainAddRequest param) {
-                clusterDomainManager.add(param.getDomain(), param.getNamespace(),
-                        param.getService(), param.getPort());
+            public Void execute(ClusterDomainEnableRequest param) {
+                clusterDomainManager.enable(param.getDomain(), param.getUpstream());
                 return null;
             }
         });
     }
 
-    /** 删除域名映射（同时删除 dm- 前缀的 Ingress）。 */
-    @PostMapping("/remove")
-    public ApiResult<Void> remove(@RequestBody ClusterDomainRemoveRequest request) {
-        return ApiTemplate.execute(request, new ApiTemplate.Callback<ClusterDomainRemoveRequest, Void>() {
+    /** 关闭公网映射（删除 Caddy 站点块，不影响集群 Ingress）。 */
+    @PostMapping("/disable")
+    public ApiResult<Void> disable(@RequestBody ClusterDomainDisableRequest request) {
+        return ApiTemplate.execute(request, new ApiTemplate.Callback<ClusterDomainDisableRequest, Void>() {
 
             @Override
-            public void beforeService(ClusterDomainRemoveRequest param) {
-                ClusterDomainParamChecker.checkRemoveRequest(param);
+            public void beforeService(ClusterDomainDisableRequest param) {
+                ClusterDomainParamChecker.checkDisableRequest(param);
             }
 
             @Override
-            public Void execute(ClusterDomainRemoveRequest param) {
-                clusterDomainManager.remove(param.getDomain());
+            public Void execute(ClusterDomainDisableRequest param) {
+                clusterDomainManager.disable(param.getDomain());
                 return null;
             }
         });
@@ -90,12 +89,11 @@ public class ClusterDomainController {
         ClusterDomainResponse response = new ClusterDomainResponse();
         response.setDomain(view.getDomain());
         response.setCaddy(view.getCaddy());
-        response.setIngress(view.getIngress());
-        response.setIngressName(view.getIngressName());
+        response.setType(view.getType());
+        response.setUpstream(view.getUpstream());
         response.setNamespace(view.getNamespace());
         response.setService(view.getService());
         response.setPort(view.getPort());
-        response.setManaged(view.getManaged());
         return response;
     }
 }

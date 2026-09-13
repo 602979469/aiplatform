@@ -1,33 +1,36 @@
 #!/bin/bash
-# 公网域名映射管理：Ingress（集群内路由）+ Caddy（公网入口）双写
+# 公网域名映射（只管理公网 Caddy，不创建/删除集群 Ingress）
+#
+# 数据来源：
+#   - 集群 Ingress 的域名（kubectl 读取，作为「ingress 类型」候选，页面只做 Caddy 开关）
+#   - 公网 Caddy 的站点块（/etc/caddy/Caddyfile 解析，含 upstream）
+#
 # 用法:
-#   caddy_mapping.sh list                                     列出全部域名映射（JSON）
-#   caddy_mapping.sh add <domain> [namespace service port]     新增：建 Ingress（可选）+ Caddy 站点块 + reload
-#   caddy_mapping.sh remove <domain>                           删除：删 Ingress（dm- 前缀）+ Caddy 站点块 + reload
-# 域名规则: 只允许 xxxx.jakt.online（防注入）；Ingress 名称固定为 dm-<域名点转横线>
+#   caddy_mapping.sh list                       列出全部域名（集群 Ingress ∪ Caddy 站点，JSON）
+#   caddy_mapping.sh enable <domain> [upstream] 开启/新增公网映射（默认 127.0.0.1:8080）+ reload
+#   caddy_mapping.sh disable <domain>           关闭/删除公网映射 + reload
+#
 # 前置: master 上存在免密私钥（默认 /home/ubuntu/.ssh/caddy_manage），公钥已加入公网服务器 root
 set -euo pipefail
 
 CADDY_HOST="${CADDY_HOST:-root@124.222.40.231}"
 CADDY_KEY="${CADDY_KEY:-/home/ubuntu/.ssh/caddy_manage}"
-UPSTREAM="${UPSTREAM:-127.0.0.1:8080}"
+DEFAULT_UPSTREAM="${DEFAULT_UPSTREAM:-127.0.0.1:8080}"
 KUBECTL="${KUBECTL:-kubectl}"
 SSH_OPTS=(-i "${CADDY_KEY}" -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=10)
 
 ACTION="${1:-}"
 DOMAIN="${2:-}"
-NAMESPACE="${3:-}"
-SERVICE="${4:-}"
-PORT="${5:-80}"
+UPSTREAM="${3:-${DEFAULT_UPSTREAM}}"
 
 usage() {
-  echo "用法: caddy_mapping.sh <list|add|remove> [domain] [namespace service port]" >&2
+  echo "用法: caddy_mapping.sh <list|enable|disable> [domain] [upstream]" >&2
   exit 1
 }
 
 [ -n "${ACTION}" ] || usage
 case "${ACTION}" in
-  list|add|remove) ;;
+  list|enable|disable) ;;
   *) usage ;;
 esac
 
@@ -36,9 +39,11 @@ if [ "${ACTION}" != "list" ]; then
     echo "域名不合法（只允许 xxxx.jakt.online 形式）: ${DOMAIN}" >&2
     exit 1
   fi
+  if ! echo "${UPSTREAM}" | grep -qE '^[A-Za-z0-9._-]+:[0-9]{1,5}$'; then
+    echo "上游地址不合法（形如 127.0.0.1:8080）: ${UPSTREAM}" >&2
+    exit 1
+  fi
 fi
-
-INGRESS_NAME="dm-$(echo "${DOMAIN}" | tr '.' '-')"
 
 # 集群内 Ingress 域名清单（master 上执行）
 k8s_list_json() {
@@ -62,51 +67,9 @@ for it in d.get("items", []):
                 "namespace": ns,
                 "service": b.get("name"),
                 "port": port.get("number") or port.get("name"),
-                "path": p.get("path"),
-                "managed": name.startswith("dm-"),
             })
 print(json.dumps(out, ensure_ascii=False))
 '
-}
-
-k8s_apply_ingress() {
-  ${KUBECTL} apply -f - <<YAML
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: ${INGRESS_NAME}
-  namespace: ${NAMESPACE}
-  annotations:
-    nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: ${DOMAIN}
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: ${SERVICE}
-                port:
-                  number: ${PORT}
-YAML
-}
-
-k8s_delete_ingress() {
-  local ns
-  ns=$(${KUBECTL} get ingress -A -o json 2>/dev/null | python3 -c "
-import json, sys
-d = json.load(sys.stdin)
-print(next((i['metadata']['namespace'] for i in d.get('items', [])
-            if i['metadata']['name'] == '${INGRESS_NAME}'), ''))
-")
-  if [ -n "${ns}" ]; then
-    ${KUBECTL} delete ingress "${INGRESS_NAME}" -n "${ns}" --ignore-not-found
-  else
-    echo "Ingress 不存在: ${INGRESS_NAME}"
-  fi
 }
 
 # 公网 Caddy 操作（SSH 到公网服务器执行 python）
@@ -132,6 +95,7 @@ def read_text():
 
 
 def find_block(lines, domain):
+    """返回 (start, end) 行号区间；找不到返回 None。"""
     start = None
     for i, line in enumerate(lines):
         if re.match(r'^' + re.escape(domain) + r'\s*\{', line.strip()):
@@ -147,15 +111,22 @@ def find_block(lines, domain):
     return None
 
 
-def list_domains(lines):
+def list_blocks(lines):
+    """解析站点块：返回 [{domain, upstream}]。"""
     out = []
-    for line in lines:
-        s = line.strip()
-        if not s or s.startswith('#'):
+    i = 0
+    while i < len(lines):
+        s = lines[i].strip()
+        if s and not s.startswith('#') and re.match(r'^[a-z0-9][a-z0-9.\-]*\s*\{$', s):
+            domain = s.split()[0]
+            rng = find_block(lines, domain)
+            end = rng[1] if rng else i
+            body = '\n'.join(lines[i:end + 1])
+            m = re.search(r'reverse_proxy\s+([^\s{]+)', body)
+            out.append({'domain': domain, 'upstream': m.group(1) if m else None})
+            i = end + 1
             continue
-        m = re.match(r'^([a-z0-9][a-z0-9.\-]*)\s*\{$', s)
-        if m:
-            out.append(m.group(1))
+        i += 1
     return out
 
 
@@ -185,10 +156,10 @@ text = read_text()
 lines = text.splitlines()
 
 if action == 'list':
-    print(json.dumps(list_domains(lines), ensure_ascii=False))
+    print(json.dumps(list_blocks(lines), ensure_ascii=False))
     sys.exit(0)
 
-if action == 'add':
+if action == 'enable':
     if find_block(lines, domain):
         print('已存在: ' + domain)
         sys.exit(0)
@@ -204,10 +175,10 @@ if action == 'add':
         '}',
     ]
     apply_and_reload(text.rstrip('\n') + '\n' + '\n'.join(block) + '\n')
-    print('已新增: ' + domain)
+    print('已开启: ' + domain + ' -> ' + upstream)
     sys.exit(0)
 
-if action == 'remove':
+if action == 'disable':
     rng = find_block(lines, domain)
     if not rng:
         print('不存在: ' + domain)
@@ -215,7 +186,7 @@ if action == 'remove':
     start, end = rng
     new_lines = lines[:start] + lines[end + 1:]
     apply_and_reload('\n'.join(new_lines).rstrip('\n') + '\n')
-    print('已删除: ' + domain)
+    print('已关闭: ' + domain)
     sys.exit(0)
 
 print('未知操作: ' + action)
@@ -229,38 +200,33 @@ case "${ACTION}" in
     INGRESS_JSON=$(k8s_list_json)
     CADDY_JSON="${CADDY_JSON}" INGRESS_JSON="${INGRESS_JSON}" python3 -c '
 import json, os
-caddy = set(json.loads(os.environ["CADDY_JSON"]))
+caddy = {item["domain"]: item for item in json.loads(os.environ["CADDY_JSON"])}
 ingress = json.loads(os.environ["INGRESS_JSON"])
 by_domain = {}
 for item in ingress:
-    by_domain.setdefault(item["domain"], []).append(item)
-domains = sorted(caddy | set(by_domain.keys()))
+    by_domain.setdefault(item["domain"], item)
+domains = sorted(set(caddy.keys()) | set(by_domain.keys()))
 out = []
 for d in domains:
-    entries = by_domain.get(d, [])
-    e = entries[0] if entries else {}
+    ing = by_domain.get(d)
+    cad = caddy.get(d) or {}
     out.append({
         "domain": d,
         "caddy": d in caddy,
-        "ingress": bool(entries),
-        "ingressName": e.get("ingress"),
-        "namespace": e.get("namespace"),
-        "service": e.get("service"),
-        "port": e.get("port"),
-        "managed": bool(e.get("managed")),
+        "type": "ingress" if ing else "custom",
+        "upstream": cad.get("upstream"),
+        "ingressName": (ing or {}).get("ingress"),
+        "namespace": (ing or {}).get("namespace"),
+        "service": (ing or {}).get("service"),
+        "port": (ing or {}).get("port"),
     })
 print(json.dumps(out, ensure_ascii=False))
 '
     ;;
-  add)
-    if [ -n "${NAMESPACE}" ] && [ -n "${SERVICE}" ]; then
-      k8s_apply_ingress >/dev/null
-      echo "Ingress 已更新: ${NAMESPACE}/${INGRESS_NAME} -> ${SERVICE}:${PORT}"
-    fi
-    caddy_py add
+  enable)
+    caddy_py enable
     ;;
-  remove)
-    k8s_delete_ingress
-    caddy_py remove
+  disable)
+    caddy_py disable
     ;;
 esac

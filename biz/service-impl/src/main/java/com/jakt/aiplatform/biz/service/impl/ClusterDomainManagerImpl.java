@@ -51,39 +51,37 @@ public class ClusterDomainManagerImpl implements ClusterDomainManager {
             ClusterDomainView view = new ClusterDomainView();
             view.setDomain(obj.getStr("domain"));
             view.setCaddy(obj.getBool("caddy"));
-            view.setIngress(obj.getBool("ingress"));
-            view.setIngressName(obj.getStr("ingressName"));
+            view.setType(obj.getStr("type"));
+            view.setUpstream(obj.getStr("upstream"));
             view.setNamespace(obj.getStr("namespace"));
             view.setService(obj.getStr("service"));
             view.setPort(obj.getStr("port"));
-            view.setManaged(obj.getBool("managed"));
             views.add(view);
         }
         return views;
     }
 
     @Override
-    public void add(String domain, String namespace, String service, Integer port) {
+    public void enable(String domain, String upstream) {
         StringBuilder command = new StringBuilder("bash ").append(scriptPath())
-                .append(" add '").append(domain).append("'");
-        if (StrUtil.isNotBlank(namespace) && StrUtil.isNotBlank(service)) {
-            command.append(" '").append(namespace).append("' '").append(service).append("' ")
-                    .append(port == null ? 80 : port);
+                .append(" enable '").append(domain).append("'");
+        if (StrUtil.isNotBlank(upstream)) {
+            command.append(" '").append(upstream).append("'");
         }
         SshResult result = sshClient.execute(ciProperties.getMasterHost(), command.toString(), 120);
         if (!result.isSuccess()) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
-                    "新增域名映射失败: " + StrUtil.maxLength(result.getOutput(), 300));
+                    "开启公网映射失败: " + StrUtil.maxLength(result.getOutput(), 300));
         }
     }
 
     @Override
-    public void remove(String domain) {
+    public void disable(String domain) {
         SshResult result = sshClient.execute(ciProperties.getMasterHost(),
-                "bash " + scriptPath() + " remove '" + domain + "'", 120);
+                "bash " + scriptPath() + " disable '" + domain + "'", 120);
         if (!result.isSuccess()) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
-                    "删除域名映射失败: " + StrUtil.maxLength(result.getOutput(), 300));
+                    "关闭公网映射失败: " + StrUtil.maxLength(result.getOutput(), 300));
         }
     }
 

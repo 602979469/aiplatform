@@ -14,11 +14,11 @@ public class ClusterDomainResponse {
     /** 是否已配置公网 Caddy 站点块。 */
     private Boolean caddy;
 
-    /** 是否已有集群内 Ingress。 */
-    private Boolean ingress;
+    /** 类型：ingress / custom。 */
+    private String type;
 
-    /** Ingress 名称。 */
-    private String ingressName;
+    /** 公网 Caddy 反代上游。 */
+    private String upstream;
 
     /** Ingress 命名空间。 */
     private String namespace;
@@ -29,6 +29,4 @@ public class ClusterDomainResponse {
     /** 后端 Service 端口。 */
     private String port;
 
-    /** 是否由域名映射功能纳管（Ingress 名 dm- 前缀）。 */
-    private Boolean managed;
 }

@@ -8,26 +8,24 @@ import java.util.List;
 public interface ClusterDomainManager {
 
     /**
-     * 列出全部域名映射（Caddy 站点 ∪ Ingress 域名）。
+     * 列出全部域名：集群 Ingress 域名 ∪ 公网 Caddy 站点。
      *
-     * @return 域名映射列表
+     * @return 域名列表
      */
     List<ClusterDomainView> list();
 
     /**
-     * 新增映射：建/更新 Ingress（命名空间+Service 非空时）+ Caddy 站点块 + reload。
+     * 开启公网映射（新增 Caddy 站点块 + reload）；已存在则保持不变。
      *
-     * @param domain    完整域名（xxxx.jakt.online）
-     * @param namespace 目标命名空间（可空）
-     * @param service   目标 Service（可空）
-     * @param port      目标端口（可空，默认 80）
+     * @param domain   完整域名（xxxx.jakt.online）
+     * @param upstream 反代上游（可空，默认 127.0.0.1:8080）
      */
-    void add(String domain, String namespace, String service, Integer port);
+    void enable(String domain, String upstream);
 
     /**
-     * 删除映射：删 Ingress（dm- 前缀）+ Caddy 站点块 + reload。
+     * 关闭公网映射（删除 Caddy 站点块 + reload），不影响集群 Ingress。
      *
      * @param domain 完整域名
      */
-    void remove(String domain);
+    void disable(String domain);
 }
