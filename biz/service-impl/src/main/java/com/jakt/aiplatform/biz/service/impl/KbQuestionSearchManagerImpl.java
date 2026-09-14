@@ -21,6 +21,9 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
     /** 摘要截断长度。 */
     private static final int SNIPPET_LENGTH = 200;
 
+    /** ES 默认 max_result_window：from + size 不能超过该值。 */
+    private static final int MAX_RESULT_WINDOW = 10000;
+
     /** ES 客户端。 */
     private final EsSearchClient esSearchClient;
 
@@ -34,7 +37,10 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
 
     @Override
     public KbQuestionSearchView search(String keyword, int pageNum, int pageSize) {
-        int from = Math.max(0, (pageNum - 1) * pageSize);
+        // 深分页保护：from + size 必须 <= max_result_window（ES 默认 10000），超出会 400
+        int maxPage = Math.max(1, MAX_RESULT_WINDOW / Math.max(1, pageSize));
+        int safePage = Math.min(Math.max(1, pageNum), maxPage);
+        int from = Math.max(0, (safePage - 1) * pageSize);
         JSONObject body = new JSONObject()
                 .set("from", from)
                 .set("size", pageSize)
