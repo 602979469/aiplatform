@@ -57,7 +57,7 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
                 .set("track_total_hits", true)
                 // 列表只取轻量字段：摘要 summary（详情走单独接口），避免传输长正文
                 .set("_source", new JSONArray().set("title").set("summary").set("category")
-                        .set("tags").set("difficulty").set("doc_type"));
+                        .set("tags").set("difficulty").set("doc_type").set("id"));
         if (StrUtil.isBlank(keyword)) {
             body.set("query", new JSONObject().set("match_all", new JSONObject()));
         } else {
@@ -84,7 +84,8 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
                 JSONObject hit = (JSONObject) hitObj;
                 JSONObject source = hit.getJSONObject("_source");
                 KbQuestionSearchView.Item item = new KbQuestionSearchView.Item();
-                item.setId(hit.getStr("_id"));
+                // id 用 MySQL 主键（详情接口按主键查，ES 文档 _id 也是主键）
+                item.setId(source.getStr("id", hit.getStr("_id")));
                 item.setTitle(source.getStr("title"));
                 item.setCategory(source.getStr("category"));
                 item.setDifficulty(source.getStr("difficulty"));
