@@ -3,10 +3,15 @@ package com.jakt.aiplatform.biz.service.impl;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
+import com.jakt.aiplatform.biz.service.KbQuestionDetailView;
 import com.jakt.aiplatform.biz.service.KbQuestionSearchManager;
 import com.jakt.aiplatform.biz.service.KbQuestionSearchView;
+import com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO;
 import com.jakt.aiplatform.common.dal.es.EsProperties;
 import com.jakt.aiplatform.common.dal.es.EsSearchClient;
+import com.jakt.aiplatform.common.dal.mapper.KbQuestionMapper;
+import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -30,9 +35,14 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
     /** ES 配置。 */
     private final EsProperties esProperties;
 
-    public KbQuestionSearchManagerImpl(EsSearchClient esSearchClient, EsProperties esProperties) {
+    /** 题库 Mapper（详情查询走 MySQL）。 */
+    private final KbQuestionMapper kbQuestionMapper;
+
+    public KbQuestionSearchManagerImpl(EsSearchClient esSearchClient, EsProperties esProperties,
+                                       KbQuestionMapper kbQuestionMapper) {
         this.esSearchClient = esSearchClient;
         this.esProperties = esProperties;
+        this.kbQuestionMapper = kbQuestionMapper;
     }
 
     @Override
@@ -45,20 +55,21 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
                 .set("from", from)
                 .set("size", pageSize)
                 .set("track_total_hits", true)
-                .set("_source", new JSONArray().set("title").set("content").set("category")
+                // 列表只取轻量字段：摘要 summary（详情走单独接口），避免传输长正文
+                .set("_source", new JSONArray().set("title").set("summary").set("category")
                         .set("tags").set("difficulty").set("doc_type"));
         if (StrUtil.isBlank(keyword)) {
             body.set("query", new JSONObject().set("match_all", new JSONObject()));
         } else {
             body.set("query", new JSONObject().set("multi_match", new JSONObject()
                     .set("query", keyword.trim())
-                    .set("fields", new JSONArray().set("title^3").set("tags^2").set("content"))
+                    .set("fields", new JSONArray().set("title^3").set("tags^2").set("summary").set("content"))
                     .set("type", "best_fields")));
             body.set("highlight", new JSONObject()
                     .set("pre_tags", new JSONArray().set("<em>"))
                     .set("post_tags", new JSONArray().set("</em>"))
                     .set("fields", new JSONObject()
-                            .set("content", new JSONObject().set("fragment_size", 160).set("number_of_fragments", 1))
+                            .set("summary", new JSONObject().set("fragment_size", 160).set("number_of_fragments", 1))
                             .set("title", new JSONObject())));
         }
 
@@ -98,7 +109,7 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
     private String resolveSnippet(JSONObject hit, JSONObject source) {
         JSONObject highlight = hit.getJSONObject("highlight");
         if (highlight != null) {
-            JSONArray fragments = highlight.getJSONArray("content");
+            JSONArray fragments = highlight.getJSONArray("summary");
             if (fragments != null && !fragments.isEmpty()) {
                 return fragments.getStr(0);
             }
@@ -107,6 +118,28 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
                 return titleFragments.getStr(0);
             }
         }
-        return StrUtil.maxLength(StrUtil.nullToEmpty(source.getStr("content")).replaceAll("\\s+", " "), SNIPPET_LENGTH);
+        return StrUtil.maxLength(StrUtil.nullToEmpty(source.getStr("summary")).replaceAll("\\s+", " "), SNIPPET_LENGTH);
+    }
+
+    @Override
+    public KbQuestionDetailView detail(Long id) {
+        KbQuestionDO row = kbQuestionMapper.selectById(id);
+        if (row == null) {
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID, "题目不存在");
+        }
+        KbQuestionDetailView view = new KbQuestionDetailView();
+        view.setId(row.getId());
+        view.setDocType(row.getDocType());
+        view.setCategory(row.getCategory());
+        view.setTitle(row.getTitle());
+        view.setContent(row.getContent());
+        view.setOptions(row.getOptions());
+        view.setAnswer(row.getAnswer());
+        view.setExplanation(row.getExplanation());
+        view.setDifficulty(row.getDifficulty());
+        view.setTags(row.getTags());
+        view.setSourcePath(row.getSourcePath());
+        view.setCreateTime(row.getCreateTime());
+        return view;
     }
 }

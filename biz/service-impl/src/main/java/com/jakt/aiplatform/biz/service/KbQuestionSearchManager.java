@@ -14,4 +14,12 @@ public interface KbQuestionSearchManager {
      * @return 搜索结果
      */
     KbQuestionSearchView search(String keyword, int pageNum, int pageSize);
+
+    /**
+     * 查询题目详情（含完整解答，列表接口不返回大字段）。
+     *
+     * @param id 题目 ID
+     * @return 题目详情
+     */
+    KbQuestionDetailView detail(Long id);
 }
