@@ -95,3 +95,10 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [%X{traceId}] %logger{40} - %msg%n"
   level:
     com.jakt.aiplatform: info
+
+# Elasticsearch（题库检索）
+es:
+  url: ${ES_URL:http://elasticsearch.efk.svc.cluster.local:9200}
+  username: ${ES_USERNAME:elastic}
+  password: ${ES_PASSWORD:}
+  question-index: ${ES_QUESTION_INDEX:java-kb}

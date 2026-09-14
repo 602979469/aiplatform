@@ -45,6 +45,17 @@ spec:
               value: mysql.tsk.svc.cluster.local
             - name: MYSQL_PORT
               value: "3306"
+            - name: ES_URL
+              value: http://elasticsearch.efk.svc.cluster.local:9200
+            - name: ES_USERNAME
+              value: elastic
+            - name: ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: es-credentials
+                  key: elastic-password
+            - name: ES_QUESTION_INDEX
+              value: java-kb
             - name: MYSQL_USERNAME
               value: root
             - name: MYSQL_PASSWORD

@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.KbQuestionMapper">
+
+    <sql id="selectColumns">
+        id, doc_type, category, title, content, options, answer, explanation, create_by, update_by, difficulty, tags, source_path, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="docType != null and docType != ''">
+                AND doc_type = #{docType}
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="title != null and title != ''">
+                AND title = #{title}
+            </if>
+            <if test="content != null and content != ''">
+                AND content = #{content}
+            </if>
+            <if test="answer != null and answer != ''">
+                AND answer = #{answer}
+            </if>
+            <if test="explanation != null and explanation != ''">
+                AND explanation = #{explanation}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                AND create_by = #{createBy}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                AND update_by = #{updateBy}
+            </if>
+            <if test="difficulty != null and difficulty != ''">
+                AND difficulty = #{difficulty}
+            </if>
+            <if test="tags != null and tags != ''">
+                AND tags = #{tags}
+            </if>
+            <if test="sourcePath != null and sourcePath != ''">
+                AND source_path = #{sourcePath}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_question
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_question
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_question
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectOne" resultType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_question
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM kb_question
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO kb_question (doc_type, category, title, content, options, answer, explanation, create_by, update_by, difficulty, tags, source_path)
+        VALUES (#{docType}, #{category}, #{title}, #{content}, #{options}, #{answer}, #{explanation}, #{createBy}, #{updateBy}, #{difficulty}, #{tags}, #{sourcePath})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO">
+        UPDATE kb_question
+        SET doc_type = #{docType},
+            category = #{category},
+            title = #{title},
+            content = #{content},
+            options = #{options},
+            answer = #{answer},
+            explanation = #{explanation},
+            create_by = #{createBy},
+            update_by = #{updateBy},
+            difficulty = #{difficulty},
+            tags = #{tags},
+            source_path = #{sourcePath}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO">
+        <if test="docType != null or category != null or title != null or content != null or options != null or answer != null or explanation != null or createBy != null or updateBy != null or difficulty != null or tags != null or sourcePath != null">
+            UPDATE kb_question
+        <set>
+            <if test="docType != null">
+                doc_type = #{docType},
+            </if>
+            <if test="category != null">
+                category = #{category},
+            </if>
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="content != null">
+                content = #{content},
+            </if>
+            <if test="options != null">
+                options = #{options},
+            </if>
+            <if test="answer != null">
+                answer = #{answer},
+            </if>
+            <if test="explanation != null">
+                explanation = #{explanation},
+            </if>
+            <if test="createBy != null">
+                create_by = #{createBy},
+            </if>
+            <if test="updateBy != null">
+                update_by = #{updateBy},
+            </if>
+            <if test="difficulty != null">
+                difficulty = #{difficulty},
+            </if>
+            <if test="tags != null">
+                tags = #{tags},
+            </if>
+            <if test="sourcePath != null">
+                source_path = #{sourcePath},
+            </if>
+        </set>
+            WHERE id = #{id}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM kb_question WHERE id = #{id}
+    </delete>
+</mapper>
