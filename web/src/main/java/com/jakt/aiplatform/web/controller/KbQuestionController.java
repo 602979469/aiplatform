@@ -242,4 +242,30 @@ public class KbQuestionController {
             }
         });
     }
+
+    /** 题库筛选项（题型/技术方向/知识点/难度 + 数量）。 */
+    @GetMapping("/facets")
+    public ApiResult<java.util.Map<String, List<KbQuestionSearchResponse.Bucket>>> facets() {
+        return ApiTemplate.execute("facets", new ApiTemplate.Callback<String,
+                java.util.Map<String, List<KbQuestionSearchResponse.Bucket>>>() {
+
+            @Override
+            public java.util.Map<String, List<KbQuestionSearchResponse.Bucket>> execute(String param) {
+                java.util.Map<String, List<KbQuestionSearchResponse.Bucket>> result = new LinkedHashMap<>();
+                kbQuestionSearchManager.facets().forEach((name, buckets) -> {
+                    List<KbQuestionSearchResponse.Bucket> target = new ArrayList<>();
+                    if (buckets != null) {
+                        for (KbQuestionSearchView.Bucket b : buckets) {
+                            KbQuestionSearchResponse.Bucket bucket = new KbQuestionSearchResponse.Bucket();
+                            bucket.setKey(b.getKey());
+                            bucket.setCount(b.getCount());
+                            target.add(bucket);
+                        }
+                    }
+                    result.put(name, target);
+                });
+                return result;
+            }
+        });
+    }
 }

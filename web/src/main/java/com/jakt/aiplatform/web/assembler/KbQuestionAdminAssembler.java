@@ -54,15 +54,16 @@ public final class KbQuestionAdminAssembler {
         target.setId(request.getId());
         target.setQuestionType(request.getQuestionType());
         target.setCategory(request.getCategory());
-        target.setSubtopic(request.getSubtopic());
+        // subtopic / tags / source_path 在库里是 NOT NULL DEFAULT ''，显式传 null 会违反约束
+        target.setSubtopic(request.getSubtopic() == null ? "" : request.getSubtopic());
         target.setTitle(request.getTitle());
         target.setContent(request.getContent());
         target.setOptions(request.getOptions());
         target.setAnswer(request.getAnswer());
         target.setExplanation(request.getExplanation());
         target.setDifficulty(request.getDifficulty());
-        target.setTags(request.getTags());
-        target.setSourcePath(request.getSourcePath());
+        target.setTags(request.getTags() == null ? "" : request.getTags());
+        target.setSourcePath(request.getSourcePath() == null ? "" : request.getSourcePath());
         return target;
     }
 
