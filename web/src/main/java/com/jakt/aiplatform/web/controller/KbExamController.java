@@ -224,6 +224,20 @@ public class KbExamController {
         });
     }
 
+    /** 删除考试记录（试卷 + 答题明细，错题集/掌握度保留）。 */
+    @DeleteMapping("/paper/{paperId}")
+    @SaCheckPermission("kb:exam:start")
+    public ApiResult<Void> deletePaper(@PathVariable Long paperId) {
+        return ApiTemplate.execute(paperId, new ApiTemplate.Callback<Long, Void>() {
+
+            @Override
+            public Void execute(Long param) {
+                kbExamManager.deletePaper(param, StpUtil.getLoginIdAsLong());
+                return null;
+            }
+        });
+    }
+
     /** 考试记录。 */
     @GetMapping("/history")
     @SaCheckPermission("kb:exam:start")

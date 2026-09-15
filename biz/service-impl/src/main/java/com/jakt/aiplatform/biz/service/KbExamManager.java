@@ -82,4 +82,12 @@ public interface KbExamManager {
      * @param questionId 题目ID
      */
     void markMastered(Long userId, Long questionId);
+
+    /**
+     * 删除考试记录（试卷 + 答题明细；错题集/掌握度属于学习进度，保留不动）。
+     *
+     * @param paperId 试卷ID
+     * @param userId  用户ID
+     */
+    void deletePaper(Long paperId, Long userId);
 }

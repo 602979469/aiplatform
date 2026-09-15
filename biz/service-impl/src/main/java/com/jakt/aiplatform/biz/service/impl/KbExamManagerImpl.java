@@ -346,6 +346,9 @@ public class KbExamManagerImpl implements KbExamManager {
 
     @Override
     public PageResult<KbExamPaper> history(Long userId, Integer pageNum, Integer pageSize) {
+        // TODO 后续改为定时任务统一处理：这里在查询列表时兜底把「已超时但仍在进行中」的试卷自动交卷，
+        //      避免用户中途退出后记录一直挂在"未完成"。单次判断成本极低（只查当前用户的进行中记录）。
+        autoSubmitExpired(userId);
         KbExamPaperDalQuery query = new KbExamPaperDalQuery();
         query.setUserId(userId);
         query.setPageNum(pageNum == null ? 1 : pageNum);
@@ -354,6 +357,37 @@ public class KbExamManagerImpl implements KbExamManager {
         long total = kbExamPaperMapper.countByQuery(query);
         List<KbExamPaper> list = rows.stream().map(this::toPaperDomain).collect(Collectors.toList());
         return new PageResult<>(total, query.getPageNum(), query.getPageSize(), list);
+    }
+
+    /** 超时兜底：进行中且已过 deadline 的试卷按已作答内容自动交卷。 */
+    private void autoSubmitExpired(Long userId) {
+        KbExamPaperDalQuery query = new KbExamPaperDalQuery();
+        query.setUserId(userId);
+        query.setStatus("IN_PROGRESS");
+        query.setPageNum(1);
+        query.setPageSize(50);
+        List<KbExamPaperDO> papers = kbExamPaperMapper.selectList(query);
+        if (papers == null || papers.isEmpty()) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        for (KbExamPaperDO paper : papers) {
+            if (paper.getDeadline() != null && paper.getDeadline().isBefore(now)) {
+                LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "考试超时自动交卷 paperId={} userId={}",
+                        paper.getId(), userId);
+                submit(paper.getId(), userId);
+            }
+        }
+    }
+
+    @Override
+    public void deletePaper(Long paperId, Long userId) {
+        requirePaper(paperId, userId);
+        BizTemplate.executeWithoutResult(transactionTemplate, () -> {
+            kbExamPaperQuestionMapper.deleteByPaperId(paperId);
+            kbExamPaperMapper.deleteById(paperId);
+        });
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "删除考试记录 paperId={} userId={}", paperId, userId);
     }
 
     @Override
