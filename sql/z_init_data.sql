@@ -53,9 +53,9 @@ VALUES (1,   'AI 应用',    0, 1, '/ai',        '',                            
        (600, '题库',        0, 6, '/kb',        '',                            'M', '0', '0', null,                      'el-icon-reading',         '题库目录'),
        (601, '题库搜索',    600, 1, 'search',   'kb/question/index',           'C', '0', '0', 'kb:question:search',      'el-icon-search',          '题库搜索菜单'),
        (602, '题库管理',    600, 2, 'manage',   'kb/manage/index',             'C', '0', '0', 'kb:question:list',        'el-icon-edit-outline',    '题库管理菜单（增删改查）'),
-       (6021, '题目新增',   602, 1, '',         '',                            'F', '0', '0', 'kb:question:add',         null,                      '题库新增按钮'),
-       (6022, '题目修改',   602, 2, '',         '',                            'F', '0', '0', 'kb:question:edit',        null,                      '题库修改按钮'),
-       (6023, '题目删除',   602, 3, '',         '',                            'F', '0', '0', 'kb:question:remove',      null,                      '题库删除按钮')
+       (6021, '题目新增',   602, 1, '',         '',                            'F', '0', '0', 'kb:question:add',         '',                        '题库新增按钮'),
+       (6022, '题目修改',   602, 2, '',         '',                            'F', '0', '0', 'kb:question:edit',        '',                        '题库修改按钮'),
+       (6023, '题目删除',   602, 3, '',         '',                            'F', '0', '0', 'kb:question:remove',      '',                        '题库删除按钮')
 ON DUPLICATE KEY UPDATE
     menu_name = VALUES(menu_name),
     parent_id = VALUES(parent_id),
