@@ -80,6 +80,34 @@ ON DUPLICATE KEY UPDATE
 DELETE FROM auth_role_menu WHERE menu_id = 600;
 DELETE FROM auth_menu WHERE menu_id = 600;
 
+-- 4.2 默认试卷模板（App 端只能选模板开考，先给几套现成的，可自行增删改）
+INSERT INTO kb_exam_template
+    (id, name, description, scope, owner_user_id, status, mode, question_count,
+     per_question_seconds, objective_only, exclude_mastered, use_count, create_by, update_by)
+VALUES
+    (7001, 'Java 基础 20 题',   'Java 基础知识点随机抽题，只出没做过的题', 'GLOBAL', NULL, 'PUBLISHED', 'NORMAL', 20, 60, 1, 1, 0, 'system', 'system'),
+    (7002, 'JUC 并发专项 20 题', '并发编程重点知识点（线程池/AQS/锁/并发容器）', 'GLOBAL', NULL, 'PUBLISHED', 'NORMAL', 20, 60, 1, 1, 0, 'system', 'system'),
+    (7003, 'JVM 专项 15 题',    'JVM 内存结构、GC、类加载等',                'GLOBAL', NULL, 'PUBLISHED', 'NORMAL', 15, 60, 1, 1, 0, 'system', 'system'),
+    (7004, 'MySQL 专项 20 题',  'MySQL 索引、事务、锁、执行计划等',           'GLOBAL', NULL, 'PUBLISHED', 'NORMAL', 20, 60, 1, 1, 0, 'system', 'system')
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    description = VALUES(description),
+    scope = VALUES(scope),
+    status = VALUES(status),
+    mode = VALUES(mode),
+    question_count = VALUES(question_count),
+    per_question_seconds = VALUES(per_question_seconds),
+    objective_only = VALUES(objective_only),
+    exclude_mastered = VALUES(exclude_mastered);
+
+DELETE FROM kb_exam_template_rule WHERE template_id IN (7001, 7002, 7003, 7004);
+INSERT INTO kb_exam_template_rule (template_id, category, subtopic, question_type, difficulty, question_count, order_num)
+VALUES
+    (7001, 'Java基础', NULL, NULL, NULL, 20, 1),
+    (7002, '并发编程', NULL, NULL, NULL, 20, 1),
+    (7003, 'JVM',     NULL, NULL, NULL, 15, 1),
+    (7004, 'MySQL',   NULL, NULL, NULL, 20, 1);
+
 -- 5. 菜单授权
 -- 5.1 超级管理员：全部启用菜单
 INSERT IGNORE INTO auth_role_menu (role_id, menu_id)
