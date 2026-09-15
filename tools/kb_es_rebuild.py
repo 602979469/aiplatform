@@ -16,7 +16,6 @@ NAMESPACE_DB = "tsk"
 NAMESPACE_ES = "efk"
 MYSQL_POD = "mysql-0"
 MYSQL_USER = "root"
-MYSQL_PASSWORD = "123456"
 MYSQL_DB = "aiplatform"
 
 # MySQL 批量导出会转义引号/换行，直接输出 JSON 会解析失败；这里用 base64 包裹保证一行一文档
@@ -34,6 +33,12 @@ def sh(cmd):
     if done.returncode != 0:
         sys.exit("命令失败: %s\n%s" % (" ".join(cmd), done.stderr[:500]))
     return done.stdout
+
+
+# 密码从 Secret 读，避免写死在脚本里（Secret 变更后脚本自动跟随）
+MYSQL_PASSWORD = base64.b64decode(sh([
+    "kubectl", "get", "secret", "mysql-secret", "-n", NAMESPACE_DB, "-o",
+    "jsonpath={.data.root-password}"]).strip()).decode()
 
 
 es_ip = sh(["kubectl", "-n", NAMESPACE_ES, "get", "svc", "elasticsearch",
