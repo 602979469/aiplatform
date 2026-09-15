@@ -135,6 +135,23 @@ public class KbExamManagerImpl implements KbExamManager {
                     questionCount - picked.size(), picked));
         }
         if (picked.isEmpty()) {
+            // 区分两种为空：知识点本身没有题（配置问题） vs 都做对了（可切换复习模式）
+            for (KbExamRuleParam rule : rules) {
+                KbQuestionPickQuery probe = new KbQuestionPickQuery();
+                probe.setCategory(StrUtil.trimToNull(rule.getCategory()));
+                probe.setSubtopic(StrUtil.trimToNull(rule.getSubtopic()));
+                probe.setQuestionType(StrUtil.trimToNull(rule.getQuestionType()));
+                probe.setDifficulty(StrUtil.trimToNull(rule.getDifficulty()));
+                probe.setExcludeMastered(false);
+                probe.setLimit(1);
+                List<Long> exists = kbQuestionMapper.selectPickIds(probe);
+                if (exists == null || exists.isEmpty()) {
+                    String target = StrUtil.isBlank(rule.getSubtopic())
+                            ? rule.getCategory() : rule.getCategory() + "/" + rule.getSubtopic();
+                    throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID,
+                            "知识点「" + target + "」下暂无题目，请重新配置试卷");
+                }
+            }
             throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID,
                     "没有可用题目：所选知识点下的题目可能都已做对（可切换复习模式）");
         }
