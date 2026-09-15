@@ -1,9 +1,19 @@
 package com.jakt.aiplatform.biz.service;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * 题库检索（走 Elasticsearch）。
  */
 public interface KbQuestionSearchManager {
+
+    /**
+     * 题库筛选项（题型/技术方向/知识点/难度 + 数量），进页面即可用，无需先查询。
+     *
+     * @return 聚合结果
+     */
+    Map<String, List<KbQuestionSearchView.Bucket>> facets();
 
     /**
      * 检索题库。

@@ -124,6 +124,18 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
         return view;
     }
 
+    @Override
+    public Map<String, List<KbQuestionSearchView.Bucket>> facets() {
+        JSONObject body = new JSONObject()
+                .set("size", 0)
+                .set("aggs", new JSONObject()
+                        .set("question_type", terms("question_type", 10))
+                        .set("category", terms("category", 60))
+                        .set("subtopic", terms("subtopic", 60))
+                        .set("difficulty", terms("difficulty", 10)));
+        return parseFacets(esSearchClient.search(esProperties.getQuestionIndex(), body));
+    }
+
     /**
      * 构造 terms 聚合。
      */
