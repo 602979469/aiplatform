@@ -13,7 +13,7 @@ public class KbQuestionDO extends BaseDO {
     private Long id;
 
     /** 题目类型：qa解答题 / choice选择题。 */
-    private String docType;
+    private String questionType;
 
     /** 来源。 */
     private String category;

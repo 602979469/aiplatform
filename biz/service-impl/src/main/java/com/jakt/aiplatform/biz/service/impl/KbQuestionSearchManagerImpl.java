@@ -130,7 +130,7 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
         }
         KbQuestionDetailView view = new KbQuestionDetailView();
         view.setId(row.getId());
-        view.setDocType(row.getDocType());
+        view.setDocType(row.getQuestionType());
         view.setCategory(row.getCategory());
         view.setTitle(row.getTitle());
         view.setContent(row.getContent());

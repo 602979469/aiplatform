@@ -3,7 +3,7 @@
 <mapper namespace="com.jakt.aiplatform.common.dal.mapper.KbQuestionMapper">
 
     <sql id="selectColumns">
-        id, doc_type, category, title, content, options, answer, explanation, create_by, update_by, difficulty, tags, source_path, create_time, update_time
+        id, question_type, category, title, content, options, answer, explanation, create_by, update_by, difficulty, tags, source_path, create_time, update_time
     </sql>
 
     <sql id="queryConditions">
@@ -11,8 +11,8 @@
             <if test="id != null">
                 AND id = #{id}
             </if>
-            <if test="docType != null and docType != ''">
-                AND doc_type = #{docType}
+            <if test="questionType != null and questionType != ''">
+                AND question_type = #{questionType}
             </if>
             <if test="category != null and category != ''">
                 AND category = #{category}
@@ -95,13 +95,13 @@
 
     <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO kb_question (doc_type, category, title, content, options, answer, explanation, create_by, update_by, difficulty, tags, source_path)
-        VALUES (#{docType}, #{category}, #{title}, #{content}, #{options}, #{answer}, #{explanation}, #{createBy}, #{updateBy}, #{difficulty}, #{tags}, #{sourcePath})
+        INSERT INTO kb_question (question_type, category, title, content, options, answer, explanation, create_by, update_by, difficulty, tags, source_path)
+        VALUES (#{questionType}, #{category}, #{title}, #{content}, #{options}, #{answer}, #{explanation}, #{createBy}, #{updateBy}, #{difficulty}, #{tags}, #{sourcePath})
     </insert>
 
     <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO">
         UPDATE kb_question
-        SET doc_type = #{docType},
+        SET question_type = #{questionType},
             category = #{category},
             title = #{title},
             content = #{content},
@@ -117,11 +117,11 @@
     </update>
 
     <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO">
-        <if test="docType != null or category != null or title != null or content != null or options != null or answer != null or explanation != null or createBy != null or updateBy != null or difficulty != null or tags != null or sourcePath != null">
+        <if test="questionType != null or category != null or title != null or content != null or options != null or answer != null or explanation != null or createBy != null or updateBy != null or difficulty != null or tags != null or sourcePath != null">
             UPDATE kb_question
         <set>
-            <if test="docType != null">
-                doc_type = #{docType},
+            <if test="questionType != null">
+                question_type = #{questionType},
             </if>
             <if test="category != null">
                 category = #{category},
