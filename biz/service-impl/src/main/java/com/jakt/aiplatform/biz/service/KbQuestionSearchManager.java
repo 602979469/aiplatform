@@ -13,7 +13,7 @@ public interface KbQuestionSearchManager {
      * @param pageSize 每页条数
      * @return 搜索结果
      */
-    KbQuestionSearchView search(String keyword, int pageNum, int pageSize);
+    KbQuestionSearchView search(KbQuestionSearchQuery query);
 
     /**
      * 查询题目详情（含完整解答，列表接口不返回大字段）。

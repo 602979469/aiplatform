@@ -3,6 +3,7 @@ package com.jakt.aiplatform.web.result;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 题库搜索响应。
@@ -15,6 +16,20 @@ public class KbQuestionSearchResponse {
 
     /** 结果列表。 */
     private List<Item> list;
+
+    /** 筛选项聚合（question_type / category / subtopic / difficulty）。 */
+    private Map<String, List<Bucket>> facets;
+
+    /** 聚合桶。 */
+    @Data
+    public static class Bucket {
+
+        /** 取值。 */
+        private String key;
+
+        /** 数量。 */
+        private Long count;
+    }
 
     /** 单条结果。 */
     @Data

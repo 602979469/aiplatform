@@ -5,6 +5,7 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.jakt.aiplatform.biz.service.KbQuestionDetailView;
 import com.jakt.aiplatform.biz.service.KbQuestionSearchManager;
+import com.jakt.aiplatform.biz.service.KbQuestionSearchQuery;
 import com.jakt.aiplatform.biz.service.KbQuestionSearchView;
 import com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO;
 import com.jakt.aiplatform.common.dal.es.EsProperties;
@@ -15,7 +16,9 @@ import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 题库检索实现：调用 Elasticsearch（索引 java-kb）。
@@ -46,25 +49,45 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
     }
 
     @Override
-    public KbQuestionSearchView search(String keyword, int pageNum, int pageSize) {
+    public KbQuestionSearchView search(KbQuestionSearchQuery query) {
+        String keyword = query.getKeyword();
+        int pageSize = Math.max(1, query.getPageSize());
         // 深分页保护：from + size 必须 <= max_result_window（ES 默认 10000），超出会 400
         int maxPage = Math.max(1, MAX_RESULT_WINDOW / Math.max(1, pageSize));
-        int safePage = Math.min(Math.max(1, pageNum), maxPage);
+        int safePage = Math.min(Math.max(1, query.getPageNum()), maxPage);
         int from = Math.max(0, (safePage - 1) * pageSize);
+
+        JSONArray filter = new JSONArray();
+        addTerms(filter, "question_type", query.getQuestionTypes());
+        addTerms(filter, "category", query.getCategories());
+        addTerms(filter, "subtopic", query.getSubtopics());
+        addTerms(filter, "difficulty", query.getDifficulties());
+
+        JSONObject must;
+        boolean hasKeyword = StrUtil.isNotBlank(keyword);
+        if (hasKeyword) {
+            must = new JSONObject().set("multi_match", new JSONObject()
+                    .set("query", keyword.trim())
+                    .set("fields", new JSONArray().set("title^3").set("tags^2").set("summary").set("content"))
+                    .set("type", "best_fields"));
+        } else {
+            must = new JSONObject().set("match_all", new JSONObject());
+        }
+
         JSONObject body = new JSONObject()
                 .set("from", from)
                 .set("size", pageSize)
                 .set("track_total_hits", true)
+                .set("query", new JSONObject().set("bool", new JSONObject().set("must", must).set("filter", filter)))
+                .set("aggs", new JSONObject()
+                        .set("question_type", terms("question_type", 10))
+                        .set("category", terms("category", 60))
+                        .set("subtopic", terms("subtopic", 60))
+                        .set("difficulty", terms("difficulty", 10)))
                 // 列表只取轻量字段：摘要 summary（详情走单独接口），避免传输长正文
                 .set("_source", new JSONArray().set("title").set("summary").set("category")
                         .set("tags").set("difficulty").set("doc_type").set("id"));
-        if (StrUtil.isBlank(keyword)) {
-            body.set("query", new JSONObject().set("match_all", new JSONObject()));
-        } else {
-            body.set("query", new JSONObject().set("multi_match", new JSONObject()
-                    .set("query", keyword.trim())
-                    .set("fields", new JSONArray().set("title^3").set("tags^2").set("summary").set("content"))
-                    .set("type", "best_fields")));
+        if (hasKeyword) {
             body.set("highlight", new JSONObject()
                     .set("pre_tags", new JSONArray().set("<em>"))
                     .set("post_tags", new JSONArray().set("</em>"))
@@ -97,7 +120,50 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
             }
         }
         view.setList(items);
+        view.setFacets(parseFacets(response));
         return view;
+    }
+
+    /**
+     * 构造 terms 聚合。
+     */
+    private JSONObject terms(String field, int size) {
+        return new JSONObject().set("terms", new JSONObject().set("field", field).set("size", size));
+    }
+
+    /**
+     * 追加 terms 过滤（多值）。
+     */
+    private void addTerms(JSONArray filter, String field, List<String> values) {
+        if (values != null && !values.isEmpty()) {
+            filter.add(new JSONObject().set("terms", new JSONObject().set(field, values)));
+        }
+    }
+
+    /**
+     * 解析聚合结果为 facets。
+     */
+    private Map<String, List<KbQuestionSearchView.Bucket>> parseFacets(JSONObject response) {
+        Map<String, List<KbQuestionSearchView.Bucket>> facets = new LinkedHashMap<>();
+        JSONObject aggs = response.getJSONObject("aggregations");
+        if (aggs == null) {
+            return facets;
+        }
+        for (String name : new String[]{"question_type", "category", "subtopic", "difficulty"}) {
+            JSONObject agg = aggs.getJSONObject(name);
+            List<KbQuestionSearchView.Bucket> buckets = new ArrayList<>();
+            if (agg != null && agg.getJSONArray("buckets") != null) {
+                for (Object o : agg.getJSONArray("buckets")) {
+                    JSONObject b = (JSONObject) o;
+                    KbQuestionSearchView.Bucket bucket = new KbQuestionSearchView.Bucket();
+                    bucket.setKey(b.getStr("key"));
+                    bucket.setCount(b.getLong("doc_count", 0L));
+                    buckets.add(bucket);
+                }
+            }
+            facets.put(name, buckets);
+        }
+        return facets;
     }
 
     /**

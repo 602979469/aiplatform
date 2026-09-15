@@ -3,6 +3,7 @@ package com.jakt.aiplatform.biz.service;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 题库搜索结果视图。
@@ -15,6 +16,20 @@ public class KbQuestionSearchView {
 
     /** 当前页数据。 */
     private List<Item> list;
+
+    /** 聚合结果（筛选项 + 计数）：questionType / category / subtopic / difficulty。 */
+    private Map<String, List<Bucket>> facets;
+
+    /** 聚合桶。 */
+    @Data
+    public static class Bucket {
+
+        /** 取值。 */
+        private String key;
+
+        /** 数量。 */
+        private Long count;
+    }
 
     /** 单条结果。 */
     @Data
