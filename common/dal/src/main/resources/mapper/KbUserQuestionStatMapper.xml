@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.KbUserQuestionStatMapper">
+
+    <sql id="selectColumns">
+        id, user_id, question_id, right_count, wrong_count, last_result, last_answer_time, first_right_time, mastered, in_wrong_book, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="questionId != null">
+                AND question_id = #{questionId}
+            </if>
+            <if test="rightCount != null">
+                AND right_count = #{rightCount}
+            </if>
+            <if test="wrongCount != null">
+                AND wrong_count = #{wrongCount}
+            </if>
+            <if test="lastResult != null">
+                AND last_result = #{lastResult}
+            </if>
+            <if test="lastAnswerTime != null">
+                AND last_answer_time = #{lastAnswerTime}
+            </if>
+            <if test="firstRightTime != null">
+                AND first_right_time = #{firstRightTime}
+            </if>
+            <if test="mastered != null">
+                AND mastered = #{mastered}
+            </if>
+            <if test="inWrongBook != null">
+                AND in_wrong_book = #{inWrongBook}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.KbUserQuestionStatDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_user_question_stat
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.KbUserQuestionStatDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_user_question_stat
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.KbUserQuestionStatDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_user_question_stat
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectOne" resultType="com.jakt.aiplatform.common.dal.dataobject.KbUserQuestionStatDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_user_question_stat
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM kb_user_question_stat
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbUserQuestionStatDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO kb_user_question_stat (user_id, question_id, right_count, wrong_count, last_result, last_answer_time, first_right_time, mastered, in_wrong_book)
+        VALUES (#{userId}, #{questionId}, #{rightCount}, #{wrongCount}, #{lastResult}, #{lastAnswerTime}, #{firstRightTime}, #{mastered}, #{inWrongBook})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbUserQuestionStatDO">
+        UPDATE kb_user_question_stat
+        SET user_id = #{userId},
+            question_id = #{questionId},
+            right_count = #{rightCount},
+            wrong_count = #{wrongCount},
+            last_result = #{lastResult},
+            last_answer_time = #{lastAnswerTime},
+            first_right_time = #{firstRightTime},
+            mastered = #{mastered},
+            in_wrong_book = #{inWrongBook}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbUserQuestionStatDO">
+        <if test="userId != null or questionId != null or rightCount != null or wrongCount != null or lastResult != null or lastAnswerTime != null or firstRightTime != null or mastered != null or inWrongBook != null">
+            UPDATE kb_user_question_stat
+        <set>
+            <if test="userId != null">
+                user_id = #{userId},
+            </if>
+            <if test="questionId != null">
+                question_id = #{questionId},
+            </if>
+            <if test="rightCount != null">
+                right_count = #{rightCount},
+            </if>
+            <if test="wrongCount != null">
+                wrong_count = #{wrongCount},
+            </if>
+            <if test="lastResult != null">
+                last_result = #{lastResult},
+            </if>
+            <if test="lastAnswerTime != null">
+                last_answer_time = #{lastAnswerTime},
+            </if>
+            <if test="firstRightTime != null">
+                first_right_time = #{firstRightTime},
+            </if>
+            <if test="mastered != null">
+                mastered = #{mastered},
+            </if>
+            <if test="inWrongBook != null">
+                in_wrong_book = #{inWrongBook},
+            </if>
+        </set>
+            WHERE id = #{id}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM kb_user_question_stat WHERE id = #{id}
+    </delete>
+</mapper>

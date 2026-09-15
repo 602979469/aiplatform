@@ -14,8 +14,8 @@ public class KbQuestionDalQuery extends DalPageQuery {
     /** 主键。 */
     private Long id;
 
-    /** 题目类型：qa解答题 / choice选择题。 */
-    private String docType;
+    /** 题型（单选/多选/判断/解答）。 */
+    private String questionType;
 
     /** 来源。 */
     private String category;
@@ -28,6 +28,12 @@ public class KbQuestionDalQuery extends DalPageQuery {
 
     /** 选择题答案。 */
     private String answer;
+
+    /** 子主题（知识点二级）。 */
+    private String subtopic;
+
+    /** 关键词（题干/正文模糊匹配）。 */
+    private String keyword;
 
     /** 解析。 */
     private String explanation;

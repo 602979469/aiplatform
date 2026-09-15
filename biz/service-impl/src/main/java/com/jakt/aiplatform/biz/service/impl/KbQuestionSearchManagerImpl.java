@@ -198,6 +198,7 @@ public class KbQuestionSearchManagerImpl implements KbQuestionSearchManager {
         view.setId(row.getId());
         view.setDocType(row.getQuestionType());
         view.setCategory(row.getCategory());
+        view.setSubtopic(row.getSubtopic());
         view.setTitle(row.getTitle());
         view.setContent(row.getContent());
         view.setOptions(row.getOptions());

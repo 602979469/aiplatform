@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.KbExamTemplateRuleMapper">
+
+    <sql id="selectColumns">
+        id, template_id, category, subtopic, question_type, difficulty, question_count, order_num, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="templateId != null">
+                AND template_id = #{templateId}
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="subtopic != null and subtopic != ''">
+                AND subtopic = #{subtopic}
+            </if>
+            <if test="questionType != null and questionType != ''">
+                AND question_type = #{questionType}
+            </if>
+            <if test="difficulty != null and difficulty != ''">
+                AND difficulty = #{difficulty}
+            </if>
+            <if test="questionCount != null">
+                AND question_count = #{questionCount}
+            </if>
+            <if test="orderNum != null">
+                AND order_num = #{orderNum}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateRuleDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_template_rule
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateRuleDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_template_rule
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateRuleDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_template_rule
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectOne" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateRuleDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_template_rule
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM kb_exam_template_rule
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateRuleDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO kb_exam_template_rule (template_id, category, subtopic, question_type, difficulty, question_count, order_num)
+        VALUES (#{templateId}, #{category}, #{subtopic}, #{questionType}, #{difficulty}, #{questionCount}, #{orderNum})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateRuleDO">
+        UPDATE kb_exam_template_rule
+        SET template_id = #{templateId},
+            category = #{category},
+            subtopic = #{subtopic},
+            question_type = #{questionType},
+            difficulty = #{difficulty},
+            question_count = #{questionCount},
+            order_num = #{orderNum}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateRuleDO">
+        <if test="templateId != null or category != null or subtopic != null or questionType != null or difficulty != null or questionCount != null or orderNum != null">
+            UPDATE kb_exam_template_rule
+        <set>
+            <if test="templateId != null">
+                template_id = #{templateId},
+            </if>
+            <if test="category != null">
+                category = #{category},
+            </if>
+            <if test="subtopic != null">
+                subtopic = #{subtopic},
+            </if>
+            <if test="questionType != null">
+                question_type = #{questionType},
+            </if>
+            <if test="difficulty != null">
+                difficulty = #{difficulty},
+            </if>
+            <if test="questionCount != null">
+                question_count = #{questionCount},
+            </if>
+            <if test="orderNum != null">
+                order_num = #{orderNum},
+            </if>
+        </set>
+            WHERE id = #{id}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM kb_exam_template_rule WHERE id = #{id}
+    </delete>
+</mapper>

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.KbExamPaperQuestionMapper">
+
+    <sql id="selectColumns">
+        id, paper_id, question_id, seq, question_type, category, subtopic, title, content, options, answer, explanation, difficulty, score, user_answer, is_correct, answer_cost_seconds, answer_time, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="paperId != null">
+                AND paper_id = #{paperId}
+            </if>
+            <if test="questionId != null">
+                AND question_id = #{questionId}
+            </if>
+            <if test="seq != null">
+                AND seq = #{seq}
+            </if>
+            <if test="questionType != null and questionType != ''">
+                AND question_type = #{questionType}
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <if test="subtopic != null and subtopic != ''">
+                AND subtopic = #{subtopic}
+            </if>
+            <if test="title != null and title != ''">
+                AND title = #{title}
+            </if>
+            <if test="content != null and content != ''">
+                AND content = #{content}
+            </if>
+            <if test="answer != null and answer != ''">
+                AND answer = #{answer}
+            </if>
+            <if test="explanation != null and explanation != ''">
+                AND explanation = #{explanation}
+            </if>
+            <if test="difficulty != null and difficulty != ''">
+                AND difficulty = #{difficulty}
+            </if>
+            <if test="score != null">
+                AND score = #{score}
+            </if>
+            <if test="userAnswer != null and userAnswer != ''">
+                AND user_answer = #{userAnswer}
+            </if>
+            <if test="isCorrect != null">
+                AND is_correct = #{isCorrect}
+            </if>
+            <if test="answerCostSeconds != null">
+                AND answer_cost_seconds = #{answerCostSeconds}
+            </if>
+            <if test="answerTime != null">
+                AND answer_time = #{answerTime}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperQuestionDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_paper_question
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperQuestionDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_paper_question
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperQuestionDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_paper_question
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectOne" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperQuestionDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_paper_question
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM kb_exam_paper_question
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperQuestionDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO kb_exam_paper_question (paper_id, question_id, seq, question_type, category, subtopic, title, content, options, answer, explanation, difficulty, score, user_answer, is_correct, answer_cost_seconds, answer_time)
+        VALUES (#{paperId}, #{questionId}, #{seq}, #{questionType}, #{category}, #{subtopic}, #{title}, #{content}, #{options}, #{answer}, #{explanation}, #{difficulty}, #{score}, #{userAnswer}, #{isCorrect}, #{answerCostSeconds}, #{answerTime})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperQuestionDO">
+        UPDATE kb_exam_paper_question
+        SET paper_id = #{paperId},
+            question_id = #{questionId},
+            seq = #{seq},
+            question_type = #{questionType},
+            category = #{category},
+            subtopic = #{subtopic},
+            title = #{title},
+            content = #{content},
+            options = #{options},
+            answer = #{answer},
+            explanation = #{explanation},
+            difficulty = #{difficulty},
+            score = #{score},
+            user_answer = #{userAnswer},
+            is_correct = #{isCorrect},
+            answer_cost_seconds = #{answerCostSeconds},
+            answer_time = #{answerTime}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperQuestionDO">
+        <if test="paperId != null or questionId != null or seq != null or questionType != null or category != null or subtopic != null or title != null or content != null or options != null or answer != null or explanation != null or difficulty != null or score != null or userAnswer != null or isCorrect != null or answerCostSeconds != null or answerTime != null">
+            UPDATE kb_exam_paper_question
+        <set>
+            <if test="paperId != null">
+                paper_id = #{paperId},
+            </if>
+            <if test="questionId != null">
+                question_id = #{questionId},
+            </if>
+            <if test="seq != null">
+                seq = #{seq},
+            </if>
+            <if test="questionType != null">
+                question_type = #{questionType},
+            </if>
+            <if test="category != null">
+                category = #{category},
+            </if>
+            <if test="subtopic != null">
+                subtopic = #{subtopic},
+            </if>
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="content != null">
+                content = #{content},
+            </if>
+            <if test="options != null">
+                options = #{options},
+            </if>
+            <if test="answer != null">
+                answer = #{answer},
+            </if>
+            <if test="explanation != null">
+                explanation = #{explanation},
+            </if>
+            <if test="difficulty != null">
+                difficulty = #{difficulty},
+            </if>
+            <if test="score != null">
+                score = #{score},
+            </if>
+            <if test="userAnswer != null">
+                user_answer = #{userAnswer},
+            </if>
+            <if test="isCorrect != null">
+                is_correct = #{isCorrect},
+            </if>
+            <if test="answerCostSeconds != null">
+                answer_cost_seconds = #{answerCostSeconds},
+            </if>
+            <if test="answerTime != null">
+                answer_time = #{answerTime},
+            </if>
+        </set>
+            WHERE id = #{id}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM kb_exam_paper_question WHERE id = #{id}
+    </delete>
+</mapper>

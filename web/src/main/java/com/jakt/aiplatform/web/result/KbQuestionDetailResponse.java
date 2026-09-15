@@ -17,6 +17,9 @@ public class KbQuestionDetailResponse {
     /** 来源。 */
     private String category;
 
+    /** 子主题（知识点二级）。 */
+    private String subtopic;
+
     /** 标题/问题。 */
     private String title;
 

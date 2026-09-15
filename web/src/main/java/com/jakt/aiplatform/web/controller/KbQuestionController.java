@@ -1,16 +1,31 @@
 package com.jakt.aiplatform.web.controller;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.jakt.aiplatform.biz.service.KbQuestionAdminManager;
 import com.jakt.aiplatform.biz.service.KbQuestionSearchManager;
 import com.jakt.aiplatform.biz.service.KbQuestionSearchQuery;
 import com.jakt.aiplatform.biz.service.KbQuestionSearchView;
 import com.jakt.aiplatform.biz.service.KbQuestionDetailView;
+import com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO;
+import com.jakt.aiplatform.common.framework.result.PageResult;
+import com.jakt.aiplatform.common.util.tools.ConvertUtil;
+import com.jakt.aiplatform.web.assembler.KbQuestionAdminAssembler;
+import com.jakt.aiplatform.web.checker.KbQuestionAdminParamChecker;
+import com.jakt.aiplatform.web.param.KbQuestionQueryRequest;
+import com.jakt.aiplatform.web.param.KbQuestionSaveRequest;
 import com.jakt.aiplatform.web.param.KbQuestionSearchRequest;
 import com.jakt.aiplatform.web.result.ApiResult;
 import com.jakt.aiplatform.web.result.KbQuestionDetailResponse;
+import com.jakt.aiplatform.web.result.KbQuestionItemResponse;
+import com.jakt.aiplatform.web.result.KbQuestionMetaResponse;
 import com.jakt.aiplatform.web.result.KbQuestionSearchResponse;
 import com.jakt.aiplatform.web.template.ApiTemplate;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,8 +43,105 @@ public class KbQuestionController {
 
     private final KbQuestionSearchManager kbQuestionSearchManager;
 
-    public KbQuestionController(KbQuestionSearchManager kbQuestionSearchManager) {
+    /** 题库管理 Manager。 */
+    private final KbQuestionAdminManager kbQuestionAdminManager;
+
+    public KbQuestionController(KbQuestionSearchManager kbQuestionSearchManager,
+                                KbQuestionAdminManager kbQuestionAdminManager) {
         this.kbQuestionSearchManager = kbQuestionSearchManager;
+        this.kbQuestionAdminManager = kbQuestionAdminManager;
+    }
+
+    /** 题库管理：分页查询（走 MySQL，关键词 + 知识点/题型/难度筛选）。 */
+    @GetMapping("/page")
+    @SaCheckPermission("kb:question:list")
+    public ApiResult<PageResult<KbQuestionItemResponse>> page(KbQuestionQueryRequest request) {
+        return ApiTemplate.execute(request, new ApiTemplate.Callback<KbQuestionQueryRequest,
+                PageResult<KbQuestionItemResponse>>() {
+
+            @Override
+            public void beforeService(KbQuestionQueryRequest param) {
+                KbQuestionAdminParamChecker.checkQuery(param);
+            }
+
+            @Override
+            public PageResult<KbQuestionItemResponse> execute(KbQuestionQueryRequest param) {
+                PageResult<KbQuestionDO> page = kbQuestionAdminManager.page(
+                        KbQuestionAdminAssembler.toQueryParam(param));
+                return ConvertUtil.mapPage(page, KbQuestionAdminAssembler::toItem);
+            }
+        });
+    }
+
+    /** 题库管理：知识点元数据（分类 → 子主题 + 题量）。 */
+    @GetMapping("/meta")
+    @SaCheckPermission("kb:question:list")
+    public ApiResult<KbQuestionMetaResponse> meta() {
+        return ApiTemplate.execute(new Object(), new ApiTemplate.Callback<Object, KbQuestionMetaResponse>() {
+
+            @Override
+            public KbQuestionMetaResponse execute(Object param) {
+                return KbQuestionAdminAssembler.toMetaResponse(kbQuestionAdminManager.meta());
+            }
+        });
+    }
+
+    /** 题库管理：新增题目。 */
+    @PostMapping
+    @SaCheckPermission("kb:question:add")
+    public ApiResult<Long> create(@RequestBody KbQuestionSaveRequest request) {
+        return ApiTemplate.execute(request, new ApiTemplate.Callback<KbQuestionSaveRequest, Long>() {
+
+            @Override
+            public void beforeService(KbQuestionSaveRequest param) {
+                KbQuestionAdminParamChecker.checkSave(param);
+            }
+
+            @Override
+            public Long execute(KbQuestionSaveRequest param) {
+                return kbQuestionAdminManager.create(KbQuestionAdminAssembler.toDO(param));
+            }
+        });
+    }
+
+    /** 题库管理：修改题目。 */
+    @PutMapping("/{id}")
+    @SaCheckPermission("kb:question:edit")
+    public ApiResult<Void> update(@PathVariable Long id, @RequestBody KbQuestionSaveRequest request) {
+        request.setId(id);
+        return ApiTemplate.execute(request, new ApiTemplate.Callback<KbQuestionSaveRequest, Void>() {
+
+            @Override
+            public void beforeService(KbQuestionSaveRequest param) {
+                KbQuestionAdminParamChecker.checkId(param.getId());
+                KbQuestionAdminParamChecker.checkSave(param);
+            }
+
+            @Override
+            public Void execute(KbQuestionSaveRequest param) {
+                kbQuestionAdminManager.update(KbQuestionAdminAssembler.toDO(param));
+                return null;
+            }
+        });
+    }
+
+    /** 题库管理：删除题目（物理删除）。 */
+    @DeleteMapping("/{id}")
+    @SaCheckPermission("kb:question:remove")
+    public ApiResult<Void> delete(@PathVariable Long id) {
+        return ApiTemplate.execute(id, new ApiTemplate.Callback<Long, Void>() {
+
+            @Override
+            public void beforeService(Long param) {
+                KbQuestionAdminParamChecker.checkId(param);
+            }
+
+            @Override
+            public Void execute(Long param) {
+                kbQuestionAdminManager.delete(param);
+                return null;
+            }
+        });
     }
 
     /** 题库搜索。 */
@@ -117,6 +229,7 @@ public class KbQuestionController {
                 response.setId(view.getId());
                 response.setDocType(view.getDocType());
                 response.setCategory(view.getCategory());
+                response.setSubtopic(view.getSubtopic());
                 response.setTitle(view.getTitle());
                 response.setContent(view.getContent());
                 response.setOptions(view.getOptions());

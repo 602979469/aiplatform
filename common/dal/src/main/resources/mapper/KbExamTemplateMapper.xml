@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.KbExamTemplateMapper">
+
+    <sql id="selectColumns">
+        id, name, description, scope, owner_user_id, status, mode, question_count, per_question_seconds, objective_only, exclude_mastered, type_mix, difficulty_mix, use_count, create_by, update_by, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="name != null and name != ''">
+                AND name = #{name}
+            </if>
+            <if test="description != null and description != ''">
+                AND description = #{description}
+            </if>
+            <if test="scope != null and scope != ''">
+                AND scope = #{scope}
+            </if>
+            <if test="ownerUserId != null">
+                AND owner_user_id = #{ownerUserId}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="mode != null and mode != ''">
+                AND mode = #{mode}
+            </if>
+            <if test="questionCount != null">
+                AND question_count = #{questionCount}
+            </if>
+            <if test="perQuestionSeconds != null">
+                AND per_question_seconds = #{perQuestionSeconds}
+            </if>
+            <if test="objectiveOnly != null">
+                AND objective_only = #{objectiveOnly}
+            </if>
+            <if test="excludeMastered != null">
+                AND exclude_mastered = #{excludeMastered}
+            </if>
+            <if test="useCount != null">
+                AND use_count = #{useCount}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                AND create_by = #{createBy}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                AND update_by = #{updateBy}
+            </if>
+            AND del_flag = '0'
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_template
+        WHERE id = #{id}
+        AND del_flag = '0'
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_template
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_template
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectOne" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_template
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM kb_exam_template
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO kb_exam_template (name, description, scope, owner_user_id, status, mode, question_count, per_question_seconds, objective_only, exclude_mastered, type_mix, difficulty_mix, use_count, create_by, update_by)
+        VALUES (#{name}, #{description}, #{scope}, #{ownerUserId}, #{status}, #{mode}, #{questionCount}, #{perQuestionSeconds}, #{objectiveOnly}, #{excludeMastered}, #{typeMix}, #{difficultyMix}, #{useCount}, #{createBy}, #{updateBy})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateDO">
+        UPDATE kb_exam_template
+        SET name = #{name},
+            description = #{description},
+            scope = #{scope},
+            owner_user_id = #{ownerUserId},
+            status = #{status},
+            mode = #{mode},
+            question_count = #{questionCount},
+            per_question_seconds = #{perQuestionSeconds},
+            objective_only = #{objectiveOnly},
+            exclude_mastered = #{excludeMastered},
+            type_mix = #{typeMix},
+            difficulty_mix = #{difficultyMix},
+            use_count = #{useCount},
+            create_by = #{createBy},
+            update_by = #{updateBy}
+        WHERE id = #{id}
+        AND del_flag = '0'
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateDO">
+        <if test="name != null or description != null or scope != null or ownerUserId != null or status != null or mode != null or questionCount != null or perQuestionSeconds != null or objectiveOnly != null or excludeMastered != null or typeMix != null or difficultyMix != null or useCount != null or createBy != null or updateBy != null">
+            UPDATE kb_exam_template
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="description != null">
+                description = #{description},
+            </if>
+            <if test="scope != null">
+                scope = #{scope},
+            </if>
+            <if test="ownerUserId != null">
+                owner_user_id = #{ownerUserId},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="mode != null">
+                mode = #{mode},
+            </if>
+            <if test="questionCount != null">
+                question_count = #{questionCount},
+            </if>
+            <if test="perQuestionSeconds != null">
+                per_question_seconds = #{perQuestionSeconds},
+            </if>
+            <if test="objectiveOnly != null">
+                objective_only = #{objectiveOnly},
+            </if>
+            <if test="excludeMastered != null">
+                exclude_mastered = #{excludeMastered},
+            </if>
+            <if test="typeMix != null">
+                type_mix = #{typeMix},
+            </if>
+            <if test="difficultyMix != null">
+                difficulty_mix = #{difficultyMix},
+            </if>
+            <if test="useCount != null">
+                use_count = #{useCount},
+            </if>
+            <if test="createBy != null">
+                create_by = #{createBy},
+            </if>
+            <if test="updateBy != null">
+                update_by = #{updateBy},
+            </if>
+        </set>
+            WHERE id = #{id}
+            AND del_flag = '0'
+        </if>
+    </update>
+
+    <update id="deleteById" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateDO">
+        UPDATE kb_exam_template
+        SET del_flag = '2'
+        WHERE id = #{id} AND del_flag = '0'
+    </update>
+</mapper>

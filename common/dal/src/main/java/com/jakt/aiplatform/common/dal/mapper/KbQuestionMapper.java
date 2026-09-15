@@ -4,6 +4,7 @@ import com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO;
 import com.jakt.aiplatform.common.dal.query.KbQuestionDalQuery;
 import org.apache.ibatis.annotations.Mapper;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 题库 Mapper。SQL 全部在 resources/mapper/KbQuestionMapper.xml 中；
@@ -85,4 +86,11 @@ public interface KbQuestionMapper {
      * @return 受影响行数
      */
     int deleteById(Long id);
+
+    /**
+     * 分类 / 子主题汇总（每个知识点的题量），供题库管理页筛选下拉使用。
+     *
+     * @return 每行包含 category / subtopic / total
+     */
+    List<Map<String, Object>> selectCategorySubtopicSummary();
 }

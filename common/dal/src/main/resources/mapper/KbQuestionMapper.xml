@@ -3,7 +3,7 @@
 <mapper namespace="com.jakt.aiplatform.common.dal.mapper.KbQuestionMapper">
 
     <sql id="selectColumns">
-        id, question_type, category, title, content, options, answer, explanation, create_by, update_by, difficulty, tags, source_path, create_time, update_time
+        id, question_type, category, subtopic, title, content, options, answer, explanation, create_by, update_by, difficulty, tags, source_path, create_time, update_time
     </sql>
 
     <sql id="queryConditions">
@@ -13,6 +13,12 @@
             </if>
             <if test="questionType != null and questionType != ''">
                 AND question_type = #{questionType}
+            </if>
+            <if test="subtopic != null and subtopic != ''">
+                AND subtopic = #{subtopic}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (title LIKE CONCAT('%', #{keyword}, '%') OR content LIKE CONCAT('%', #{keyword}, '%'))
             </if>
             <if test="category != null and category != ''">
                 AND category = #{category}
@@ -95,14 +101,15 @@
 
     <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO kb_question (question_type, category, title, content, options, answer, explanation, create_by, update_by, difficulty, tags, source_path)
-        VALUES (#{questionType}, #{category}, #{title}, #{content}, #{options}, #{answer}, #{explanation}, #{createBy}, #{updateBy}, #{difficulty}, #{tags}, #{sourcePath})
+        INSERT INTO kb_question (question_type, category, subtopic, title, content, options, answer, explanation, create_by, update_by, difficulty, tags, source_path)
+        VALUES (#{questionType}, #{category}, #{subtopic}, #{title}, #{content}, #{options}, #{answer}, #{explanation}, #{createBy}, #{updateBy}, #{difficulty}, #{tags}, #{sourcePath})
     </insert>
 
     <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO">
         UPDATE kb_question
         SET question_type = #{questionType},
             category = #{category},
+            subtopic = #{subtopic},
             title = #{title},
             content = #{content},
             options = #{options},
@@ -117,7 +124,7 @@
     </update>
 
     <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO">
-        <if test="questionType != null or category != null or title != null or content != null or options != null or answer != null or explanation != null or createBy != null or updateBy != null or difficulty != null or tags != null or sourcePath != null">
+        <if test="questionType != null or category != null or subtopic != null or title != null or content != null or options != null or answer != null or explanation != null or createBy != null or updateBy != null or difficulty != null or tags != null or sourcePath != null">
             UPDATE kb_question
         <set>
             <if test="questionType != null">
@@ -125,6 +132,9 @@
             </if>
             <if test="category != null">
                 category = #{category},
+            </if>
+            <if test="subtopic != null">
+                subtopic = #{subtopic},
             </if>
             <if test="title != null">
                 title = #{title},
@@ -164,4 +174,13 @@
     <delete id="deleteById">
         DELETE FROM kb_question WHERE id = #{id}
     </delete>
+
+    <!-- 分类 / 子主题汇总（知识点题量），供题库管理页筛选下拉使用 -->
+    <select id="selectCategorySubtopicSummary" resultType="java.util.Map">
+        SELECT category AS category, subtopic AS subtopic, COUNT(*) AS total
+        FROM kb_question
+        GROUP BY category, subtopic
+        ORDER BY category, subtopic
+    </select>
+
 </mapper>

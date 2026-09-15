@@ -18,6 +18,9 @@ public class KbQuestionDO extends BaseDO {
     /** 来源。 */
     private String category;
 
+    /** 子主题（知识点二级）。 */
+    private String subtopic;
+
     /** 问题/题干。 */
     private String title;
 

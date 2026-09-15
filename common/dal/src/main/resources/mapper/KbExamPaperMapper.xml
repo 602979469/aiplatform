@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.KbExamPaperMapper">
+
+    <sql id="selectColumns">
+        id, user_id, title, mode, status, per_question_seconds, time_limit_seconds, question_count, total_score, score, correct_count, wrong_count, unanswered_count, categories, start_time, deadline, submit_time, cost_seconds, create_by, update_by, remark, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="title != null and title != ''">
+                AND title = #{title}
+            </if>
+            <if test="mode != null and mode != ''">
+                AND mode = #{mode}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="perQuestionSeconds != null">
+                AND per_question_seconds = #{perQuestionSeconds}
+            </if>
+            <if test="timeLimitSeconds != null">
+                AND time_limit_seconds = #{timeLimitSeconds}
+            </if>
+            <if test="questionCount != null">
+                AND question_count = #{questionCount}
+            </if>
+            <if test="totalScore != null">
+                AND total_score = #{totalScore}
+            </if>
+            <if test="score != null">
+                AND score = #{score}
+            </if>
+            <if test="correctCount != null">
+                AND correct_count = #{correctCount}
+            </if>
+            <if test="wrongCount != null">
+                AND wrong_count = #{wrongCount}
+            </if>
+            <if test="unansweredCount != null">
+                AND unanswered_count = #{unansweredCount}
+            </if>
+            <if test="startTime != null">
+                AND start_time = #{startTime}
+            </if>
+            <if test="deadline != null">
+                AND deadline = #{deadline}
+            </if>
+            <if test="submitTime != null">
+                AND submit_time = #{submitTime}
+            </if>
+            <if test="costSeconds != null">
+                AND cost_seconds = #{costSeconds}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                AND create_by = #{createBy}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                AND update_by = #{updateBy}
+            </if>
+            <if test="remark != null and remark != ''">
+                AND remark = #{remark}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_paper
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_paper
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_paper
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectOne" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_exam_paper
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM kb_exam_paper
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO kb_exam_paper (user_id, title, mode, status, per_question_seconds, time_limit_seconds, question_count, total_score, score, correct_count, wrong_count, unanswered_count, categories, start_time, deadline, submit_time, cost_seconds, create_by, update_by, remark)
+        VALUES (#{userId}, #{title}, #{mode}, #{status}, #{perQuestionSeconds}, #{timeLimitSeconds}, #{questionCount}, #{totalScore}, #{score}, #{correctCount}, #{wrongCount}, #{unansweredCount}, #{categories}, #{startTime}, #{deadline}, #{submitTime}, #{costSeconds}, #{createBy}, #{updateBy}, #{remark})
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperDO">
+        UPDATE kb_exam_paper
+        SET user_id = #{userId},
+            title = #{title},
+            mode = #{mode},
+            status = #{status},
+            per_question_seconds = #{perQuestionSeconds},
+            time_limit_seconds = #{timeLimitSeconds},
+            question_count = #{questionCount},
+            total_score = #{totalScore},
+            score = #{score},
+            correct_count = #{correctCount},
+            wrong_count = #{wrongCount},
+            unanswered_count = #{unansweredCount},
+            categories = #{categories},
+            start_time = #{startTime},
+            deadline = #{deadline},
+            submit_time = #{submitTime},
+            cost_seconds = #{costSeconds},
+            create_by = #{createBy},
+            update_by = #{updateBy},
+            remark = #{remark}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperDO">
+        <if test="userId != null or title != null or mode != null or status != null or perQuestionSeconds != null or timeLimitSeconds != null or questionCount != null or totalScore != null or score != null or correctCount != null or wrongCount != null or unansweredCount != null or categories != null or startTime != null or deadline != null or submitTime != null or costSeconds != null or createBy != null or updateBy != null or remark != null">
+            UPDATE kb_exam_paper
+        <set>
+            <if test="userId != null">
+                user_id = #{userId},
+            </if>
+            <if test="title != null">
+                title = #{title},
+            </if>
+            <if test="mode != null">
+                mode = #{mode},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="perQuestionSeconds != null">
+                per_question_seconds = #{perQuestionSeconds},
+            </if>
+            <if test="timeLimitSeconds != null">
+                time_limit_seconds = #{timeLimitSeconds},
+            </if>
+            <if test="questionCount != null">
+                question_count = #{questionCount},
+            </if>
+            <if test="totalScore != null">
+                total_score = #{totalScore},
+            </if>
+            <if test="score != null">
+                score = #{score},
+            </if>
+            <if test="correctCount != null">
+                correct_count = #{correctCount},
+            </if>
+            <if test="wrongCount != null">
+                wrong_count = #{wrongCount},
+            </if>
+            <if test="unansweredCount != null">
+                unanswered_count = #{unansweredCount},
+            </if>
+            <if test="categories != null">
+                categories = #{categories},
+            </if>
+            <if test="startTime != null">
+                start_time = #{startTime},
+            </if>
+            <if test="deadline != null">
+                deadline = #{deadline},
+            </if>
+            <if test="submitTime != null">
+                submit_time = #{submitTime},
+            </if>
+            <if test="costSeconds != null">
+                cost_seconds = #{costSeconds},
+            </if>
+            <if test="createBy != null">
+                create_by = #{createBy},
+            </if>
+            <if test="updateBy != null">
+                update_by = #{updateBy},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+        </set>
+            WHERE id = #{id}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM kb_exam_paper WHERE id = #{id}
+    </delete>
+</mapper>
