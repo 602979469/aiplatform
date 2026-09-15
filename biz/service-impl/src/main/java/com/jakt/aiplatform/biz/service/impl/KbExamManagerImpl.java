@@ -99,12 +99,26 @@ public class KbExamManagerImpl implements KbExamManager {
         if (userId == null) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID, "缺少答题用户");
         }
+        // 模板开考：未显式指定的参数从模板取默认值
+        KbExamTemplateDO template = null;
+        if (param.getTemplateId() != null) {
+            template = kbExamTemplateMapper.selectById(param.getTemplateId());
+            if (template == null) {
+                throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID, "试卷模板不存在");
+            }
+        }
         List<KbExamRuleParam> rules = resolveRules(param);
-        String mode = StrUtil.blankToDefault(param.getMode(), "NORMAL");
+        String mode = StrUtil.blankToDefault(param.getMode(),
+                template == null ? "NORMAL" : StrUtil.blankToDefault(template.getMode(), "NORMAL"));
         int perQuestionSeconds = firstNonNull(param.getPerQuestionSeconds(),
-                DEFAULT_PER_QUESTION_SECONDS);
-        boolean excludeMastered = param.getExcludeMastered() == null || param.getExcludeMastered() == 1;
-        boolean objectiveOnly = param.getObjectiveOnly() == null || param.getObjectiveOnly() == 1;
+                template != null && template.getPerQuestionSeconds() != null
+                        ? template.getPerQuestionSeconds() : DEFAULT_PER_QUESTION_SECONDS);
+        boolean excludeMastered = param.getExcludeMastered() != null
+                ? param.getExcludeMastered() == 1
+                : template == null || template.getExcludeMastered() == null || template.getExcludeMastered() == 1;
+        boolean objectiveOnly = param.getObjectiveOnly() != null
+                ? param.getObjectiveOnly() == 1
+                : template == null || template.getObjectiveOnly() == null || template.getObjectiveOnly() == 1;
         int questionCount = resolveQuestionCount(param, rules);
 
         List<Long> picked = new ArrayList<>();
@@ -179,6 +193,13 @@ public class KbExamManagerImpl implements KbExamManager {
         });
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "组卷成功 paperId={} userId={} 题量={} 模式={}",
                 paper.getId(), userId, count, mode);
+        if (template != null) {
+            // 记录模板使用次数
+            KbExamTemplateDO templateUpdate = new KbExamTemplateDO();
+            templateUpdate.setId(template.getId());
+            templateUpdate.setUseCount((template.getUseCount() == null ? 0 : template.getUseCount()) + 1);
+            kbExamTemplateMapper.updateByCondition(templateUpdate);
+        }
 
         KbExamPaperView view = new KbExamPaperView();
         view.setPaperId(paper.getId());
@@ -311,6 +332,7 @@ public class KbExamManagerImpl implements KbExamManager {
             item.setCategory(row.getCategory());
             item.setSubtopic(row.getSubtopic());
             item.setTitle(row.getTitle());
+            item.setContent(row.getContent());
             item.setOptions(row.getOptions());
             item.setUserAnswer(row.getUserAnswer());
             item.setAnswer(row.getAnswer());

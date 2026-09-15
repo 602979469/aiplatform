@@ -132,4 +132,9 @@
     <delete id="deleteById">
         DELETE FROM kb_exam_template_rule WHERE id = #{id}
     </delete>
+
+    <!-- 模板编辑：先清空该模板的全部规则，再按入参重建 -->
+    <delete id="deleteByTemplateId">
+        DELETE FROM kb_exam_template_rule WHERE template_id = #{templateId}
+    </delete>
 </mapper>

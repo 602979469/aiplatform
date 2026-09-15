@@ -65,6 +65,9 @@ public class KbExamResultView {
         /** 题干。 */
         private String title;
 
+        /** 正文（Markdown，题目补充说明）。 */
+        private String content;
+
         /** 选项 JSON 字符串。 */
         private String options;
 

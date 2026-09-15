@@ -85,4 +85,12 @@ public interface KbExamTemplateRuleMapper {
      * @return 受影响行数
      */
     int deleteById(Long id);
+
+    /**
+     * 按模板ID删除全部规则（模板编辑时先删后插）。
+     *
+     * @param templateId 模板ID
+     * @return 影响行数
+     */
+    int deleteByTemplateId(Long templateId);
 }

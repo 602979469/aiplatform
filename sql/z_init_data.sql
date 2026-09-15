@@ -58,7 +58,8 @@ VALUES (1,   'AI 应用',    0, 1, '/ai',        '',                            
        (610, '考试中心',    0,   7, '/exam',    '',                            'M', '0', '0', null,                      'el-icon-edit-outline',    '考试中心目录'),
        (611, '开始考试',    610, 1, 'start',    'kb/exam/start/index',         'C', '0', '0', 'kb:exam:start',           'el-icon-video-play',      '开始考试（组卷/答题）'),
        (612, '考试记录',    610, 2, 'history',  'kb/exam/history/index',       'C', '0', '0', 'kb:exam:start',           'el-icon-time',            '考试记录'),
-       (613, '错题集',      610, 3, 'wrong',    'kb/exam/wrong/index',         'C', '0', '0', 'kb:exam:start',           'el-icon-warning-outline', '错题集')
+       (613, '错题集',      610, 3, 'wrong',    'kb/exam/wrong/index',         'C', '0', '0', 'kb:exam:start',           'el-icon-warning-outline', '错题集'),
+       (614, '配置管理',    610, 6, 'template', 'kb/exam/template/index',      'C', '0', '0', 'kb:exam:template:edit',   'el-icon-setting',         '试卷模板（配置管理）')
 ON DUPLICATE KEY UPDATE
     menu_name = VALUES(menu_name),
     parent_id = VALUES(parent_id),
