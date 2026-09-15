@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS `kb_exam_template` (
   `create_time`          DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by`            VARCHAR(64)  DEFAULT '' COMMENT '更新者',
   `update_time`          DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `del_flag`             CHAR(1)      NOT NULL DEFAULT '0' COMMENT '删除标志（0正常 2删除）',
   PRIMARY KEY (`id`),
   KEY `idx_scope_owner` (`scope`, `owner_user_id`),
   KEY `idx_status` (`status`)

@@ -55,7 +55,11 @@ VALUES (1,   'AI 应用',    0, 1, '/ai',        '',                            
        (602, '题库管理',    600, 2, 'manage',   'kb/manage/index',             'C', '0', '0', 'kb:question:list',        'el-icon-edit-outline',    '题库管理菜单（增删改查）'),
        (6021, '题目新增',   602, 1, '',         '',                            'F', '0', '0', 'kb:question:add',         '',                        '题库新增按钮'),
        (6022, '题目修改',   602, 2, '',         '',                            'F', '0', '0', 'kb:question:edit',        '',                        '题库修改按钮'),
-       (6023, '题目删除',   602, 3, '',         '',                            'F', '0', '0', 'kb:question:remove',      '',                        '题库删除按钮')
+       (6023, '题目删除',   602, 3, '',         '',                            'F', '0', '0', 'kb:question:remove',      '',                        '题库删除按钮'),
+       (610, '考试中心',    0,   7, '/exam',    '',                            'M', '0', '0', null,                      'el-icon-edit-outline',    '考试中心目录'),
+       (611, '开始考试',    610, 1, 'start',    'kb/exam/start/index',         'C', '0', '0', 'kb:exam:start',           'el-icon-video-play',      '开始考试（组卷/答题）'),
+       (612, '考试记录',    610, 2, 'history',  'kb/exam/history/index',       'C', '0', '0', 'kb:exam:start',           'el-icon-time',            '考试记录'),
+       (613, '错题集',      610, 3, 'wrong',    'kb/exam/wrong/index',         'C', '0', '0', 'kb:exam:start',           'el-icon-warning-outline', '错题集')
 ON DUPLICATE KEY UPDATE
     menu_name = VALUES(menu_name),
     parent_id = VALUES(parent_id),
@@ -78,7 +82,8 @@ SELECT 1, menu_id FROM auth_menu WHERE status = '0';
 INSERT IGNORE INTO auth_role_menu (role_id, menu_id)
 SELECT 2, menu_id FROM auth_menu
 WHERE status = '0'
-  AND menu_id IN (100, 101, 200, 303, 400, 401, 402, 403, 404, 405, 500, 501, 600, 601);
+  AND menu_id IN (100, 101, 200, 303, 400, 401, 402, 403, 404, 405, 500, 501, 600, 601,
+                  610, 611, 612, 613);
 
 -- 6. AI 能力（镜像加速器：版本匹配）
 INSERT INTO sys_ai_capability

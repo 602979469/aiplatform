@@ -2,8 +2,11 @@ package com.jakt.aiplatform.common.dal.mapper;
 
 import com.jakt.aiplatform.common.dal.dataobject.KbUserQuestionStatDO;
 import com.jakt.aiplatform.common.dal.query.KbUserQuestionStatDalQuery;
+import com.jakt.aiplatform.common.dal.query.KbQuestionStatDelta;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 用户题目掌握状态 Mapper。SQL 全部在 resources/mapper/KbUserQuestionStatMapper.xml 中；
@@ -85,4 +88,51 @@ public interface KbUserQuestionStatMapper {
      * @return 受影响行数
      */
     int deleteById(Long id);
+
+    /**
+     * 掌握度增量 upsert：答对/答错累加次数，并更新最近结果、掌握标记与错题集标记。
+     *
+     * @param delta 增量参数
+     * @return 影响行数
+     */
+    int upsertStat(KbQuestionStatDelta delta);
+
+    /**
+     * 错题集列表：掌握度表关联题库，返回错题明细（我的答案/正确答案/解析）。
+     *
+     * @param userId 用户ID
+     * @param category 分类（可空）
+     * @param limit 每页条数
+     * @param offset 偏移量
+     * @return 每行包含 question_id / title / category / subtopic / question_type / answer /
+     *         user_answer / explanation / wrong_count / last_answer_time
+     */
+    List<Map<String, Object>> selectWrongBook(@Param("userId") Long userId,
+                                              @Param("category") String category,
+                                              @Param("limit") int limit,
+                                              @Param("offset") int offset);
+
+    /**
+     * 统计错题集条数。
+     *
+     * @param userId 用户ID
+     * @param category 分类（可空）
+     * @return 条数
+     */
+    long countWrongBook(@Param("userId") Long userId,
+                        @Param("category") String category);
+
+    /**
+     * 更新错题集标记（标记已掌握 = 移出错题集）。
+     *
+     * @param userId 用户ID
+     * @param questionId 题目ID
+     * @param mastered 是否已掌握（1是）
+     * @param inWrongBook 是否在错题集（0移出）
+     * @return 影响行数
+     */
+    int updateWrongBookFlag(@Param("userId") Long userId,
+                            @Param("questionId") Long questionId,
+                            @Param("mastered") Integer mastered,
+                            @Param("inWrongBook") Integer inWrongBook);
 }

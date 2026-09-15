@@ -146,4 +146,78 @@
     <delete id="deleteById">
         DELETE FROM kb_user_question_stat WHERE id = #{id}
     </delete>
+
+    <!-- 错题集：掌握度表关联题库 -->
+    <select id="selectWrongBook" resultType="java.util.Map">
+        SELECT q.id            AS question_id,
+               q.title         AS title,
+               q.category      AS category,
+               q.subtopic      AS subtopic,
+               q.question_type AS question_type,
+               q.answer        AS answer,
+               q.explanation   AS explanation,
+               s.wrong_count   AS wrong_count,
+               s.right_count   AS right_count,
+               s.last_result   AS last_result,
+               s.last_answer_time AS last_answer_time,
+               (SELECT pq.user_answer
+                FROM kb_exam_paper_question pq
+                JOIN kb_exam_paper p ON p.id = pq.paper_id
+                WHERE pq.question_id = q.id AND p.user_id = #{userId} AND pq.user_answer IS NOT NULL
+                ORDER BY pq.answer_time DESC LIMIT 1) AS user_answer
+        FROM kb_user_question_stat s
+        JOIN kb_question q ON q.id = s.question_id
+        WHERE s.user_id = #{userId}
+          AND s.in_wrong_book = 1
+        <if test="category != null and category != ''">
+            AND q.category = #{category}
+        </if>
+        ORDER BY s.last_answer_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countWrongBook" resultType="long">
+        SELECT COUNT(*)
+        FROM kb_user_question_stat s
+        JOIN kb_question q ON q.id = s.question_id
+        WHERE s.user_id = #{userId}
+          AND s.in_wrong_book = 1
+        <if test="category != null and category != ''">
+            AND q.category = #{category}
+        </if>
+    </select>
+
+    <update id="updateWrongBookFlag">
+        UPDATE kb_user_question_stat
+        SET mastered = #{mastered},
+            in_wrong_book = #{inWrongBook},
+            update_time = NOW()
+        WHERE user_id = #{userId} AND question_id = #{questionId}
+    </update>
+
+    <!-- 掌握度增量 upsert：答对把错题移出，答错加入错题集 -->
+    <insert id="upsertStat" parameterType="com.jakt.aiplatform.common.dal.query.KbQuestionStatDelta">
+        INSERT INTO kb_user_question_stat
+            (user_id, question_id, right_count, wrong_count, last_result, last_answer_time,
+             first_right_time, mastered, in_wrong_book, create_time, update_time)
+        VALUES (#{userId}, #{questionId}, #{rightDelta}, #{wrongDelta}, #{lastResult}, NOW(),
+                <choose>
+                    <when test="rightDelta > 0">NOW()</when>
+                    <otherwise>NULL</otherwise>
+                </choose>,
+                #{mastered}, #{inWrongBook}, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+            right_count = right_count + #{rightDelta},
+            wrong_count = wrong_count + #{wrongDelta},
+            last_result = #{lastResult},
+            last_answer_time = NOW(),
+            first_right_time = IFNULL(first_right_time,
+                <choose>
+                    <when test="rightDelta > 0">NOW()</when>
+                    <otherwise>NULL</otherwise>
+                </choose>),
+            mastered = GREATEST(mastered, #{mastered}),
+            in_wrong_book = #{inWrongBook},
+            update_time = NOW()
+    </insert>
 </mapper>

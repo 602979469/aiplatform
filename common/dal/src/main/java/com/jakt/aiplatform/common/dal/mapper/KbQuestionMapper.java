@@ -2,7 +2,9 @@ package com.jakt.aiplatform.common.dal.mapper;
 
 import com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO;
 import com.jakt.aiplatform.common.dal.query.KbQuestionDalQuery;
+import com.jakt.aiplatform.common.dal.query.KbQuestionPickQuery;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import java.util.List;
 import java.util.Map;
 
@@ -93,4 +95,20 @@ public interface KbQuestionMapper {
      * @return 每行包含 category / subtopic / total
      */
     List<Map<String, Object>> selectCategorySubtopicSummary();
+
+    /**
+     * 组卷抽题：按知识点筛选 + 可选排除已掌握题目，随机取 N 条 id。
+     *
+     * @param query 抽题条件
+     * @return 题目ID列表
+     */
+    List<Long> selectPickIds(KbQuestionPickQuery query);
+
+    /**
+     * 按 id 集合批量查询（组卷快照用）。
+     *
+     * @param ids 题目ID列表
+     * @return 题目列表
+     */
+    List<KbQuestionDO> selectByIds(@Param("ids") List<Long> ids);
 }

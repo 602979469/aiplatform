@@ -50,7 +50,6 @@
             <if test="updateBy != null and updateBy != ''">
                 AND update_by = #{updateBy}
             </if>
-            AND del_flag = '0'
             <if test="createTimeBegin != null">
                 AND create_time &gt;= #{createTimeBegin}
             </if>
@@ -70,7 +69,6 @@
         SELECT <include refid="selectColumns"/>
         FROM kb_exam_template
         WHERE id = #{id}
-        AND del_flag = '0'
     </select>
 
     <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateDO">
@@ -125,7 +123,6 @@
             create_by = #{createBy},
             update_by = #{updateBy}
         WHERE id = #{id}
-        AND del_flag = '0'
     </update>
 
     <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateDO">
@@ -179,13 +176,10 @@
             </if>
         </set>
             WHERE id = #{id}
-            AND del_flag = '0'
         </if>
     </update>
 
-    <update id="deleteById" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateDO">
-        UPDATE kb_exam_template
-        SET del_flag = '2'
-        WHERE id = #{id} AND del_flag = '0'
-    </update>
+    <delete id="deleteById">
+        DELETE FROM kb_exam_template WHERE id = #{id}
+    </delete>
 </mapper>

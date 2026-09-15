@@ -183,4 +183,42 @@
         ORDER BY category, subtopic
     </select>
 
+    <!-- 组卷抽题：按知识点筛选，可排除该用户已做对的题目 -->
+    <select id="selectPickIds" resultType="java.lang.Long">
+        SELECT q.id
+        FROM kb_question q
+        <where>
+            <if test="category != null and category != ''">
+                AND q.category = #{category}
+            </if>
+            <if test="subtopic != null and subtopic != ''">
+                AND q.subtopic = #{subtopic}
+            </if>
+            <if test="questionType != null and questionType != ''">
+                AND q.question_type = #{questionType}
+            </if>
+            <if test="difficulty != null and difficulty != ''">
+                AND q.difficulty = #{difficulty}
+            </if>
+            <if test="excludeMastered and userId != null">
+                AND NOT EXISTS (
+                    SELECT 1 FROM kb_user_question_stat s
+                    WHERE s.user_id = #{userId} AND s.question_id = q.id AND s.mastered = 1
+                )
+            </if>
+        </where>
+        ORDER BY RAND()
+        LIMIT #{limit}
+    </select>
+
+    <!-- 组卷快照：按 id 集合批量取题 -->
+    <select id="selectByIds" resultType="com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO">
+        SELECT <include refid="selectColumns"/>
+        FROM kb_question
+        WHERE id IN
+        <foreach collection="ids" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
 </mapper>
