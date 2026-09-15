@@ -676,6 +676,8 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
                         .build();
                 kubernetesClient.configMaps().inNamespace(namespace).resource(configMap).create();
             } else {
+                // fabric8 6.13.4 + Jackson 3：managedFields 序列化会 NPE，更新前必须清掉
+                existing.getMetadata().setManagedFields(null);
                 ConfigMap configMap = new ConfigMapBuilder(existing).withData(data).build();
                 kubernetesClient.configMaps().inNamespace(namespace).resource(configMap).update();
             }
@@ -700,6 +702,8 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
                     ? new HashMap<>() : new HashMap<>(meta.getAnnotations());
             annotations.put("kubectl.kubernetes.io/restartedAt", String.valueOf(System.currentTimeMillis()));
             meta.setAnnotations(annotations);
+            // fabric8 6.13.4 + Jackson 3：managedFields 序列化会 NPE，更新前必须清掉
+            deployment.getMetadata().setManagedFields(null);
             kubernetesClient.apps().deployments().inNamespace(namespace).resource(deployment).update();
             LoggerUtil.info(LogFileEnum.INTEGRATION, "【K8S】Deployment {}/{} 已触发滚动重启", namespace, name);
         } catch (KubernetesClientException e) {

@@ -199,4 +199,8 @@
     <delete id="deleteById">
         DELETE FROM kb_exam_paper_question WHERE id = #{id}
     </delete>
+
+    <delete id="deleteByPaperId">
+        DELETE FROM kb_exam_paper_question WHERE paper_id = #{paperId}
+    </delete>
 </mapper>
