@@ -37,6 +37,9 @@ VALUES (1,   'AI 应用',    0, 1, '/ai',        '',                            
        (201, '菜单管理',    200, 1, 'menu',     'system/menu/index',           'C', '0', '0', 'auth:menu:list',          'el-icon-menu',            '菜单管理菜单'),
        (202, '用户管理',    200, 2, 'user',     'system/user/index',           'C', '0', '0', 'auth:user:list',          'el-icon-user',            '用户管理菜单'),
        (203, '角色管理',    200, 3, 'role',     'system/role/index',           'C', '0', '0', 'auth:role:list',          'el-icon-user-solid',      '角色管理菜单'),
+       (204, 'ES 同步',    200, 5, 'cdc',      'system/cdc/index',            'C', '0', '0', 'cdc:sync:list',           'el-icon-refresh',         'ES 同步（canal CDC 映射管理）'),
+       (2041, '保存映射',  204, 1, '',         '',                            'F', '0', '0', 'cdc:sync:edit',           '',                        'ES 同步保存/重启按钮'),
+       (2042, '删除映射',  204, 2, '',         '',                            'F', '0', '0', 'cdc:sync:edit',           '',                        'ES 同步删除按钮'),
        (300, '系统监控',    0, 3, '/monitor',   '',                            'M', '0', '0', null,                      'el-icon-monitor',         '系统监控目录'),
        (301, '在线用户',    300, 1, 'online',   'monitor/online/index',        'C', '0', '0', 'auth:online:list',        'el-icon-view',            '在线用户菜单'),
        (302, '登录日志',    300, 2, 'logininfor', 'monitor/logininfor/index',  'C', '0', '0', 'auth:loginlog:list',      'el-icon-document',        '登录日志菜单'),
@@ -86,7 +89,7 @@ SELECT 1, menu_id FROM auth_menu WHERE status = '0';
 INSERT IGNORE INTO auth_role_menu (role_id, menu_id)
 SELECT 2, menu_id FROM auth_menu
 WHERE status = '0'
-  AND menu_id IN (100, 101, 200, 303, 400, 401, 402, 403, 404, 405, 500, 501, 601,
+  AND menu_id IN (100, 101, 200, 204, 303, 400, 401, 402, 403, 404, 405, 500, 501, 601,
                   610, 611, 612, 613);
 
 -- 6. AI 能力（镜像加速器：版本匹配）

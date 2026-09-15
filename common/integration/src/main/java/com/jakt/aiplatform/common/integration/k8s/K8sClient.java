@@ -108,4 +108,30 @@ public interface K8sClient {
      * @return 事件列表
      */
     List<K8sEventInfo> listPodEvents(String namespace, String podName);
+
+    /**
+     * 读取 ConfigMap 的 data（同步映射配置用）。
+     *
+     * @param namespace 命名空间
+     * @param name      ConfigMap 名称
+     * @return data 的副本；ConfigMap 不存在或没有 data 时返回空 Map
+     */
+    Map<String, String> getConfigMapData(String namespace, String name);
+
+    /**
+     * 覆盖写入 ConfigMap 的 data（整体替换，调用方需传完整 data）。
+     *
+     * @param namespace 命名空间
+     * @param name      ConfigMap 名称
+     * @param data      完整 data
+     */
+    void applyConfigMap(String namespace, String name, Map<String, String> data);
+
+    /**
+     * 滚动重启 Deployment（给 Pod 模板打 restartedAt 注解，等价 kubectl rollout restart）。
+     *
+     * @param namespace 命名空间
+     * @param name      Deployment 名称
+     */
+    void restartDeployment(String namespace, String name);
 }

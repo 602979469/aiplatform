@@ -8,7 +8,10 @@ import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.common.integration.exception.AiIntegrationErrorCode;
 import com.jakt.aiplatform.common.integration.exception.AiIntegrationException;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.NodeCondition;
 import io.fabric8.kubernetes.api.model.NodeStatus;
@@ -646,6 +649,61 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
         } catch (DateTimeParseException e) {
             LoggerUtil.warn(LogFileEnum.INTEGRATION, "【K8S】时间解析失败 value={}", value);
             return null;
+        }
+    }
+
+    @Override
+    public Map<String, String> getConfigMapData(String namespace, String name) {
+        try {
+            ConfigMap configMap = kubernetesClient.configMaps().inNamespace(namespace).withName(name).get();
+            if (configMap == null || configMap.getData() == null) {
+                return new HashMap<>();
+            }
+            return new HashMap<>(configMap.getData());
+        } catch (KubernetesClientException e) {
+            throw toIntegrationException("查询 ConfigMap 失败 namespace={} name={}", e, namespace, name);
+        }
+    }
+
+    @Override
+    public void applyConfigMap(String namespace, String name, Map<String, String> data) {
+        try {
+            ConfigMap existing = kubernetesClient.configMaps().inNamespace(namespace).withName(name).get();
+            if (existing == null) {
+                ConfigMap configMap = new ConfigMapBuilder()
+                        .withNewMetadata().withName(name).withNamespace(namespace).endMetadata()
+                        .withData(data)
+                        .build();
+                kubernetesClient.configMaps().inNamespace(namespace).resource(configMap).create();
+            } else {
+                ConfigMap configMap = new ConfigMapBuilder(existing).withData(data).build();
+                kubernetesClient.configMaps().inNamespace(namespace).resource(configMap).update();
+            }
+            LoggerUtil.info(LogFileEnum.INTEGRATION, "【K8S】ConfigMap {}/{} 已更新，条目数={}",
+                    namespace, name, data.size());
+        } catch (KubernetesClientException e) {
+            throw toIntegrationException("写入 ConfigMap 失败 namespace={} name={}", e, namespace, name);
+        }
+    }
+
+    @Override
+    public void restartDeployment(String namespace, String name) {
+        try {
+            Deployment deployment = kubernetesClient.apps().deployments().inNamespace(namespace).withName(name).get();
+            if (deployment == null) {
+                LoggerUtil.error(LogFileEnum.INTEGRATION, "【K8S】Deployment 不存在 {}/{}", namespace, name);
+                throw new AiIntegrationException(AiIntegrationErrorCode.K8S_API_ERROR,
+                        "Deployment 不存在: " + namespace + "/" + name);
+            }
+            ObjectMeta meta = deployment.getSpec().getTemplate().getMetadata();
+            Map<String, String> annotations = meta.getAnnotations() == null
+                    ? new HashMap<>() : new HashMap<>(meta.getAnnotations());
+            annotations.put("kubectl.kubernetes.io/restartedAt", String.valueOf(System.currentTimeMillis()));
+            meta.setAnnotations(annotations);
+            kubernetesClient.apps().deployments().inNamespace(namespace).resource(deployment).update();
+            LoggerUtil.info(LogFileEnum.INTEGRATION, "【K8S】Deployment {}/{} 已触发滚动重启", namespace, name);
+        } catch (KubernetesClientException e) {
+            throw toIntegrationException("重启 Deployment 失败 namespace={} name={}", e, namespace, name);
         }
     }
 
