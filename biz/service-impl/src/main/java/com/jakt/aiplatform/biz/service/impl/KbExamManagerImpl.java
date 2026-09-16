@@ -1,6 +1,8 @@
 package com.jakt.aiplatform.biz.service.impl;
 
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import com.jakt.aiplatform.biz.service.KbExamManager;
 import com.jakt.aiplatform.biz.service.KbExamPaperView;
 import com.jakt.aiplatform.biz.service.KbExamQuestionView;
@@ -32,11 +34,13 @@ import com.jakt.aiplatform.common.framework.template.TransactionTemplate;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.domain.KbExamPaper;
+import com.jakt.aiplatform.core.service.AiCapabilityService;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -44,6 +48,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 考题系统实现：组卷（排除已掌握题目）→ 答题落库 → 交卷判分 → 回写错题集与掌握度。
@@ -57,11 +63,45 @@ public class KbExamManagerImpl implements KbExamManager {
     /** 默认题量。 */
     private static final int DEFAULT_QUESTION_COUNT = 10;
 
-    /** 组卷总分。 */
-    private static final int TOTAL_SCORE = 100;
+    /** AI 判分场景码。 */
+    private static final String AI_SCENE_EXAM = "EXAM";
 
-    /** 客观题类型。 */
+    /** AI 判分能力码。 */
+    private static final String AI_CAPABILITY_GRADING = "ANSWER_GRADING";
+
+    /** 客观题类型（1 分/题）。 */
     private static final Set<String> OBJECTIVE_TYPES = Set.of("单选", "多选", "判断");
+
+    /** 客观题每题分值。 */
+    private static final int SCORE_OBJECTIVE = 1;
+
+    /** 解答题每题分值（满分，最终得分由 AI 判分决定）。 */
+    private static final int SCORE_ESSAY = 5;
+
+    /**
+     * 题型配比：选择 : 问答 : 解答 = 5 : 2 : 1（按 8 份折算，每类至少 1 题）。
+     *
+     * <p>TODO 后续考虑做成表配置（题型配比模板，可按考试类型/难度自定义），当前先写死。
+     */
+    private static final int RATIO_SELECT = 5;
+
+    /** 问答题配比份数。 */
+    private static final int RATIO_QA = 2;
+
+    /** 解答题配比份数。 */
+    private static final int RATIO_ESSAY = 1;
+
+    /** 配比总份数。 */
+    private static final int RATIO_TOTAL = RATIO_SELECT + RATIO_QA + RATIO_ESSAY;
+
+    /** 选择题型集合（单选 + 多选）。 */
+    private static final List<String> GROUP_SELECT = List.of("单选", "多选");
+
+    /** 问答题型集合（当前题库对应"判断"，后续新增问答题类型时在此扩展）。 */
+    private static final List<String> GROUP_QA = List.of("判断");
+
+    /** 解答题型集合。 */
+    private static final List<String> GROUP_ESSAY = List.of("解答");
 
     private final KbQuestionMapper kbQuestionMapper;
 
@@ -77,13 +117,17 @@ public class KbExamManagerImpl implements KbExamManager {
 
     private final TransactionTemplate transactionTemplate;
 
+    /** AI 能力服务（解答题判分）。 */
+    private final AiCapabilityService aiCapabilityService;
+
     public KbExamManagerImpl(KbQuestionMapper kbQuestionMapper,
                              KbExamPaperMapper kbExamPaperMapper,
                              KbExamPaperQuestionMapper kbExamPaperQuestionMapper,
                              KbExamTemplateMapper kbExamTemplateMapper,
                              KbExamTemplateRuleMapper kbExamTemplateRuleMapper,
                              KbUserQuestionStatMapper kbUserQuestionStatMapper,
-                             TransactionTemplate transactionTemplate) {
+                             TransactionTemplate transactionTemplate,
+                             AiCapabilityService aiCapabilityService) {
         this.kbQuestionMapper = kbQuestionMapper;
         this.kbExamPaperMapper = kbExamPaperMapper;
         this.kbExamPaperQuestionMapper = kbExamPaperQuestionMapper;
@@ -91,6 +135,7 @@ public class KbExamManagerImpl implements KbExamManager {
         this.kbExamTemplateRuleMapper = kbExamTemplateRuleMapper;
         this.kbUserQuestionStatMapper = kbUserQuestionStatMapper;
         this.transactionTemplate = transactionTemplate;
+        this.aiCapabilityService = aiCapabilityService;
     }
 
     @Override
@@ -116,22 +161,22 @@ public class KbExamManagerImpl implements KbExamManager {
         boolean excludeMastered = param.getExcludeMastered() != null
                 ? param.getExcludeMastered() == 1
                 : template == null || template.getExcludeMastered() == null || template.getExcludeMastered() == 1;
-        boolean objectiveOnly = param.getObjectiveOnly() != null
-                ? param.getObjectiveOnly() == 1
-                : template == null || template.getObjectiveOnly() == null || template.getObjectiveOnly() == 1;
+        // 说明：题型由固定配比（5:2:1）决定，objectiveOnly 不再参与抽题，保留字段仅为兼容历史模板配置
         int questionCount = resolveQuestionCount(param, rules);
 
+        // 题型配额：先按 5:2:1 把总题量拆成 选择/问答/解答，再按知识点权重二次分配到各规则
+        int essayQuota = Math.max(1, (int) Math.round(questionCount * RATIO_ESSAY / (double) RATIO_TOTAL));
+        int qaQuota = Math.max(1, (int) Math.round(questionCount * RATIO_QA / (double) RATIO_TOTAL));
+        int selectQuota = Math.max(1, questionCount - essayQuota - qaQuota);
+
         List<Long> picked = new ArrayList<>();
-        for (KbExamRuleParam rule : rules) {
-            int need = rule.getCount() == null ? 0 : rule.getCount();
-            if (need <= 0) {
-                continue;
-            }
-            picked.addAll(pick(rule, userId, excludeMastered, objectiveOnly, need, picked));
-        }
+        picked.addAll(pickByGroup(GROUP_SELECT, selectQuota, rules, userId, excludeMastered, picked));
+        picked.addAll(pickByGroup(GROUP_QA, qaQuota, rules, userId, excludeMastered, picked));
+        picked.addAll(pickByGroup(GROUP_ESSAY, essayQuota, rules, userId, excludeMastered, picked));
+        // 某类题量不足时用客观题补足，保证整卷题量
         if (picked.size() < questionCount) {
             KbExamRuleParam fill = new KbExamRuleParam();
-            picked.addAll(pick(fill, userId, excludeMastered, objectiveOnly,
+            picked.addAll(pick(fill, OBJECTIVE_TYPES, userId, excludeMastered,
                     questionCount - picked.size(), picked));
         }
         if (picked.isEmpty()) {
@@ -166,8 +211,10 @@ public class KbExamManagerImpl implements KbExamManager {
                 .collect(Collectors.toList());
 
         int count = questions.size();
-        int baseScore = TOTAL_SCORE / count;
-        int remainder = TOTAL_SCORE % count;
+        int totalScore = 0;
+        for (KbQuestionDO question : questions) {
+            totalScore += scoreOf(question.getQuestionType());
+        }
         LocalDateTime now = LocalDateTime.now();
 
         KbExamPaperDO paper = new KbExamPaperDO();
@@ -178,7 +225,7 @@ public class KbExamManagerImpl implements KbExamManager {
         paper.setPerQuestionSeconds(perQuestionSeconds);
         paper.setTimeLimitSeconds(count * perQuestionSeconds);
         paper.setQuestionCount(count);
-        paper.setTotalScore(TOTAL_SCORE);
+        paper.setTotalScore(totalScore);
         paper.setStartTime(now);
         paper.setDeadline(now.plusSeconds((long) count * perQuestionSeconds));
 
@@ -197,7 +244,7 @@ public class KbExamManagerImpl implements KbExamManager {
             row.setAnswer(question.getAnswer());
             row.setExplanation(question.getExplanation());
             row.setDifficulty(question.getDifficulty());
-            row.setScore(baseScore + (i < remainder ? 1 : 0));
+            row.setScore(scoreOf(question.getQuestionType()));
             paperQuestions.add(row);
         }
 
@@ -276,6 +323,15 @@ public class KbExamManagerImpl implements KbExamManager {
 
     @Override
     public KbExamResultView submit(Long paperId, Long userId) {
+        return submitInternal(paperId, userId, true);
+    }
+
+    /**
+     * 交卷判分。
+     *
+     * @param aiGradeEssay 是否对解答题调用 AI 判分；列表超时兜底时为 false（避免拖慢查询）
+     */
+    private KbExamResultView submitInternal(Long paperId, Long userId, boolean aiGradeEssay) {
         KbExamPaperDO paper = requirePaper(paperId, userId);
         if (!"IN_PROGRESS".equals(paper.getStatus())) {
             return result(paperId, userId);
@@ -288,27 +344,44 @@ public class KbExamManagerImpl implements KbExamManager {
         for (KbExamPaperQuestionDO row : rows) {
             boolean objective = OBJECTIVE_TYPES.contains(row.getQuestionType());
             Integer isCorrect = null;
-            if (!objective) {
-                // 解答题不自动判分（练习模式看参考答案自评）
-            } else if (StrUtil.isBlank(row.getUserAnswer())) {
+            int fullScore = row.getScore() == null ? scoreOf(row.getQuestionType()) : row.getScore();
+            int actualScore = 0;
+            String aiComment = null;
+            if (StrUtil.isBlank(row.getUserAnswer())) {
+                // 未作答：客观题与解答题都记 0 分
                 isCorrect = 0;
                 unanswered++;
-            } else if (normalizeAnswer(row.getUserAnswer()).equals(normalizeAnswer(row.getAnswer()))) {
-                isCorrect = 1;
-                correct++;
-                score += row.getScore() == null ? 0 : row.getScore();
+            } else if (objective) {
+                if (normalizeAnswer(row.getUserAnswer()).equals(normalizeAnswer(row.getAnswer()))) {
+                    isCorrect = 1;
+                    actualScore = fullScore;
+                    correct++;
+                } else {
+                    isCorrect = 0;
+                    wrong++;
+                }
+            } else if (!aiGradeEssay) {
+                // TODO 后续用定时任务/异步补判：这里（列表超时兜底）不调 AI，解答题先置为待判分
+                isCorrect = null;
+                actualScore = 0;
+                aiComment = "超时自动交卷，解答题待 AI 判分";
+                answerScoreRow(row, isCorrect, actualScore, aiComment);
+                continue;
             } else {
-                isCorrect = 0;
-                wrong++;
+                // 解答题：调用 AI 能力判分（严格的面试官口径，0~满分）
+                AiGrade grade = gradeEssay(row, fullScore);
+                actualScore = grade.score;
+                aiComment = grade.comment;
+                isCorrect = actualScore * 2 >= fullScore ? 1 : 0;
+                if (isCorrect == 1) {
+                    correct++;
+                } else {
+                    wrong++;
+                }
             }
-            KbExamPaperQuestionDO update = new KbExamPaperQuestionDO();
-            update.setId(row.getId());
-            update.setIsCorrect(isCorrect);
-            kbExamPaperQuestionMapper.updateByCondition(update);
-            row.setIsCorrect(isCorrect);
-            if (objective) {
-                writeStat(userId, row.getQuestionId(), isCorrect != null && isCorrect == 1);
-            }
+            score += actualScore;
+            answerScoreRow(row, isCorrect, actualScore, aiComment);
+            writeStat(userId, row.getQuestionId(), isCorrect != null && isCorrect == 1);
         }
         LocalDateTime now = LocalDateTime.now();
         int cost = (int) Duration.between(paper.getStartTime(), now).getSeconds();
@@ -356,6 +429,8 @@ public class KbExamManagerImpl implements KbExamManager {
             item.setExplanation(row.getExplanation());
             item.setIsCorrect(row.getIsCorrect());
             item.setScore(row.getScore());
+            item.setActualScore(row.getActualScore());
+            item.setAiComment(row.getAiComment());
             return item;
         }).collect(Collectors.toList()));
         return view;
@@ -392,7 +467,8 @@ public class KbExamManagerImpl implements KbExamManager {
             if (paper.getDeadline() != null && paper.getDeadline().isBefore(now)) {
                 LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "考试超时自动交卷 paperId={} userId={}",
                         paper.getId(), userId);
-                submit(paper.getId(), userId);
+                // 列表兜底不调 AI 判分（避免拖慢查询），解答题置为待判分
+                submitInternal(paper.getId(), userId, false);
             }
         }
     }
@@ -486,15 +562,56 @@ public class KbExamManagerImpl implements KbExamManager {
         return sum > 0 ? sum : DEFAULT_QUESTION_COUNT;
     }
 
-    /** 按规则抽题（随机 + 去重 + 排除已掌握）。 */
-    private List<Long> pick(KbExamRuleParam rule, Long userId, boolean excludeMastered,
-                            boolean objectiveOnly, int need, List<Long> selected) {
+    /**
+     * 按题型分组抽题：把一个题型组的配额按各知识点权重分配到规则上，再逐条抽题。
+     *
+     * @param allowedTypes    允许的题型（如 选择=单选+多选）
+     * @param count           该组需要的题量
+     * @param rules           知识点规则
+     * @param userId          用户ID
+     * @param excludeMastered 是否排除已做对
+     * @param selected        已选中的题目ID（去重）
+     * @return 抽中的题目ID
+     */
+    private List<Long> pickByGroup(List<String> allowedTypes, int count, List<KbExamRuleParam> rules,
+                                   Long userId, boolean excludeMastered, List<Long> selected) {
+        List<Long> result = new ArrayList<>();
+        if (count <= 0 || rules.isEmpty()) {
+            return result;
+        }
+        int totalWeight = rules.stream().mapToInt(rule -> rule.getCount() == null ? 1 : rule.getCount()).sum();
+        if (totalWeight <= 0) {
+            totalWeight = rules.size();
+        }
+        int remaining = count;
+        for (int i = 0; i < rules.size() && remaining > 0; i++) {
+            KbExamRuleParam rule = rules.get(i);
+            int weight = rule.getCount() == null ? 1 : rule.getCount();
+            int quota = (i == rules.size() - 1)
+                    ? remaining
+                    : Math.max(1, (int) Math.round(count * weight / (double) totalWeight));
+            quota = Math.min(quota, remaining);
+            List<Long> taken = new ArrayList<>(selected);
+            taken.addAll(result);
+            List<Long> got = pick(rule, allowedTypes, userId, excludeMastered, quota, taken);
+            result.addAll(got);
+            remaining = count - result.size();
+        }
+        return result;
+    }
+
+    /** 按规则 + 题型集合抽题（随机 + 去重 + 排除已掌握）。 */
+    private List<Long> pick(KbExamRuleParam rule, Collection<String> allowedTypes, Long userId,
+                            boolean excludeMastered, int need, List<Long> selected) {
+        if (need <= 0) {
+            return Collections.emptyList();
+        }
         KbQuestionPickQuery query = new KbQuestionPickQuery();
         query.setUserId(userId);
         query.setCategory(StrUtil.trimToNull(rule.getCategory()));
         query.setSubtopic(StrUtil.trimToNull(rule.getSubtopic()));
-        query.setQuestionType(objectiveOnly && StrUtil.isBlank(rule.getQuestionType())
-                ? null : StrUtil.trimToNull(rule.getQuestionType()));
+        // 规则里显式指定了题型时以规则为准，否则按题型组过滤
+        query.setQuestionType(StrUtil.trimToNull(rule.getQuestionType()));
         query.setDifficulty(StrUtil.trimToNull(rule.getDifficulty()));
         query.setExcludeMastered(excludeMastered);
         query.setLimit(Math.max(need * 5, 50));
@@ -506,19 +623,94 @@ public class KbExamManagerImpl implements KbExamManager {
         List<Long> pool = candidates.stream()
                 .filter(id -> !taken.contains(id))
                 .collect(Collectors.toList());
-        // 只出客观题时，过滤掉解答题（抽题 SQL 不按题型过滤的情况）
-        if (objectiveOnly && StrUtil.isBlank(rule.getQuestionType()) && !pool.isEmpty()) {
+        // 按题型组过滤（抽题 SQL 只支持单个题型，这里在内存里按分组筛）
+        if (allowedTypes != null && !allowedTypes.isEmpty() && StrUtil.isBlank(rule.getQuestionType())) {
             Map<Long, KbQuestionDO> map = new LinkedHashMap<>();
             for (KbQuestionDO row : kbQuestionMapper.selectByIds(pool)) {
                 map.put(row.getId(), row);
             }
             pool = pool.stream()
                     .filter(id -> map.containsKey(id)
-                            && OBJECTIVE_TYPES.contains(map.get(id).getQuestionType()))
+                            && allowedTypes.contains(map.get(id).getQuestionType()))
                     .collect(Collectors.toList());
         }
         Collections.shuffle(pool);
         return pool.stream().limit(need).collect(Collectors.toList());
+    }
+
+    /** 按题型给分：客观题 1 分，解答题 5 分。 */
+    private int scoreOf(String questionType) {
+        return OBJECTIVE_TYPES.contains(questionType) ? SCORE_OBJECTIVE : SCORE_ESSAY;
+    }
+
+    /**
+     * 解答题 AI 判分：调用 EXAM/ANSWER_GRADING 能力（严格的面试官口径），返回 0~满分。
+     *
+     * @param row       题目快照
+     * @param fullScore 本题满分
+     * @return 判分结果
+     */
+    private AiGrade gradeEssay(KbExamPaperQuestionDO row, int fullScore) {
+        String input = "题目：\n" + StrUtil.nullToEmpty(row.getTitle())
+                + "\n\n参考答案：\n" + StrUtil.nullToEmpty(row.getAnswer())
+                + "\n\n考生作答：\n" + StrUtil.nullToEmpty(row.getUserAnswer())
+                + "\n\n本题满分：" + fullScore + " 分";
+        try {
+            String output = aiCapabilityService.invoke(AI_SCENE_EXAM, AI_CAPABILITY_GRADING, input);
+            return parseGrade(output, fullScore);
+        } catch (Exception e) {
+            LoggerUtil.warn(LogFileEnum.BIZ_SERVICE, "【考试】AI 判分失败 questionId={}: {}",
+                    row.getQuestionId(), e.getMessage());
+            return new AiGrade(0, "AI 判分失败，本题按 0 分计");
+        }
+    }
+
+    /** 解析 AI 判分输出（优先严格 JSON，失败则从文本里取第一个数字兜底）。 */
+    private AiGrade parseGrade(String output, int fullScore) {
+        if (StrUtil.isBlank(output)) {
+            return new AiGrade(0, "AI 未返回判分结果");
+        }
+        String text = output.trim().replace("```json", "").replace("```", "").trim();
+        int score = 0;
+        String comment = text;
+        try {
+            JSONObject json = JSONUtil.parseObj(text);
+            score = json.getInt("score", 0);
+            comment = json.getStr("comment", "");
+        } catch (Exception ignore) {
+            Matcher matcher = Pattern.compile("(\\d+)").matcher(text);
+            if (matcher.find()) {
+                score = Integer.parseInt(matcher.group(1));
+            }
+        }
+        int safeScore = Math.max(0, Math.min(score, fullScore));
+        return new AiGrade(safeScore, StrUtil.maxLength(StrUtil.nullToEmpty(comment), 200));
+    }
+
+    /**
+     * AI 判分结果。
+     */
+    private record AiGrade(int score, String comment) {
+    }
+
+    /**
+     * 回写单题判分结果（is_correct / actual_score / ai_comment）。
+     *
+     * @param row         题目行
+     * @param isCorrect   是否正确（null=待判分）
+     * @param actualScore 实际得分
+     * @param aiComment   AI 评语（可空）
+     */
+    private void answerScoreRow(KbExamPaperQuestionDO row, Integer isCorrect, int actualScore, String aiComment) {
+        KbExamPaperQuestionDO update = new KbExamPaperQuestionDO();
+        update.setId(row.getId());
+        update.setIsCorrect(isCorrect);
+        update.setActualScore(actualScore);
+        update.setAiComment(aiComment);
+        kbExamPaperQuestionMapper.updateByCondition(update);
+        row.setIsCorrect(isCorrect);
+        row.setActualScore(actualScore);
+        row.setAiComment(aiComment);
     }
 
     /** 掌握度回写：答对 → 已掌握并移出错题集；答错 → 进错题集。 */

@@ -3,7 +3,7 @@
 <mapper namespace="com.jakt.aiplatform.common.dal.mapper.KbExamPaperQuestionMapper">
 
     <sql id="selectColumns">
-        id, paper_id, question_id, seq, question_type, category, subtopic, title, content, options, answer, explanation, difficulty, score, user_answer, is_correct, answer_cost_seconds, answer_time, create_time, update_time
+        id, paper_id, question_id, seq, question_type, category, subtopic, title, content, options, answer, explanation, difficulty, score, actual_score, ai_comment, user_answer, is_correct, answer_cost_seconds, answer_time, create_time, update_time
     </sql>
 
     <sql id="queryConditions">
@@ -110,8 +110,8 @@
 
     <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperQuestionDO"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO kb_exam_paper_question (paper_id, question_id, seq, question_type, category, subtopic, title, content, options, answer, explanation, difficulty, score, user_answer, is_correct, answer_cost_seconds, answer_time)
-        VALUES (#{paperId}, #{questionId}, #{seq}, #{questionType}, #{category}, #{subtopic}, #{title}, #{content}, #{options}, #{answer}, #{explanation}, #{difficulty}, #{score}, #{userAnswer}, #{isCorrect}, #{answerCostSeconds}, #{answerTime})
+        INSERT INTO kb_exam_paper_question (paper_id, question_id, seq, question_type, category, subtopic, title, content, options, answer, explanation, difficulty, score, actual_score, ai_comment, user_answer, is_correct, answer_cost_seconds, answer_time)
+        VALUES (#{paperId}, #{questionId}, #{seq}, #{questionType}, #{category}, #{subtopic}, #{title}, #{content}, #{options}, #{answer}, #{explanation}, #{difficulty}, #{score}, #{actualScore}, #{aiComment}, #{userAnswer}, #{isCorrect}, #{answerCostSeconds}, #{answerTime})
     </insert>
 
     <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperQuestionDO">
@@ -129,6 +129,8 @@
             explanation = #{explanation},
             difficulty = #{difficulty},
             score = #{score},
+            actual_score = #{actualScore},
+            ai_comment = #{aiComment},
             user_answer = #{userAnswer},
             is_correct = #{isCorrect},
             answer_cost_seconds = #{answerCostSeconds},
@@ -137,7 +139,7 @@
     </update>
 
     <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.KbExamPaperQuestionDO">
-        <if test="paperId != null or questionId != null or seq != null or questionType != null or category != null or subtopic != null or title != null or content != null or options != null or answer != null or explanation != null or difficulty != null or score != null or userAnswer != null or isCorrect != null or answerCostSeconds != null or answerTime != null">
+        <if test="paperId != null or questionId != null or seq != null or questionType != null or category != null or subtopic != null or title != null or content != null or options != null or answer != null or explanation != null or difficulty != null or score != null or actualScore != null or aiComment != null or userAnswer != null or isCorrect != null or answerCostSeconds != null or answerTime != null">
             UPDATE kb_exam_paper_question
         <set>
             <if test="paperId != null">
@@ -178,6 +180,12 @@
             </if>
             <if test="score != null">
                 score = #{score},
+            </if>
+            <if test="actualScore != null">
+                actual_score = #{actualScore},
+            </if>
+            <if test="aiComment != null">
+                ai_comment = #{aiComment},
             </if>
             <if test="userAnswer != null">
                 user_answer = #{userAnswer},

@@ -83,7 +83,13 @@ public class KbExamResultView {
         /** 是否正确（null=未判，如解答题）。 */
         private Integer isCorrect;
 
-        /** 本题得分。 */
+        /** 本题满分。 */
         private Integer score;
+
+        /** 本题实际得分（客观题判分 / AI 判分）。 */
+        private Integer actualScore;
+
+        /** AI 判分评语（解答题）。 */
+        private String aiComment;
     }
 }

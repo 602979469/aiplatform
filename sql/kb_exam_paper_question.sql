@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS `kb_exam_paper_question` (
   `explanation`         TEXT         DEFAULT NULL COMMENT '解析快照',
   `difficulty`          VARCHAR(16)  DEFAULT NULL COMMENT '难度',
   `score`               INT          NOT NULL DEFAULT 5 COMMENT '本题分值',
+  `actual_score`        INT          DEFAULT NULL COMMENT '实际得分（客观题判分或 AI 判分）',
+  `ai_comment`          VARCHAR(500) DEFAULT NULL COMMENT 'AI 判分评语（解答题）',
   `user_answer`         VARCHAR(512) DEFAULT NULL COMMENT '用户作答（如 A,B）',
   `is_correct`          TINYINT      DEFAULT NULL COMMENT '是否正确（NULL未判/0错/1对）',
   `answer_cost_seconds` INT          DEFAULT NULL COMMENT '本题作答耗时（秒，前端上报）',

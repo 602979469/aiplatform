@@ -52,6 +52,12 @@ public class KbExamPaperQuestionDO extends BaseDO {
     /** 本题分值。 */
     private Integer score;
 
+    /** 实际得分（客观题判分或 AI 判分）。 */
+    private Integer actualScore;
+
+    /** AI 判分评语（解答题）。 */
+    private String aiComment;
+
     /** 用户作答（如 A,B）。 */
     private String userAnswer;
 
