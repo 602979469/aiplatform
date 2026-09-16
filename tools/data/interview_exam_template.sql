@@ -25,24 +25,25 @@ SET @tid = LAST_INSERT_ID();
 INSERT INTO kb_exam_template_rule
   (template_id, category, subtopic, question_type, difficulty, question_count, order_num, create_time, update_time)
 VALUES
-  (@tid, '面试题', 'Java基础',        NULL, NULL, 2, 1,  NOW(), NOW()),
-  (@tid, '面试题', '并发编程',        NULL, NULL, 2, 2,  NOW(), NOW()),
+  -- 前面 14 个知识点承接 14 道解答题配额（抽题按 order_num 先后分配），故核心栈排在前面
+  (@tid, '面试题', 'Java基础',        NULL, NULL, 1, 1,  NOW(), NOW()),
+  (@tid, '面试题', '并发编程',        NULL, NULL, 1, 2,  NOW(), NOW()),
   (@tid, '面试题', 'JVM与调优',       NULL, NULL, 1, 3,  NOW(), NOW()),
   (@tid, '面试题', 'Spring',          NULL, NULL, 1, 4,  NOW(), NOW()),
-  (@tid, '面试题', 'MyBatis',         NULL, NULL, 1, 5,  NOW(), NOW()),
-  (@tid, '面试题', 'MySQL',           NULL, NULL, 1, 6,  NOW(), NOW()),
-  (@tid, '面试题', 'Redis',           NULL, NULL, 1, 7,  NOW(), NOW()),
-  (@tid, '面试题', 'RocketMQ',        NULL, NULL, 1, 8,  NOW(), NOW()),
-  (@tid, '面试题', 'Elasticsearch',   NULL, NULL, 1, 9,  NOW(), NOW()),
-  (@tid, '面试题', '分布式与高可用',  NULL, NULL, 1, 10, NOW(), NOW()),
-  (@tid, '面试题', '支付与资金安全',  NULL, NULL, 1, 11, NOW(), NOW()),
-  (@tid, '面试题', 'DDD与设计模式',   NULL, NULL, 1, 12, NOW(), NOW()),
-  (@tid, '面试题', 'Docker与K8s',     NULL, NULL, 1, 13, NOW(), NOW()),
-  (@tid, '面试题', '云原生交付',      NULL, NULL, 1, 14, NOW(), NOW()),
-  (@tid, '面试题', '可观测性',        NULL, NULL, 1, 15, NOW(), NOW()),
-  (@tid, '面试题', '存储与对象存储',  NULL, NULL, 1, 16, NOW(), NOW()),
-  (@tid, '面试题', '工作流Flowable',  NULL, NULL, 1, 17, NOW(), NOW()),
-  (@tid, '面试题', 'Netty与长连接',   NULL, NULL, 1, 18, NOW(), NOW());
+  (@tid, '面试题', 'MySQL',           NULL, NULL, 1, 5,  NOW(), NOW()),
+  (@tid, '面试题', 'Redis',           NULL, NULL, 1, 6,  NOW(), NOW()),
+  (@tid, '面试题', '分布式与高可用',  NULL, NULL, 1, 7,  NOW(), NOW()),
+  (@tid, '面试题', '支付与资金安全',  NULL, NULL, 1, 8,  NOW(), NOW()),
+  (@tid, '面试题', 'Docker与K8s',     NULL, NULL, 1, 9,  NOW(), NOW()),
+  (@tid, '面试题', '云原生交付',      NULL, NULL, 1, 10, NOW(), NOW()),
+  (@tid, '面试题', '工作流Flowable',  NULL, NULL, 1, 11, NOW(), NOW()),
+  (@tid, '面试题', 'Netty与长连接',   NULL, NULL, 1, 12, NOW(), NOW()),
+  (@tid, '面试题', 'RocketMQ',        NULL, NULL, 1, 13, NOW(), NOW()),
+  (@tid, '面试题', 'Elasticsearch',   NULL, NULL, 1, 14, NOW(), NOW()),
+  (@tid, '面试题', 'MyBatis',         NULL, NULL, 1, 15, NOW(), NOW()),
+  (@tid, '面试题', 'DDD与设计模式',   NULL, NULL, 1, 16, NOW(), NOW()),
+  (@tid, '面试题', '可观测性',        NULL, NULL, 1, 17, NOW(), NOW()),
+  (@tid, '面试题', '存储与对象存储',  NULL, NULL, 1, 18, NOW(), NOW());
 
 SELECT CONCAT('template_id=', @tid, ' 规则数=', COUNT(*)) AS result
   FROM kb_exam_template_rule WHERE template_id = @tid;

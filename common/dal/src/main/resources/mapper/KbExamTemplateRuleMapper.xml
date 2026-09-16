@@ -57,7 +57,7 @@
         SELECT <include refid="selectColumns"/>
         FROM kb_exam_template_rule
         <include refid="queryConditions"/>
-        ORDER BY id DESC
+        ORDER BY order_num ASC, id ASC
         LIMIT #{offset}, #{pageSize}
     </select>
 
@@ -65,7 +65,7 @@
         SELECT <include refid="selectColumns"/>
         FROM kb_exam_template_rule
         <include refid="queryConditions"/>
-        ORDER BY id DESC
+        ORDER BY order_num ASC, id ASC
     </select>
 
     <select id="selectOne" resultType="com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateRuleDO">
