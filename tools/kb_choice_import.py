@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""选择题/判断题/多选题 JSONL -> kb_question 增量导入（按标题去重，可重跑）。
+"""选择题/判断题/多选题/解答题 JSONL -> kb_question 增量导入（按标题去重，可重跑）。
 
 JSONL 每行一个对象：
   {"question_type":"单选","category":"游戏","subtopic":"王者荣耀","title":"...",
    "options":[{"key":"A","text":"..."}],"answer":"A","content":"Markdown 解析",
    "difficulty":"easy","tags":"游戏,王者荣耀"}
+解答题没有 options，参考答案写在 content 里：
+  {"question_type":"解答","category":"面试题","subtopic":"MySQL","title":"面试官：...？",
+   "content":"## 回答要点\\n- ...","difficulty":"hard","tags":"面试题,MySQL"}
 
 在 k8s-master 上执行（需要 kubectl 能访问 tsk 命名空间）。
 导入完成后需执行 kb_es_rebuild.py 把 MySQL 同步到 ES。
@@ -77,6 +80,13 @@ def title_key(title):
     return hashlib.md5(title.strip()[:250].encode("utf-8")).hexdigest()
 
 
+def sql_literal(value):
+    """可空字符串：None/空 -> NULL，否则加引号并转义。"""
+    if value is None or value == "":
+        return "NULL"
+    return "'%s'" % esc(value)
+
+
 mysql_password = base64.b64decode(sh([
     "kubectl", "get", "secret", "mysql-secret", "-n", NAMESPACE, "-o",
     "jsonpath={.data.root-password}"]).strip()).decode()
@@ -99,8 +109,10 @@ for line in open(jsonl_path, encoding="utf-8"):
     raw = json.loads(line)
     title = clean(raw.get("title") or "").strip()
     content = clean(raw.get("content") or "").strip()
+    question_type = str(raw.get("question_type") or "单选").strip()
     options = raw.get("options") or []
-    if len(title) < 6 or not options:
+    is_essay = question_type == "解答"
+    if len(title) < 6 or (not is_essay and not options):
         continue
     key = title_key(title)
     if key in seen:
@@ -108,12 +120,12 @@ for line in open(jsonl_path, encoding="utf-8"):
     seen.add(key)
     rows.append({
         "key": key,
-        "question_type": str(raw.get("question_type") or "单选").strip(),
+        "question_type": question_type,
         "category": clean(raw.get("category") or "").strip(),
         "subtopic": clean(raw.get("subtopic") or "").strip(),
         "title": title[:250],
-        "options": json.dumps(options, ensure_ascii=False),
-        "answer": clean(raw.get("answer") or "").strip(),
+        "options": json.dumps(options, ensure_ascii=False) if options else None,
+        "answer": clean(raw.get("answer") or "").strip() or None,
         "content": content,
         "difficulty": clean(raw.get("difficulty") or "medium").strip() or "medium",
         "tags": clean(raw.get("tags") or "").strip(),
@@ -145,10 +157,10 @@ for start in range(0, len(pending), ROWS_PER_FILE):
     for offset in range(0, len(chunk), ROWS_PER_STATEMENT):
         part = chunk[offset:offset + ROWS_PER_STATEMENT]
         values = ",".join(
-            "(%d,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" % (
+            "(%d,'%s','%s','%s','%s',%s,%s,'%s','%s','%s','%s')" % (
                 start_id + start + offset + index,
                 esc(r["question_type"]), esc(r["category"]), esc(r["subtopic"]), esc(r["title"]),
-                esc(r["options"]), esc(r["answer"]), esc(r["content"]),
+                sql_literal(r["options"]), sql_literal(r["answer"]), esc(r["content"]),
                 esc(r["difficulty"]), esc(r["tags"]), source_path)
             for index, r in enumerate(part))
         statements.append("INSERT INTO kb_question (id, question_type, category, subtopic, title, "

@@ -161,13 +161,13 @@ public class KbExamManagerImpl implements KbExamManager {
         boolean excludeMastered = param.getExcludeMastered() != null
                 ? param.getExcludeMastered() == 1
                 : template == null || template.getExcludeMastered() == null || template.getExcludeMastered() == 1;
-        // 说明：题型由固定配比（5:2:1）决定，objectiveOnly 不再参与抽题，保留字段仅为兼容历史模板配置
         int questionCount = resolveQuestionCount(param, rules);
 
-        // 题型配额：先按 5:2:1 把总题量拆成 选择/问答/解答，再按知识点权重二次分配到各规则
-        int essayQuota = Math.max(1, (int) Math.round(questionCount * RATIO_ESSAY / (double) RATIO_TOTAL));
-        int qaQuota = Math.max(1, (int) Math.round(questionCount * RATIO_QA / (double) RATIO_TOTAL));
-        int selectQuota = Math.max(1, questionCount - essayQuota - qaQuota);
+        // 题型配额：优先用模板的 typeMix（如 {"解答":14,"单选":4,"判断":2}），没配则回退固定配比 5:2:1
+        int[] quotas = resolveTypeQuotas(param, questionCount);
+        int selectQuota = quotas[0];
+        int qaQuota = quotas[1];
+        int essayQuota = quotas[2];
 
         List<Long> picked = new ArrayList<>();
         picked.addAll(pickByGroup(GROUP_SELECT, selectQuota, rules, userId, excludeMastered, picked));
@@ -545,6 +545,67 @@ public class KbExamManagerImpl implements KbExamManager {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID, "请选择模板或至少配置一个知识点");
         }
         return param.getRules();
+    }
+
+    /**
+     * 题型配额：优先读模板的 typeMix（如 {"解答":14,"单选":4,"判断":2}），未配置时回退固定配比 5:2:1。
+     *
+     * @param param         开考参数
+     * @param questionCount 总题量
+     * @return 长度 3 的数组：[选择题配额(单选+多选), 判断题配额, 解答题配额]
+     */
+    private int[] resolveTypeQuotas(KbExamStartParam param, int questionCount) {
+        Map<String, Integer> mix = resolveTypeMix(param.getTemplateId());
+        if (!mix.isEmpty()) {
+            int select = mix.getOrDefault("单选", 0) + mix.getOrDefault("多选", 0);
+            int qa = mix.getOrDefault("判断", 0);
+            int essay = mix.getOrDefault("解答", 0);
+            if (select + qa + essay > 0) {
+                return new int[]{Math.max(0, select), Math.max(0, qa), Math.max(0, essay)};
+            }
+        }
+        return fixedTypeQuotas(questionCount);
+    }
+
+    /**
+     * 固定配比 5:2:1 的配额（历史行为，兜底用）。
+     *
+     * @param questionCount 总题量
+     * @return 长度 3 的数组：[选择题配额, 判断题配额, 解答题配额]
+     */
+    private int[] fixedTypeQuotas(int questionCount) {
+        int essayQuota = Math.max(1, (int) Math.round(questionCount * RATIO_ESSAY / (double) RATIO_TOTAL));
+        int qaQuota = Math.max(1, (int) Math.round(questionCount * RATIO_QA / (double) RATIO_TOTAL));
+        int selectQuota = Math.max(1, questionCount - essayQuota - qaQuota);
+        return new int[]{selectQuota, qaQuota, essayQuota};
+    }
+
+    /**
+     * 解析模板的题型配比 JSON。
+     *
+     * @param templateId 模板ID
+     * @return 题型 -> 题量；未配置或解析失败返回空 Map
+     */
+    private Map<String, Integer> resolveTypeMix(Long templateId) {
+        if (templateId == null) {
+            return new LinkedHashMap<>();
+        }
+        KbExamTemplateDO template = kbExamTemplateMapper.selectById(templateId);
+        if (template == null || StrUtil.isBlank(template.getTypeMix())) {
+            return new LinkedHashMap<>();
+        }
+        Map<String, Integer> mix = new LinkedHashMap<>();
+        try {
+            JSONObject json = JSONUtil.parseObj(template.getTypeMix());
+            for (String key : json.keySet()) {
+                mix.put(key, json.getInt(key, 0));
+            }
+        } catch (Exception e) {
+            LoggerUtil.warn(LogFileEnum.BIZ_SERVICE, "【考试】模板 {} 的题型配比解析失败: {}",
+                    templateId, template.getTypeMix());
+            return new LinkedHashMap<>();
+        }
+        return mix;
     }
 
     /** 题量：模板优先，其次入参，最后默认值。 */
