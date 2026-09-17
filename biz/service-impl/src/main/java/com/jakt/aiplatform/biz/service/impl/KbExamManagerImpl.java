@@ -347,8 +347,9 @@ public class KbExamManagerImpl implements KbExamManager {
             int fullScore = row.getScore() == null ? scoreOf(row.getQuestionType()) : row.getScore();
             int actualScore = 0;
             String aiComment = null;
-            if (StrUtil.isBlank(row.getUserAnswer())) {
-                // 未作答：客观题与解答题都记 0 分
+            boolean answered = !StrUtil.isBlank(row.getUserAnswer());
+            if (!answered) {
+                // 未作答：只记 0 分与未答数，不计入错题集/掌握度（没作答不算错题）
                 isCorrect = 0;
                 unanswered++;
             } else if (objective) {
@@ -381,7 +382,10 @@ public class KbExamManagerImpl implements KbExamManager {
             }
             score += actualScore;
             answerScoreRow(row, isCorrect, actualScore, aiComment);
-            writeStat(userId, row.getQuestionId(), isCorrect != null && isCorrect == 1);
+            // 只有真正作答过的题才回写掌握度与错题集
+            if (answered) {
+                writeStat(userId, row.getQuestionId(), isCorrect != null && isCorrect == 1);
+            }
         }
         LocalDateTime now = LocalDateTime.now();
         int cost = (int) Duration.between(paper.getStartTime(), now).getSeconds();
