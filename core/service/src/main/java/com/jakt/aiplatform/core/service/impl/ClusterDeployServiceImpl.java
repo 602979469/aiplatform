@@ -1,5 +1,9 @@
 package com.jakt.aiplatform.core.service.impl;
 
+import com.jakt.aiplatform.common.integration.k8s.K8sDeploymentInfo;
+
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
@@ -12,7 +16,7 @@ import com.jakt.aiplatform.common.integration.ssh.SshClient;
 import com.jakt.aiplatform.common.integration.ssh.SshResult;
 import com.jakt.aiplatform.core.model.domain.ClusterPodConfig;
 import com.jakt.aiplatform.core.model.domain.ClusterImage;
-import com.jakt.aiplatform.core.service.ClusterCiProperties;
+import com.jakt.aiplatform.core.service.config.ClusterCiProperties;
 import com.jakt.aiplatform.core.service.ClusterImageService;
 import com.jakt.aiplatform.core.service.ClusterDeployService;
 import com.jakt.aiplatform.core.service.ClusterPodConfigService;
@@ -92,13 +96,14 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
         String appDir = ciProperties.getWorkDir() + "/apps/" + config.getId();
 
         // 1. 校验：集群中已有同名 Deployment 则拒绝（PRD：只判断集群里面有没有了）
+        K8sDeploymentInfo existing = k8sClient.getDeployment(config.getNamespace(), deploymentName);
         AssertUtil.throwErrWhenTrue(
-                k8sClient.getDeployment(config.getNamespace(), deploymentName) != null,
+                ObjectUtil.isNotNull(existing),
                 ErrorCodeEnum.PARAM_INVALID,
                 "集群中已存在同名 Deployment，请先删除或停用后再部署: " + deploymentName);
 
         // 2. 仅支持镜像流程：绑定已发布镜像（cluster_image）部署；旧 git 流程已下线
-        AssertUtil.throwErrWhenTrue(config.getImageId() == null,
+        AssertUtil.throwErrWhenTrue(ObjectUtil.isNull(config.getImageId()),
                 ErrorCodeEnum.PARAM_INVALID,
                 "该配置未绑定已发布镜像（旧 git 流程已下线），请先在配置中选择镜像后部署");
 
@@ -210,7 +215,7 @@ public class ClusterDeployServiceImpl implements ClusterDeployService {
                 Object metadata = root.get("metadata");
                 if (metadata instanceof Map) {
                     Object name = ((Map<String, Object>) metadata).get("name");
-                    if (name != null) {
+                    if (ObjectUtil.isNotNull(name)) {
                         return String.valueOf(name);
                     }
                 }

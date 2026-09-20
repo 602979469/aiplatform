@@ -1,7 +1,7 @@
 package com.jakt.aiplatform.web.controller;
 
 import com.jakt.aiplatform.biz.service.ClusterDomainManager;
-import com.jakt.aiplatform.biz.service.ClusterDomainView;
+import com.jakt.aiplatform.core.model.dto.ClusterDomainView;
 import com.jakt.aiplatform.web.checker.ClusterDomainParamChecker;
 import com.jakt.aiplatform.web.param.ClusterDomainDisableRequest;
 import com.jakt.aiplatform.web.param.ClusterDomainDeleteRequest;

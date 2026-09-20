@@ -2,6 +2,8 @@ package com.jakt.aiplatform.core.repository;
 
 import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.model.domain.KbUserQuestionStat;
+import com.jakt.aiplatform.core.model.dto.KbExamWrongView;
+import com.jakt.aiplatform.core.model.param.KbUserQuestionStatDelta;
 import com.jakt.aiplatform.core.model.param.KbUserQuestionStatQueryParam;
 
 import java.util.List;
@@ -75,4 +77,41 @@ public interface KbUserQuestionStatRepository {
      * @return 受影响行数；0 表示未生效，由上层决定
      */
     int deleteById(Long id);
+
+    /**
+     * 错题集列表：掌握度表关联题库，返回错题明细（我的答案/正确答案/解析）。
+     *
+     * @param userId 用户ID
+     * @param category 分类（可空）
+     * @param offset 偏移量
+     * @param limit 每页条数
+     * @return 错题集条目
+     */
+    List<KbExamWrongView> findWrongBook(Long userId, String category, int offset, int limit);
+
+    /**
+     * 统计错题集条数。
+     *
+     * @param userId 用户ID
+     * @param category 分类（可空）
+     * @return 错题集条数
+     */
+    long countWrongBook(Long userId, String category);
+
+    /**
+     * 更新错题集标记（标记已掌握 = 移出错题集）。
+     *
+     * @param userId 用户ID
+     * @param questionId 题目ID
+     * @return 受影响行数；0 表示未生效，由上层决定
+     */
+    int removeFromWrongBook(Long userId, Long questionId);
+
+    /**
+     * 掌握度增量 upsert：答对/答错累加次数，并更新最近结果、掌握标记与错题集标记。
+     *
+     * @param delta 掌握度增量
+     * @return 受影响行数；0 表示未生效，由上层决定
+     */
+    int upsertStat(KbUserQuestionStatDelta delta);
 }

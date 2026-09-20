@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.common.integration.ssh;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.core.io.FileUtil;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
@@ -36,9 +38,9 @@ public class SshClientImpl implements SshClient {
     public SshClientImpl(SshProperties properties) {
         this.properties = properties;
         // 私钥只注册一次：JSch identity 会累积，反复 addIdentity 会导致认证混乱（Auth fail）
-        if (properties.getPrivateKeyPath() != null && !properties.getPrivateKeyPath().isBlank()) {
+        if (ObjectUtil.isNotNull(properties.getPrivateKeyPath()) && !properties.getPrivateKeyPath().isBlank()) {
             try {
-                if (properties.getPassphrase() != null && !properties.getPassphrase().isBlank()) {
+                if (ObjectUtil.isNotNull(properties.getPassphrase()) && !properties.getPassphrase().isBlank()) {
                     jsch.addIdentity(properties.getPrivateKeyPath(), properties.getPassphrase());
                 } else {
                     jsch.addIdentity(properties.getPrivateKeyPath());
@@ -124,10 +126,10 @@ public class SshClientImpl implements SshClient {
         } catch (Exception e) {
             throw toIntegrationException("SSH 执行异常 host={} cmd长度={}", e, host, command.length());
         } finally {
-            if (channel != null) {
+            if (ObjectUtil.isNotNull(channel)) {
                 channel.disconnect();
             }
-            if (session != null) {
+            if (ObjectUtil.isNotNull(session)) {
                 session.disconnect();
             }
         }
@@ -148,10 +150,10 @@ public class SshClientImpl implements SshClient {
         } catch (Exception e) {
             throw toIntegrationException("SSH 上传文件失败 host={} {} -> {}", e, host, localPath, remotePath);
         } finally {
-            if (sftp != null) {
+            if (ObjectUtil.isNotNull(sftp)) {
                 sftp.disconnect();
             }
-            if (session != null) {
+            if (ObjectUtil.isNotNull(session)) {
                 session.disconnect();
             }
         }
@@ -171,10 +173,10 @@ public class SshClientImpl implements SshClient {
         } catch (Exception e) {
             throw toIntegrationException("SSH 下载文件失败 host={} {} -> {}", e, host, remotePath, localPath);
         } finally {
-            if (sftp != null) {
+            if (ObjectUtil.isNotNull(sftp)) {
                 sftp.disconnect();
             }
-            if (session != null) {
+            if (ObjectUtil.isNotNull(session)) {
                 session.disconnect();
             }
         }

@@ -9,7 +9,7 @@ import com.jakt.aiplatform.web.param.MirrorSearchRequest;
 /**
  * 镜像加速器参数检查器。
  */
-public class AiMirrorParamChecker {
+public final class AiMirrorParamChecker {
 
     private AiMirrorParamChecker() {
     }

@@ -1,4 +1,6 @@
 package com.jakt.aiplatform.core.service.impl;
+
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
@@ -60,7 +62,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthLoginInfo login(String username, String password) {
         AuthUser user = authUserRepository.findByUsername(username);
-        if (user == null || !BCrypt.checkpw(password, user.getPassword())) {
+        if (ObjectUtil.isNull(user) || !BCrypt.checkpw(password, user.getPassword())) {
             writeLoginLog(null, username, LoginLogStatusEnum.FAIL, "用户名或密码错误");
             throw AiPlatformException.ofThrow(BizErrorCodeEnum.LOGIN_FAILED);
         }
@@ -73,8 +75,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthLoginInfo register(String username, String password, String nickname, String email) {
-        AssertUtil.throwErrWhenTrue(authUserRepository.findByUsername(username) != null,
-                BizErrorCodeEnum.USERNAME_EXISTS);
+        AuthUser existing = authUserRepository.findByUsername(username);
+        AssertUtil.throwErrWhenTrue(ObjectUtil.isNotNull(existing), BizErrorCodeEnum.USERNAME_EXISTS);
         Result<AuthUser> result = BizTemplate.execute(transactionTemplate, () -> {
             AuthUser user = new AuthUser();
             user.setUsername(username);

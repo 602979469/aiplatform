@@ -1,4 +1,4 @@
-package com.jakt.aiplatform.core.service;
+package com.jakt.aiplatform.core.service.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

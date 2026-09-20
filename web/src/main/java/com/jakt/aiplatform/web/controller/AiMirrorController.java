@@ -6,7 +6,7 @@ import com.jakt.aiplatform.web.checker.AiMirrorParamChecker;
 import com.jakt.aiplatform.web.param.MirrorDownloadRequest;
 import com.jakt.aiplatform.web.param.MirrorSearchRequest;
 import com.jakt.aiplatform.web.result.ApiResult;
-import com.jakt.aiplatform.web.result.MirrorDownloadTask;
+import com.jakt.aiplatform.web.result.MirrorDownloadTaskResponse;
 import com.jakt.aiplatform.web.result.MirrorSearchResponse;
 import com.jakt.aiplatform.web.template.ApiTemplate;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -66,8 +66,8 @@ public class AiMirrorController {
      * @return 下载任务
      */
     @PostMapping("/download/generate")
-    public ApiResult<MirrorDownloadTask> generate(@RequestBody MirrorDownloadRequest request) {
-        return ApiTemplate.execute(request, new ApiTemplate.Callback<MirrorDownloadRequest, MirrorDownloadTask>() {
+    public ApiResult<MirrorDownloadTaskResponse> generate(@RequestBody MirrorDownloadRequest request) {
+        return ApiTemplate.execute(request, new ApiTemplate.Callback<MirrorDownloadRequest, MirrorDownloadTaskResponse>() {
 
             @Override
             public void beforeService(MirrorDownloadRequest param) {
@@ -75,7 +75,7 @@ public class AiMirrorController {
             }
 
             @Override
-            public MirrorDownloadTask execute(MirrorDownloadRequest param) {
+            public MirrorDownloadTaskResponse execute(MirrorDownloadRequest param) {
                 com.jakt.aiplatform.core.model.domain.MirrorDownloadTask task =
                         aiMirrorManager.generate(param.getRepo(), param.getTag());
                 return AiMirrorAssembler.toDownloadTask(task);
@@ -90,8 +90,8 @@ public class AiMirrorController {
      * @return 下载任务
      */
     @GetMapping("/download/status")
-    public ApiResult<MirrorDownloadTask> status(@RequestParam String taskId) {
-        return ApiTemplate.execute(taskId, new ApiTemplate.Callback<String, MirrorDownloadTask>() {
+    public ApiResult<MirrorDownloadTaskResponse> status(@RequestParam String taskId) {
+        return ApiTemplate.execute(taskId, new ApiTemplate.Callback<String, MirrorDownloadTaskResponse>() {
 
             @Override
             public void beforeService(String param) {
@@ -99,7 +99,7 @@ public class AiMirrorController {
             }
 
             @Override
-            public MirrorDownloadTask execute(String param) {
+            public MirrorDownloadTaskResponse execute(String param) {
                 com.jakt.aiplatform.core.model.domain.MirrorDownloadTask task = aiMirrorManager.getStatus(param);
                 return AiMirrorAssembler.toDownloadTask(task);
             }

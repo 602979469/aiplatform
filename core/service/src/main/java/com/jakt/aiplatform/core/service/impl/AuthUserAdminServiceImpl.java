@@ -1,4 +1,6 @@
 package com.jakt.aiplatform.core.service.impl;
+
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.dev33.satoken.stp.StpUtil;
@@ -56,7 +58,7 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
 
     @Override
     public boolean isSuperAdminUser(Long userId) {
-        if (userId == null) {
+        if (ObjectUtil.isNull(userId)) {
             return false;
         }
         return AuthRole.containsSuperAdmin(authRoleRepository.findRoleKeysByUserId(userId));
@@ -64,12 +66,12 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
 
     @Override
     public AuthUser createUser(AuthUser user, List<Long> roleIds) {
-        AssertUtil.throwErrWhenTrue(authUserRepository.findByUsername(user.getUsername()) != null,
-                BizErrorCodeEnum.USERNAME_EXISTS);
+        AuthUser existing = authUserRepository.findByUsername(user.getUsername());
+        AssertUtil.throwErrWhenTrue(ObjectUtil.isNotNull(existing), BizErrorCodeEnum.USERNAME_EXISTS);
         user.setNickname(StrUtil.blankToDefault(user.getNickname(), user.getUsername()));
         user.setEmail(StrUtil.nullToEmpty(user.getEmail()));
         user.setAvatar(StrUtil.nullToEmpty(user.getAvatar()));
-        if (user.getStatus() == null) {
+        if (ObjectUtil.isNull(user.getStatus())) {
             user.setStatus(EnableStatusEnum.ENABLE);
         }
         user.setPassword(BCrypt.hashpw(user.getPassword()));
@@ -86,7 +88,7 @@ public class AuthUserAdminServiceImpl implements AuthUserAdminService {
 
     @Override
     public void updateUser(AuthUser user) {
-        assertNotSuperAdmin(user == null ? null : user.getUserId());
+        assertNotSuperAdmin(ObjectUtil.isNull(user) ? null : user.getUserId());
         int affected = authUserRepository.updateByCondition(user);
         AssertUtil.throwErrWhenTrue(affected == 0, BizErrorCodeEnum.UPDATE_FAILED, "更新失败：记录不存在或已被修改");
     }

@@ -59,7 +59,7 @@ public class AuthUserRepositoryImpl implements AuthUserRepository {
         List<AuthUserDO> doList = authUserMapper.selectList(AuthUserConvertor.toDalQuery(query));
         AssertUtil.throwErrWhenTrue(doList.size() > 1, BizErrorCodeEnum.RESULT_NOT_UNIQUE,
                 "查询结果不唯一：预期 1 条，实际 " + doList.size() + " 条");
-        return doList.isEmpty() ? null : AuthUserConvertor.toModel(doList.get(0));
+        return CollUtil.isEmpty(doList) ? null : AuthUserConvertor.toModel(doList.get(0));
     }
 
     @Override

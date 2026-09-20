@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.web.checker;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.core.util.ArrayUtil;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 
@@ -26,7 +28,7 @@ public final class AuthUserParamChecker {
 
     /** 检查用户分页查询参数（放宽：为空跳过，分页缺省走默认值）。 */
     public static void checkUserQuery(AuthUserQueryRequest request) {
-        if (request == null) {
+        if (ObjectUtil.isNull(request)) {
             return;
         }
         ParamValidator.validate(request);
@@ -106,7 +108,7 @@ public final class AuthUserParamChecker {
 
     /** 检查当前用户资料修改参数。 */
     public static void checkProfile(AuthProfileRequest request) {
-        if (request == null) {
+        if (ObjectUtil.isNull(request)) {
             return;
         }
         ParamValidator.validate(request);

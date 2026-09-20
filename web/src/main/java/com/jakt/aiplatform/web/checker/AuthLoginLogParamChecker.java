@@ -1,4 +1,6 @@
 package com.jakt.aiplatform.web.checker;
+
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
@@ -15,7 +17,7 @@ public final class AuthLoginLogParamChecker {
 
     /** 检查登录记录分页查询参数（放宽：为空跳过）。 */
     public static void checkLoginLogQuery(AuthLoginLogQueryRequest request) {
-        if (request == null) {
+        if (ObjectUtil.isNull(request)) {
             return;
         }
         ParamValidator.validate(request);

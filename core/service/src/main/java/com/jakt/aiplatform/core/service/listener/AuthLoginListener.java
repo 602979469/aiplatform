@@ -1,17 +1,18 @@
-package com.jakt.aiplatform.core.service.impl;
+package com.jakt.aiplatform.core.service.listener;
 
 import cn.dev33.satoken.listener.SaTokenListenerForSimple;
 import cn.dev33.satoken.stp.parameter.SaLoginParameter;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.ObjectUtil;
+import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
+import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.common.util.tools.ClientInfoUtil;
 import com.jakt.aiplatform.core.model.constant.AiPlatformConstant;
 import com.jakt.aiplatform.core.model.domain.AuthLoginLog;
 import com.jakt.aiplatform.core.model.domain.AuthUser;
 import com.jakt.aiplatform.core.model.dto.AuthOnlineSnapshot;
-import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.core.model.enums.LoginLogStatusEnum;
-import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.core.repository.AuthLoginLogRepository;
 import com.jakt.aiplatform.core.repository.AuthOnlineRepository;
 import com.jakt.aiplatform.core.repository.AuthUserRepository;
@@ -44,7 +45,7 @@ public class AuthLoginListener extends SaTokenListenerForSimple {
     public void doLogin(String loginType, Object loginId, String tokenValue, SaLoginParameter loginParameter) {
         runSafely(() -> {
             AuthUser user = authUserRepository.findById(Convert.toLong(loginId));
-            if (user == null) {
+            if (ObjectUtil.isNull(user)) {
                 return;
             }
             writeLog(user, LoginLogStatusEnum.SUCCESS, "登录成功");
@@ -78,14 +79,14 @@ public class AuthLoginListener extends SaTokenListenerForSimple {
 
     /** 按 loginId 查询用户（事件场景可能拿不到用户，返回 null）。 */
     private AuthUser findUser(Object loginId) {
-        return loginId == null ? null : authUserRepository.findById(Convert.toLong(loginId));
+        return ObjectUtil.isNull(loginId) ? null : authUserRepository.findById(Convert.toLong(loginId));
     }
 
     /** 写登录记录。 */
     private void writeLog(AuthUser user, LoginLogStatusEnum status, String message) {
         AuthLoginLog log = new AuthLoginLog();
-        log.setUserId(user == null ? null : user.getUserId());
-        log.setUsername(user == null ? "" : user.getUsername());
+        log.setUserId(ObjectUtil.isNull(user) ? null : user.getUserId());
+        log.setUsername(ObjectUtil.isNull(user) ? "" : user.getUsername());
         log.setLoginIp(ClientInfoUtil.getClientIp());
         log.setUserAgent(ClientInfoUtil.getUserAgent());
         log.setStatus(status);

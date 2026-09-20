@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.core.repository.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.core.convert.Convert;
@@ -50,6 +52,12 @@ public class AuthOnlineRepositoryImpl implements AuthOnlineRepository {
         redisClient.delete(keyPrefix + tokenValue);
     }
 
+    /**
+     * 在线快照 → Redis DO。
+     *
+     * @param snapshot 在线快照
+     * @return Redis DO
+     */
     private AuthOnlineRedisDO toRedisDO(AuthOnlineSnapshot snapshot) {
         AuthOnlineRedisDO target = new AuthOnlineRedisDO();
         target.setTokenValue(snapshot.getTokenValue());
@@ -57,12 +65,18 @@ public class AuthOnlineRepositoryImpl implements AuthOnlineRepository {
         target.setUsername(snapshot.getUsername());
         target.setNickname(snapshot.getNickname());
         target.setLoginIp(snapshot.getLoginIp());
-        target.setLoginTime(snapshot.getLoginTime() == null ? null : snapshot.getLoginTime().toString());
+        target.setLoginTime(ObjectUtil.isNull(snapshot.getLoginTime()) ? null : snapshot.getLoginTime().toString());
         return target;
     }
 
+    /**
+     * Redis DO → 在线快照。
+     *
+     * @param source Redis DO；为空返回 null
+     * @return 在线快照
+     */
     private AuthOnlineSnapshot toSnapshot(AuthOnlineRedisDO source) {
-        if (source == null) {
+        if (ObjectUtil.isNull(source)) {
             return null;
         }
         AuthOnlineSnapshot target = new AuthOnlineSnapshot();

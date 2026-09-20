@@ -1,5 +1,8 @@
 package com.jakt.aiplatform.web.assembler;
 
+import cn.hutool.core.util.StrUtil;
+
+
 import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.core.model.domain.AuthMenu;
 import com.jakt.aiplatform.core.model.param.AuthMenuQueryParam;
@@ -135,7 +138,7 @@ public final class AuthMenuAssembler {
             return null;
         }
         String trimmed = path.trim();
-        if (!"0".equals(isFrame) || trimmed.isEmpty() || trimmed.matches("(?i)^https?://.*")) {
+        if (!"0".equals(isFrame) || StrUtil.isEmpty(trimmed) || trimmed.matches("(?i)^https?://.*")) {
             return trimmed;
         }
         return "https://" + trimmed;

@@ -1,11 +1,15 @@
 package com.jakt.aiplatform.biz.service.impl;
 
+import cn.hutool.core.collection.CollUtil;
+
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.jakt.aiplatform.biz.service.ClusterSecretManager;
-import com.jakt.aiplatform.biz.service.ClusterSecretView;
+import com.jakt.aiplatform.core.model.dto.ClusterSecretView;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
@@ -15,7 +19,7 @@ import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.common.integration.ssh.SshClient;
 import com.jakt.aiplatform.common.integration.ssh.SshResult;
 import com.jakt.aiplatform.core.model.enums.BizNamespaceEnum;
-import com.jakt.aiplatform.core.service.ClusterCiProperties;
+import com.jakt.aiplatform.core.service.config.ClusterCiProperties;
 import org.springframework.stereotype.Service;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -96,7 +100,7 @@ public class ClusterSecretManagerImpl implements ClusterSecretManager {
     public void upsert(String namespace, String name, String type, Boolean exists,
                        Map<String, String> keyValues) {
         checkNamespace(namespace);
-        if (keyValues == null || keyValues.isEmpty()) {
+        if (ObjectUtil.isNull(keyValues) || CollUtil.isEmpty(keyValues)) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID, "至少提交一个键值");
         }
         // 1. 服务端读取当前 Secret（kubectl -o yaml，SnakeYAML 解析；不存在则新建）
@@ -137,11 +141,12 @@ public class ClusterSecretManagerImpl implements ClusterSecretManager {
         Map<String, Object> labels = castMap(meta.get("labels"));
         labels.put(MANAGED_LABEL, "true");
 
-        String currentType = root.get("type") == null ? null : String.valueOf(root.get("type"));
+        String currentType = ObjectUtil.isNull(root.get("type")) ? null : String.valueOf(root.get("type"));
         String actualType = StrUtil.blankToDefault(StrUtil.blankToDefault(type, currentType), DEFAULT_TYPE);
         root.put("type", actualType);
 
-        Map<String, Object> data = root.get("data") == null ? new LinkedHashMap<>() : castMap(root.get("data"));
+        Map<String, Object> data = ObjectUtil.isNull(root.get("data"))
+                ? new LinkedHashMap<>() : castMap(root.get("data"));
         root.put("data", data);
 
         // 2. 合并：仅覆盖/新增提交的键（不删除），值 base64 后写入
@@ -176,14 +181,14 @@ public class ClusterSecretManagerImpl implements ClusterSecretManager {
                     60);
             AssertUtil.throwErrWhenFalse(apply.isSuccess(), ErrorCodeEnum.SYSTEM_ERROR,
                     "同步密钥失败: " + safeOutput(apply.getOutput()));
+        } catch (AiPlatformException e) {
+            cleanupRemoteFile(remoteFile);
+            throw e;
         } catch (Exception e) {
-            sshClient.execute(ciProperties.getMasterHost(), "rm -f '" + remoteFile + "'", 20);
-            if (e instanceof AiPlatformException) {
-                throw (AiPlatformException) e;
-            }
+            cleanupRemoteFile(remoteFile);
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "同步密钥失败: " + e.getMessage());
         } finally {
-            if (local != null) {
+            if (ObjectUtil.isNotNull(local)) {
                 try {
                     Files.deleteIfExists(local);
                 } catch (Exception ignored) {
@@ -196,6 +201,21 @@ public class ClusterSecretManagerImpl implements ClusterSecretManager {
                 namespace, name, actualType, new ArrayList<>(keyValues.keySet()));
     }
 
+    /**
+     * 清理远端临时文件（清理失败不影响主流程）。
+     *
+     * @param remoteFile 远端临时文件路径
+     */
+    private void cleanupRemoteFile(String remoteFile) {
+        sshClient.execute(ciProperties.getMasterHost(), "rm -f '" + remoteFile + "'", 20);
+    }
+
+    /**
+     * 从集群读取指定命名空间下的 Secret 列表（只读视图，永不含 value）。
+     *
+     * @param namespace 命名空间
+     * @return 密钥视图列表，按名称正序
+     */
     private List<ClusterSecretView> listFromCluster(String namespace) {
         String cmd = "kubectl get secret -n '" + namespace + "' -o json";
         SshResult result = sshClient.execute(ciProperties.getMasterHost(), cmd, 30);
@@ -204,12 +224,12 @@ public class ClusterSecretManagerImpl implements ClusterSecretManager {
         List<ClusterSecretView> views = new ArrayList<>();
         JSONObject root = JSONUtil.parseObj(result.getOutput());
         JSONArray items = root.getJSONArray("items");
-        if (items != null) {
+        if (ObjectUtil.isNotNull(items)) {
             for (Object item : items) {
                 JSONObject obj = (JSONObject) item;
+                JSONObject objMeta = obj.getJSONObject("metadata");
                 String name = StrUtil.blankToDefault(
-                        obj.getJSONObject("metadata") == null ? null
-                                : obj.getJSONObject("metadata").getStr("name"), "");
+                        ObjectUtil.isNull(objMeta) ? null : objMeta.getStr("name"), "");
                 if (StrUtil.isBlank(name)) {
                     continue;
                 }
@@ -220,17 +240,25 @@ public class ClusterSecretManagerImpl implements ClusterSecretManager {
         return views;
     }
 
+    /**
+     * Secret JSON → 只读视图（只保留名称/类型/纳管标签/键名，剔除 value）。
+     *
+     * @param json Secret 原始 JSON
+     * @param namespace 命名空间
+     * @param name Secret 名称
+     * @return 密钥视图
+     */
     private ClusterSecretView parseFromJson(JSONObject json, String namespace, String name) {
         ClusterSecretView view = new ClusterSecretView();
         view.setNamespace(namespace);
         view.setName(name);
         view.setType(StrUtil.blankToDefault(json.getStr("type"), DEFAULT_TYPE));
         JSONObject meta = json.getJSONObject("metadata");
-        JSONObject labels = meta == null ? null : meta.getJSONObject("labels");
-        view.setManaged(labels != null && "true".equals(labels.getStr(MANAGED_LABEL)));
+        JSONObject labels = ObjectUtil.isNull(meta) ? null : meta.getJSONObject("labels");
+        view.setManaged(ObjectUtil.isNotNull(labels) && "true".equals(labels.getStr(MANAGED_LABEL)));
         Set<String> keys = new TreeSet<>();
         JSONObject data = json.getJSONObject("data");
-        if (data != null) {
+        if (ObjectUtil.isNotNull(data)) {
             for (String key : data.keySet()) {
                 keys.add(key);
             }
@@ -239,11 +267,23 @@ public class ClusterSecretManagerImpl implements ClusterSecretManager {
         return view;
     }
 
+    /**
+     * 泛型 Map 强转（调用方已确认结构）。
+     *
+     * @param value 原始对象
+     * @return Map；结构不符时由调用方保证安全
+     */
     @SuppressWarnings("unchecked")
     private static Map<String, Object> castMap(Object value) {
         return (Map<String, Object>) value;
     }
 
+    /**
+     * Map → YAML 字符串（块状风格、双引号标量）。
+     *
+     * @param root 待序列化的根节点
+     * @return YAML 文本
+     */
     private String dumpYaml(Map<String, Object> root) {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
@@ -252,12 +292,22 @@ public class ClusterSecretManagerImpl implements ClusterSecretManager {
         return new Yaml(options).dump(root);
     }
 
+    /**
+     * 校验命名空间非空且在白名单内。
+     *
+     * @param namespace 命名空间
+     */
     private void checkNamespace(String namespace) {
         AssertUtil.throwErrWhenBlank(namespace, ErrorCodeEnum.PARAM_INVALID, "命名空间不能为空");
         AssertUtil.throwErrWhenFalse(allowedNamespaces().contains(namespace), ErrorCodeEnum.PARAM_INVALID,
                 "命名空间不在允许范围: " + namespace);
     }
 
+    /**
+     * 允许操作的命名空间白名单（来自环境变量，逗号分隔）。
+     *
+     * @return 命名空间列表
+     */
     private List<String> allowedNamespaces() {
         String envNamespaces = System.getenv(NAMESPACES_ENV);
         if (StrUtil.isNotBlank(envNamespaces)) {

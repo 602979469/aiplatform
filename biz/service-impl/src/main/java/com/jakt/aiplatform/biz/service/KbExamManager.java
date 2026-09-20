@@ -2,6 +2,10 @@ package com.jakt.aiplatform.biz.service;
 
 import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.model.domain.KbExamPaper;
+import com.jakt.aiplatform.core.model.dto.KbExamPaperView;
+import com.jakt.aiplatform.core.model.dto.KbExamResultView;
+import com.jakt.aiplatform.core.model.param.KbExamStartParam;
+import com.jakt.aiplatform.core.model.dto.KbExamWrongView;
 
 /**
  * 考题系统用例编排：组卷、续考、答题、交卷判分、成绩、历史记录、错题集。

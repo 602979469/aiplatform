@@ -1,4 +1,6 @@
 package com.jakt.aiplatform.core.service.impl;
+
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import cn.hutool.core.collection.CollUtil;
@@ -57,14 +59,14 @@ public class AuthMenuAdminServiceImpl implements AuthMenuAdminService {
 
     @Override
     public AuthMenu createMenu(AuthMenu menu) {
-        menu.setParentId(menu.getParentId() == null ? 0L : menu.getParentId());
-        menu.setOrderNum(menu.getOrderNum() == null ? 0 : menu.getOrderNum());
+        menu.setParentId(ObjectUtil.isNull(menu.getParentId()) ? 0L : menu.getParentId());
+        menu.setOrderNum(ObjectUtil.isNull(menu.getOrderNum()) ? 0 : menu.getOrderNum());
         menu.setPath(StrUtil.nullToEmpty(menu.getPath()));
         menu.setComponent(StrUtil.nullToEmpty(menu.getComponent()));
-        if (menu.getVisible() == null) {
+        if (ObjectUtil.isNull(menu.getVisible())) {
             menu.setVisible(VisibleEnum.SHOW);
         }
-        if (menu.getStatus() == null) {
+        if (ObjectUtil.isNull(menu.getStatus())) {
             menu.setStatus(EnableStatusEnum.ENABLE);
         }
         menu.setIcon(StrUtil.nullToEmpty(menu.getIcon()));
@@ -82,7 +84,8 @@ public class AuthMenuAdminServiceImpl implements AuthMenuAdminService {
     public void deleteMenu(Long menuId) {
         AuthMenuQueryParam query = new AuthMenuQueryParam();
         query.setParentId(menuId);
-        AssertUtil.throwErrWhenTrue(CollUtil.isNotEmpty(authMenuRepository.findList(query)),
+        List<AuthMenu> children = authMenuRepository.findList(query);
+        AssertUtil.throwErrWhenTrue(CollUtil.isNotEmpty(children),
                 BizErrorCodeEnum.MENU_HAS_CHILDREN, "存在子菜单，禁止删除");
         checkResult(BizTemplate.executeWithoutResult(transactionTemplate,
                 () -> {

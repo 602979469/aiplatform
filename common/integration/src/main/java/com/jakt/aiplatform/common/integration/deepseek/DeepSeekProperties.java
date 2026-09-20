@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.common.integration.deepseek;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
@@ -53,7 +55,7 @@ public class DeepSeekProperties implements InitializingBean {
         }
         if (StrUtil.isBlank(apiKey)) {
             CodexConfig config = loadCodexConfig();
-            if (config != null) {
+            if (ObjectUtil.isNotNull(config)) {
                 if (StrUtil.isBlank(apiKey)) {
                     apiKey = config.getApiKey();
                 }
@@ -63,13 +65,13 @@ public class DeepSeekProperties implements InitializingBean {
             }
         }
         if (StrUtil.isBlank(apiKey)) {
-            LoggerUtil.warn(LogFileEnum.COMMON_ERROR,
+            LoggerUtil.warn(LogFileEnum.INTEGRATION,
                     "DeepSeek API Key 未配置，请在 application.yml 配置 ai.deepseek.api-key 或设置环境变量 DEEPSEEK_API_KEY");
         }
         if (StrUtil.isNotBlank(baseUrl) && baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }
-        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "DeepSeek 配置加载完成: baseUrl={}, model={}, apiKey配置={}",
+        LoggerUtil.info(LogFileEnum.INTEGRATION, "DeepSeek 配置加载完成: baseUrl={}, model={}, apiKey配置={}",
                 baseUrl, model, StrUtil.isNotBlank(apiKey));
     }
 
@@ -85,11 +87,11 @@ public class DeepSeekProperties implements InitializingBean {
                 try {
                     String content = Files.readString(file, StandardCharsets.UTF_8);
                     CodexConfig config = parseTomlSection(content);
-                    if (config != null && StrUtil.isNotBlank(config.getApiKey())) {
+                    if (ObjectUtil.isNotNull(config) && StrUtil.isNotBlank(config.getApiKey())) {
                         return config;
                     }
                 } catch (IOException e) {
-                    LoggerUtil.warn(LogFileEnum.COMMON_ERROR, "读取 Codex 配置文件失败: {}", path);
+                    LoggerUtil.warn(LogFileEnum.INTEGRATION, "读取 Codex 配置文件失败: {}", path);
                 }
             }
         }

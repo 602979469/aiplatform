@@ -40,8 +40,10 @@ public interface ClusterImageService {
     /** 已发布镜像下拉列表。 */
     List<ClusterImage> listPublished();
 
+    /** 按主键查询镜像。 */
     ClusterImage getClusterImage(Long id);
 
+    /** 分页查询镜像。 */
     PageResult<ClusterImage> findPage(ClusterImageQueryParam query);
 
     /** 检查修改是否允许（草稿/构建失败）。 */

@@ -1,4 +1,6 @@
 package com.jakt.aiplatform.core.service.impl;
+
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
@@ -48,8 +50,8 @@ public class AuthRoleAdminServiceImpl implements AuthRoleAdminService {
     @Override
     public AuthRole createRole(AuthRole role) {
         checkRoleKeyUnique(role.getRoleKey(), null);
-        role.setRoleSort(role.getRoleSort() == null ? 0 : role.getRoleSort());
-        if (role.getStatus() == null) {
+        role.setRoleSort(ObjectUtil.isNull(role.getRoleSort()) ? 0 : role.getRoleSort());
+        if (ObjectUtil.isNull(role.getStatus())) {
             role.setStatus(EnableStatusEnum.ENABLE);
         }
         authRoleRepository.insert(role);
@@ -104,7 +106,7 @@ public class AuthRoleAdminServiceImpl implements AuthRoleAdminService {
         AuthRoleQueryParam query = new AuthRoleQueryParam();
         query.setRoleKey(roleKey);
         AuthRole exists = authRoleRepository.findOne(query);
-        AssertUtil.throwErrWhenTrue(exists != null && !Objects.equals(exists.getRoleId(), excludeRoleId),
+        AssertUtil.throwErrWhenTrue(ObjectUtil.isNotNull(exists) && !Objects.equals(exists.getRoleId(), excludeRoleId),
                 BizErrorCodeEnum.ROLE_KEY_EXISTS, "角色标识已存在");
     }
 
@@ -114,7 +116,7 @@ public class AuthRoleAdminServiceImpl implements AuthRoleAdminService {
      * @param role 角色
      */
     private void assertNotSuperAdmin(AuthRole role) {
-        AssertUtil.throwErrWhenTrue(role != null && role.isSuperAdmin(),
+        AssertUtil.throwErrWhenTrue(ObjectUtil.isNotNull(role) && role.isSuperAdmin(),
                 BizErrorCodeEnum.SUPER_ADMIN_IMMUTABLE, "超级管理员角色不允许变更");
     }
 

@@ -1,11 +1,14 @@
 package com.jakt.aiplatform.core.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.error.CommonException;
 import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.common.integration.canal.CanalAdapterClient;
 import com.jakt.aiplatform.common.integration.elastic.EsAdminClient;
@@ -212,9 +215,7 @@ public class CdcSyncServiceImpl implements CdcSyncService {
     @Override
     public String triggerEtl(String name) {
         CdcEsMapping mapping = getMapping(name);
-        if (mapping == null) {
-            throw AiPlatformException.ofThrow(BizErrorCodeEnum.RESOURCE_NOT_FOUND, "映射不存在: " + name);
-        }
+        AssertUtil.throwErrWhenNull(mapping, BizErrorCodeEnum.RESOURCE_NOT_FOUND, "映射不存在: " + name);
         String task = configMapKey(normalizeName(name));
         String response = canalAdapterClient.triggerEtl(CdcSyncConstant.ADAPTER_NAME, task);
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "【CDC】触发全量导入 task={} resp={}", task, response);
@@ -231,7 +232,7 @@ public class CdcSyncServiceImpl implements CdcSyncService {
         CdcSyncStatus status = new CdcSyncStatus();
         K8sDeploymentInfo deployment = k8sClient.getDeployment(CdcSyncConstant.NAMESPACE,
                 CdcSyncConstant.ADAPTER_DEPLOYMENT);
-        if (deployment != null) {
+        if (ObjectUtil.isNotNull(deployment)) {
             status.setReplicas(deployment.getDesiredReplicas());
             status.setReadyReplicas(deployment.getReadyReplicas());
         }
@@ -417,7 +418,7 @@ public class CdcSyncServiceImpl implements CdcSyncService {
         String index = StrUtil.trimToEmpty(mapping.getEsIndex());
         String pk = StrUtil.blankToDefault(StrUtil.trimToEmpty(mapping.getPk()), CdcSyncConstant.DEFAULT_PK);
         String sql = toOneLine(mapping.getSql());
-        int commitBatch = mapping.getCommitBatch() == null
+        int commitBatch = ObjectUtil.isNull(mapping.getCommitBatch())
                 ? CdcSyncConstant.DEFAULT_COMMIT_BATCH : mapping.getCommitBatch();
         boolean upsert = !Boolean.FALSE.equals(mapping.getUpsert());
         StringBuilder builder = new StringBuilder();

@@ -5,12 +5,13 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.jakt.aiplatform.biz.service.ClusterDomainManager;
-import com.jakt.aiplatform.biz.service.ClusterDomainView;
+import com.jakt.aiplatform.core.model.dto.ClusterDomainView;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.common.integration.ssh.SshClient;
 import com.jakt.aiplatform.common.integration.ssh.SshResult;
-import com.jakt.aiplatform.core.service.ClusterCiProperties;
+import com.jakt.aiplatform.core.service.config.ClusterCiProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -114,9 +115,8 @@ public class ClusterDomainManagerImpl implements ClusterDomainManager {
     private String extractJson(String output) {
         int start = output.indexOf('[');
         int end = output.lastIndexOf(']');
-        if (start < 0 || end <= start) {
-            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "域名映射脚本返回结果异常");
-        }
+        AssertUtil.throwErrWhenTrue(start < 0 || end <= start, ErrorCodeEnum.SYSTEM_ERROR,
+                "域名映射脚本返回结果异常");
         return output.substring(start, end + 1);
     }
 }

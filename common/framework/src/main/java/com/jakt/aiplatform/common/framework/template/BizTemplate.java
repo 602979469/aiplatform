@@ -52,11 +52,21 @@ public final class BizTemplate {
 
     @FunctionalInterface
     public interface Callback<T> {
+
+        /**
+         * 执行业务体。
+         *
+         * @return 返回值
+         */
         T execute();
     }
 
     @FunctionalInterface
     public interface CallbackWithoutResult {
+
+        /**
+         * 执行业务体。
+         */
         void execute();
     }
 }

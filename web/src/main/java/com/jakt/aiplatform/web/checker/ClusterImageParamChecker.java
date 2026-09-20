@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.web.checker;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.common.framework.tools.ParamValidator;
 import com.jakt.aiplatform.common.util.error.CommonErrorCode;
@@ -35,7 +37,7 @@ public final class ClusterImageParamChecker {
     }
 
     public static void checkQueryRequest(ClusterImageQueryRequest request) {
-        if (request != null) {
+        if (ObjectUtil.isNotNull(request)) {
             ParamValidator.validate(request);
         }
     }

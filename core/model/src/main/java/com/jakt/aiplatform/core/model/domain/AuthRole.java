@@ -1,4 +1,6 @@
 package com.jakt.aiplatform.core.model.domain;
+
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.framework.model.BaseModel;
 
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
@@ -55,7 +57,7 @@ public class AuthRole extends BaseModel {
      * @return 是否包含超级管理员角色
      */
     public static boolean containsSuperAdmin(Collection<String> roleIdentifiers) {
-        return roleIdentifiers != null && roleIdentifiers.stream().anyMatch(AuthRole::isSuperAdminIdentifier);
+        return ObjectUtil.isNotNull(roleIdentifiers) && roleIdentifiers.stream().anyMatch(AuthRole::isSuperAdminIdentifier);
     }
 
     /**

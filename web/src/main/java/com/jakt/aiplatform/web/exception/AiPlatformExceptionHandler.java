@@ -1,4 +1,6 @@
 package com.jakt.aiplatform.web.exception;
+
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
@@ -54,7 +56,7 @@ public class AiPlatformExceptionHandler {
         LoggerUtil.error(LogFileEnum.COMMON_ERROR, e, "系统异常");
         // 框架层可能包装业务异常（如 Jackson 反序列化包 AiPlatformException），沿 cause 链解包
         Throwable cause = e;
-        while (cause != null) {
+        while (ObjectUtil.isNotNull(cause)) {
             if (cause instanceof CommonException bizException) {
                 return ResponseEntity.ok(ApiResult.fail(bizException.getErrorCode(), bizException.getMessage()));
             }
@@ -87,8 +89,16 @@ public class AiPlatformExceptionHandler {
         return fail(HttpStatus.OK, ErrorCodeEnum.SYSTEM_ERROR, null);
     }
 
+    /**
+     * 统一构造失败响应。
+     *
+     * @param status HTTP 状态
+     * @param errorCode 错误码
+     * @param message 错误消息；为空时取错误码默认消息
+     * @return 统一返回体
+     */
     private ResponseEntity<ApiResult<Void>> fail(HttpStatus status, ErrorCode errorCode, String message) {
-        ApiResult<Void> result = message == null
+        ApiResult<Void> result = ObjectUtil.isNull(message)
                 ? ApiResult.fail(errorCode)
                 : ApiResult.fail(errorCode, message);
         return ResponseEntity.status(status).body(result);

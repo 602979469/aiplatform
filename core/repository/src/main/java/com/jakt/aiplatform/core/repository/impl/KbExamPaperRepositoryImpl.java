@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.core.repository.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import com.jakt.aiplatform.common.dal.dataobject.KbExamPaperDO;
 import com.jakt.aiplatform.common.dal.mapper.KbExamPaperMapper;
 import com.jakt.aiplatform.common.dal.query.KbExamPaperDalQuery;
@@ -45,7 +47,7 @@ public class KbExamPaperRepositoryImpl implements KbExamPaperRepository {
     public KbExamPaper findOne(KbExamPaperQueryParam query) {
         KbExamPaperDalQuery dalQuery = KbExamPaperConvertor.toDalQuery(query);
         KbExamPaperDO row = kbExamPaperMapper.selectOne(dalQuery);
-        return row == null ? null : KbExamPaperConvertor.toModel(row);
+        return ObjectUtil.isNull(row) ? null : KbExamPaperConvertor.toModel(row);
     }
 
     @Override

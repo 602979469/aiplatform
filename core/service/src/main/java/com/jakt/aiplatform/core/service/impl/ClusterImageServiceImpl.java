@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.core.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import com.jakt.aiplatform.common.framework.context.UserContext;
 import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
@@ -107,7 +109,7 @@ public class ClusterImageServiceImpl implements ClusterImageService {
             clusterImageRepository.updateByCondition(update);
             return;
         }
-        int retry = (current.getBuildRetryCount() == null ? 0 : current.getBuildRetryCount()) + 1;
+        int retry = (ObjectUtil.isNull(current.getBuildRetryCount()) ? 0 : current.getBuildRetryCount()) + 1;
         ClusterImage update = new ClusterImage();
         update.setId(id);
         update.setBuildRetryCount(retry);
@@ -168,7 +170,7 @@ public class ClusterImageServiceImpl implements ClusterImageService {
                 status != ClusterImageStatusEnum.DRAFT
                         && status != ClusterImageStatusEnum.BUILD_FAILED,
                 BizErrorCodeEnum.STATUS_NOT_ALLOWED,
-                "当前状态(" + (status == null ? "未知" : status.getDesc()) + ")不允许修改");
+                "当前状态(" + (ObjectUtil.isNull(status) ? "未知" : status.getDesc()) + ")不允许修改");
     }
 
     @Override
@@ -187,7 +189,7 @@ public class ClusterImageServiceImpl implements ClusterImageService {
         query.setVersion(image.getVersion());
         ClusterImage exists = clusterImageRepository.findOne(query);
         AssertUtil.throwErrWhenTrue(
-                exists != null && !exists.getId().equals(image.getId()),
+                ObjectUtil.isNotNull(exists) && !exists.getId().equals(image.getId()),
                 BizErrorCodeEnum.IMAGE_EXISTS,
                 "镜像名 + 版本已存在: " + image.getImageName() + ":" + image.getVersion());
     }

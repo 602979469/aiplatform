@@ -54,6 +54,12 @@ public class KbExamPaperQuestion extends BaseModel {
     /** 本题分值。 */
     private Integer score;
 
+    /** 本题实际得分（客观题判分 / AI 判分）。 */
+    private Integer actualScore;
+
+    /** AI 判分评语（解答题）。 */
+    private String aiComment;
+
     /** 用户作答（如 A,B）。 */
     private String userAnswer;
 

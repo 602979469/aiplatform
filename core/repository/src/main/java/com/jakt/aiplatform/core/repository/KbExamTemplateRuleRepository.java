@@ -75,4 +75,20 @@ public interface KbExamTemplateRuleRepository {
      * @return 受影响行数；0 表示未生效，由上层决定
      */
     int deleteById(Long id);
+
+    /**
+     * 按模板ID查询全部规则（按 order_num 正序）。
+     *
+     * @param templateId 模板ID
+     * @return 试卷模板知识点规则列表
+     */
+    List<KbExamTemplateRule> findByTemplateId(Long templateId);
+
+    /**
+     * 按模板ID删除全部规则（模板编辑时先删后插）。
+     *
+     * @param templateId 模板ID
+     * @return 受影响行数；0 表示未生效，由上层决定
+     */
+    int deleteByTemplateId(Long templateId);
 }

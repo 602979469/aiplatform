@@ -1,4 +1,4 @@
-package com.jakt.aiplatform.biz.service;
+package com.jakt.aiplatform.core.model.param;
 
 import lombok.Data;
 

@@ -1,9 +1,10 @@
-package com.jakt.aiplatform.biz.service;
+package com.jakt.aiplatform.core.model.dto;
 
 import lombok.Data;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import com.jakt.aiplatform.core.model.dto.KbExamQuestionView;
 
 /**
  * 试卷视图（答题页 / 续考）。

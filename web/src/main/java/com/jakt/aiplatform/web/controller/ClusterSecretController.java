@@ -1,7 +1,9 @@
 package com.jakt.aiplatform.web.controller;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import com.jakt.aiplatform.biz.service.ClusterSecretManager;
-import com.jakt.aiplatform.biz.service.ClusterSecretView;
+import com.jakt.aiplatform.core.model.dto.ClusterSecretView;
 import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.web.checker.ClusterSecretParamChecker;
 import com.jakt.aiplatform.web.param.ClusterSecretQueryRequest;
@@ -46,10 +48,10 @@ public class ClusterSecretController {
 
             @Override
             public PageResult<ClusterSecretResponse> execute(ClusterSecretQueryRequest param) {
-                int pageNum = param == null || param.getPageNum() == null ? 1 : param.getPageNum();
-                int pageSize = param == null || param.getPageSize() == null ? 10 : param.getPageSize();
-                String namespace = param == null ? null : param.getNamespace();
-                String keyword = param == null ? null : param.getKeyword();
+                int pageNum = ObjectUtil.isNull(param) || ObjectUtil.isNull(param.getPageNum()) ? 1 : param.getPageNum();
+                int pageSize = ObjectUtil.isNull(param) || ObjectUtil.isNull(param.getPageSize()) ? 10 : param.getPageSize();
+                String namespace = ObjectUtil.isNull(param) ? null : param.getNamespace();
+                String keyword = ObjectUtil.isNull(param) ? null : param.getKeyword();
                 PageResult<ClusterSecretView> page = clusterSecretManager.page(namespace, keyword, pageNum, pageSize);
                 List<ClusterSecretResponse> dataList = page.getDataList().stream()
                         .map(ClusterSecretController.this::toResponse).toList();
@@ -114,6 +116,12 @@ public class ClusterSecretController {
         });
     }
 
+    /**
+     * 密钥视图 → 响应。
+     *
+     * @param view 密钥视图
+     * @return 密钥响应
+     */
     private ClusterSecretResponse toResponse(ClusterSecretView view) {
         ClusterSecretResponse response = new ClusterSecretResponse();
         response.setNamespace(view.getNamespace());

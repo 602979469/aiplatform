@@ -1,6 +1,7 @@
 package com.jakt.aiplatform.biz.service;
 
 import java.util.List;
+import com.jakt.aiplatform.core.model.dto.KbExamTemplateView;
 
 /**
  * 试卷模板（配置管理）用例编排：列表、详情、保存（含知识点规则）、删除。

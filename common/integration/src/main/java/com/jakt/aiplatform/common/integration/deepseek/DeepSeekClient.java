@@ -47,7 +47,7 @@ public class DeepSeekClient {
      */
     public String chat(List<DeepSeekChatMessage> messages) {
         if (StrUtil.isBlank(properties.getApiKey())) {
-            throw new AiIntegrationException(AiIntegrationErrorCode.AUTH_ERROR,
+            throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.AUTH_ERROR,
                     "DeepSeek API Key 未配置，请联系管理员");
         }
 
@@ -72,12 +72,12 @@ public class DeepSeekClient {
             String response = restTemplate.postForObject(
                     url, new HttpEntity<>(body.toJSONString(), headers), String.class);
             long cost = System.currentTimeMillis() - start;
-            LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "DeepSeek 调用成功, 模型={}, 耗时={}ms",
+            LoggerUtil.info(LogFileEnum.INTEGRATION, "DeepSeek 调用成功, 模型={}, 耗时={}ms",
                     properties.getModel(), cost);
             return parseContent(response);
         } catch (RestClientException e) {
-            LoggerUtil.error(LogFileEnum.COMMON_ERROR, "DeepSeek 接口调用失败: {}", e.getMessage());
-            throw new AiIntegrationException(AiIntegrationErrorCode.DEEPSEEK_API_ERROR,
+            LoggerUtil.error(LogFileEnum.INTEGRATION, "DeepSeek 接口调用失败: {}", e.getMessage());
+            throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.DEEPSEEK_API_ERROR,
                     "AI 服务暂时不可用，请稍后重试", e);
         }
     }
@@ -90,13 +90,13 @@ public class DeepSeekClient {
      */
     private String parseContent(String response) {
         if (StrUtil.isBlank(response)) {
-            throw new AiIntegrationException(AiIntegrationErrorCode.DEEPSEEK_API_ERROR, "AI 服务返回为空");
+            throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.DEEPSEEK_API_ERROR, "AI 服务返回为空");
         }
         JSONObject result = JSON.parseObject(response);
         JSONArray choices = ObjectUtil.isNull(result) ? null : result.getJSONArray("choices");
         if (ObjectUtil.isNull(choices) || CollUtil.isEmpty(choices)) {
-            LoggerUtil.error(LogFileEnum.COMMON_ERROR, "DeepSeek 响应异常: {}", response);
-            throw new AiIntegrationException(AiIntegrationErrorCode.DEEPSEEK_API_ERROR, "AI 服务返回异常，请稍后重试");
+            LoggerUtil.error(LogFileEnum.INTEGRATION, "DeepSeek 响应异常: {}", response);
+            throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.DEEPSEEK_API_ERROR, "AI 服务返回异常，请稍后重试");
         }
         return choices.getJSONObject(0).getJSONObject("message").getString("content");
     }

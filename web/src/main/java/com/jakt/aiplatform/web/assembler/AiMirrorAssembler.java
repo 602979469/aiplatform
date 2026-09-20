@@ -1,8 +1,8 @@
 package com.jakt.aiplatform.web.assembler;
 
 import com.jakt.aiplatform.common.util.tools.ConvertUtil;
-import com.jakt.aiplatform.web.result.MirrorDownloadTask;
-import com.jakt.aiplatform.web.result.MirrorImageResult;
+import com.jakt.aiplatform.web.result.MirrorDownloadTaskResponse;
+import com.jakt.aiplatform.web.result.MirrorImageItemResponse;
 import com.jakt.aiplatform.web.result.MirrorSearchResponse;
 
 import java.util.List;
@@ -26,7 +26,7 @@ public final class AiMirrorAssembler {
         if (source == null) {
             return null;
         }
-        List<MirrorImageResult> results = source.getResults() == null
+        List<MirrorImageItemResponse> results = source.getResults() == null
                 ? null
                 : ConvertUtil.map(source.getResults(), AiMirrorAssembler::toImageResult);
         MirrorSearchResponse response = new MirrorSearchResponse();
@@ -42,11 +42,11 @@ public final class AiMirrorAssembler {
      * @param source 镜像结果模型
      * @return 镜像结果响应；入参为空返回 null
      */
-    public static MirrorImageResult toImageResult(com.jakt.aiplatform.core.model.domain.MirrorImageResult source) {
+    public static MirrorImageItemResponse toImageResult(com.jakt.aiplatform.core.model.domain.MirrorImageResult source) {
         if (source == null) {
             return null;
         }
-        MirrorImageResult response = new MirrorImageResult();
+        MirrorImageItemResponse response = new MirrorImageItemResponse();
         response.setVendor(source.getVendor());
         response.setRepo(source.getRepo());
         response.setTag(source.getTag());
@@ -64,11 +64,11 @@ public final class AiMirrorAssembler {
      * @param source 下载任务模型
      * @return 下载任务响应；入参为空返回 null
      */
-    public static MirrorDownloadTask toDownloadTask(com.jakt.aiplatform.core.model.domain.MirrorDownloadTask source) {
+    public static MirrorDownloadTaskResponse toDownloadTask(com.jakt.aiplatform.core.model.domain.MirrorDownloadTask source) {
         if (source == null) {
             return null;
         }
-        MirrorDownloadTask response = new MirrorDownloadTask();
+        MirrorDownloadTaskResponse response = new MirrorDownloadTaskResponse();
         response.setTaskId(source.getTaskId());
         response.setRepo(source.getRepo());
         response.setTag(source.getTag());

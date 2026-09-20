@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.core.repository.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import com.jakt.aiplatform.common.dal.dataobject.KbExamTemplateRuleDO;
 import com.jakt.aiplatform.common.dal.mapper.KbExamTemplateRuleMapper;
 import com.jakt.aiplatform.common.dal.query.KbExamTemplateRuleDalQuery;
@@ -45,7 +47,7 @@ public class KbExamTemplateRuleRepositoryImpl implements KbExamTemplateRuleRepos
     public KbExamTemplateRule findOne(KbExamTemplateRuleQueryParam query) {
         KbExamTemplateRuleDalQuery dalQuery = KbExamTemplateRuleConvertor.toDalQuery(query);
         KbExamTemplateRuleDO row = kbExamTemplateRuleMapper.selectOne(dalQuery);
-        return row == null ? null : KbExamTemplateRuleConvertor.toModel(row);
+        return ObjectUtil.isNull(row) ? null : KbExamTemplateRuleConvertor.toModel(row);
     }
 
     @Override
@@ -88,6 +90,23 @@ public class KbExamTemplateRuleRepositoryImpl implements KbExamTemplateRuleRepos
         int affected = kbExamTemplateRuleMapper.deleteById(id);
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "KbExamTemplateRuleRepository.deleteById id={} 影响行数={}",
                 id, affected);
+        return affected;
+    }
+
+    @Override
+    public List<KbExamTemplateRule> findByTemplateId(Long templateId) {
+        KbExamTemplateRuleQueryParam query = new KbExamTemplateRuleQueryParam();
+        query.setTemplateId(templateId);
+        KbExamTemplateRuleDalQuery dalQuery = KbExamTemplateRuleConvertor.toDalQuery(query);
+        List<KbExamTemplateRuleDO> doList = kbExamTemplateRuleMapper.selectList(dalQuery);
+        return ConvertUtil.map(doList, KbExamTemplateRuleConvertor::toModel);
+    }
+
+    @Override
+    public int deleteByTemplateId(Long templateId) {
+        int affected = kbExamTemplateRuleMapper.deleteByTemplateId(templateId);
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "KbExamTemplateRuleRepository.deleteByTemplateId templateId={} 影响行数={}",
+                templateId, affected);
         return affected;
     }
 }

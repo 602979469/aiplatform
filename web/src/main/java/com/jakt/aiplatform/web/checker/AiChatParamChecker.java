@@ -9,7 +9,7 @@ import com.jakt.aiplatform.web.param.AiChatSessionRenameRequest;
 /**
  * AI 对话参数检查器。
  */
-public class AiChatParamChecker {
+public final class AiChatParamChecker {
 
     private AiChatParamChecker() {
     }

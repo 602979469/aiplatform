@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.web.checker;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.common.framework.error.CommonException;
@@ -29,7 +31,7 @@ public final class ClusterSecretParamChecker {
     }
 
     public static void checkPageRequest(ClusterSecretQueryRequest request) {
-        if (request != null) {
+        if (ObjectUtil.isNotNull(request)) {
             ParamValidator.validate(request);
             if (StrUtil.isNotBlank(request.getNamespace())) {
                 AssertUtil.throwErrWhenFalse(NAME_PATTERN.matcher(request.getNamespace()).matches(),
@@ -65,6 +67,12 @@ public final class ClusterSecretParamChecker {
         }
     }
 
+    /**
+     * 校验命名空间与 Secret 名称的非空与 DNS-1123 格式。
+     *
+     * @param namespace 命名空间
+     * @param name Secret 名称
+     */
     private static void checkNamespaceName(String namespace, String name) {
         AssertUtil.throwErrWhenBlank(namespace, CommonErrorCode.PARAM_INVALID, "命名空间不能为空");
         AssertUtil.throwErrWhenFalse(NAME_PATTERN.matcher(namespace).matches(),

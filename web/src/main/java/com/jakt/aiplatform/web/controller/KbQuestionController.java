@@ -3,12 +3,11 @@ package com.jakt.aiplatform.web.controller;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.jakt.aiplatform.biz.service.KbQuestionAdminManager;
 import com.jakt.aiplatform.biz.service.KbQuestionSearchManager;
-import com.jakt.aiplatform.biz.service.KbQuestionSearchQuery;
-import com.jakt.aiplatform.biz.service.KbQuestionSearchView;
-import com.jakt.aiplatform.biz.service.KbQuestionDetailView;
-import com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO;
 import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.common.util.tools.ConvertUtil;
+import com.jakt.aiplatform.core.model.domain.KbQuestion;
+import com.jakt.aiplatform.core.model.dto.KbQuestionDetailView;
+import com.jakt.aiplatform.core.model.dto.KbQuestionSearchView;
 import com.jakt.aiplatform.web.assembler.KbQuestionAdminAssembler;
 import com.jakt.aiplatform.web.checker.KbQuestionAdminParamChecker;
 import com.jakt.aiplatform.web.param.KbQuestionQueryRequest;
@@ -30,17 +29,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 题库接口：检索走 Elasticsearch。
+ * 题库接口：管理走 MySQL，检索走 Elasticsearch。
  */
 @RestController
 @RequestMapping("/api/kb/question")
 public class KbQuestionController {
 
+    /** 题库检索 Manager。 */
     private final KbQuestionSearchManager kbQuestionSearchManager;
 
     /** 题库管理 Manager。 */
@@ -52,13 +50,17 @@ public class KbQuestionController {
         this.kbQuestionAdminManager = kbQuestionAdminManager;
     }
 
-    /** 题库管理：分页查询（走 MySQL，关键词 + 知识点/题型/难度筛选）。 */
+    /**
+     * 题库管理：分页查询（走 MySQL，关键词 + 知识点/题型/难度筛选）。
+     *
+     * @param request 查询请求
+     * @return 分页结果
+     */
     @GetMapping("/page")
     @SaCheckPermission("kb:question:list")
     public ApiResult<PageResult<KbQuestionItemResponse>> page(KbQuestionQueryRequest request) {
         return ApiTemplate.execute(request, new ApiTemplate.Callback<KbQuestionQueryRequest,
                 PageResult<KbQuestionItemResponse>>() {
-
             @Override
             public void beforeService(KbQuestionQueryRequest param) {
                 KbQuestionAdminParamChecker.checkQuery(param);
@@ -66,19 +68,21 @@ public class KbQuestionController {
 
             @Override
             public PageResult<KbQuestionItemResponse> execute(KbQuestionQueryRequest param) {
-                PageResult<KbQuestionDO> page = kbQuestionAdminManager.page(
-                        KbQuestionAdminAssembler.toQueryParam(param));
+                PageResult<KbQuestion> page = kbQuestionAdminManager.page(KbQuestionAdminAssembler.toQueryParam(param));
                 return ConvertUtil.mapPage(page, KbQuestionAdminAssembler::toItem);
             }
         });
     }
 
-    /** 题库管理：知识点元数据（分类 → 子主题 + 题量）。 */
+    /**
+     * 题库管理：知识点元数据（分类 → 子主题 + 题量）。
+     *
+     * @return 元数据响应
+     */
     @GetMapping("/meta")
     @SaCheckPermission("kb:question:list")
     public ApiResult<KbQuestionMetaResponse> meta() {
         return ApiTemplate.execute(new Object(), new ApiTemplate.Callback<Object, KbQuestionMetaResponse>() {
-
             @Override
             public KbQuestionMetaResponse execute(Object param) {
                 return KbQuestionAdminAssembler.toMetaResponse(kbQuestionAdminManager.meta());
@@ -86,12 +90,16 @@ public class KbQuestionController {
         });
     }
 
-    /** 题库管理：新增题目。 */
+    /**
+     * 题库管理：新增题目。
+     *
+     * @param request 保存请求
+     * @return 新增后的主键
+     */
     @PostMapping
     @SaCheckPermission("kb:question:add")
     public ApiResult<Long> create(@RequestBody KbQuestionSaveRequest request) {
         return ApiTemplate.execute(request, new ApiTemplate.Callback<KbQuestionSaveRequest, Long>() {
-
             @Override
             public void beforeService(KbQuestionSaveRequest param) {
                 KbQuestionAdminParamChecker.checkSave(param);
@@ -99,18 +107,23 @@ public class KbQuestionController {
 
             @Override
             public Long execute(KbQuestionSaveRequest param) {
-                return kbQuestionAdminManager.create(KbQuestionAdminAssembler.toDO(param));
+                return kbQuestionAdminManager.create(KbQuestionAdminAssembler.toModel(param));
             }
         });
     }
 
-    /** 题库管理：修改题目。 */
+    /**
+     * 题库管理：修改题目。
+     *
+     * @param id 题目ID
+     * @param request 保存请求
+     * @return 空响应
+     */
     @PutMapping("/{id}")
     @SaCheckPermission("kb:question:edit")
     public ApiResult<Void> update(@PathVariable Long id, @RequestBody KbQuestionSaveRequest request) {
         request.setId(id);
-        return ApiTemplate.execute(request, new ApiTemplate.Callback<KbQuestionSaveRequest, Void>() {
-
+        return ApiTemplate.executeWithoutResult(request, new ApiTemplate.CallbackWithoutResult<KbQuestionSaveRequest>() {
             @Override
             public void beforeService(KbQuestionSaveRequest param) {
                 KbQuestionAdminParamChecker.checkId(param.getId());
@@ -118,153 +131,81 @@ public class KbQuestionController {
             }
 
             @Override
-            public Void execute(KbQuestionSaveRequest param) {
-                kbQuestionAdminManager.update(KbQuestionAdminAssembler.toDO(param));
-                return null;
+            public void execute(KbQuestionSaveRequest param) {
+                kbQuestionAdminManager.update(KbQuestionAdminAssembler.toModel(param));
             }
         });
     }
 
-    /** 题库管理：删除题目（物理删除）。 */
+    /**
+     * 题库管理：物理删除题目。
+     *
+     * @param id 题目ID
+     * @return 空响应
+     */
     @DeleteMapping("/{id}")
     @SaCheckPermission("kb:question:remove")
     public ApiResult<Void> delete(@PathVariable Long id) {
-        return ApiTemplate.execute(id, new ApiTemplate.Callback<Long, Void>() {
-
+        return ApiTemplate.executeWithoutResult(id, new ApiTemplate.CallbackWithoutResult<Long>() {
             @Override
             public void beforeService(Long param) {
                 KbQuestionAdminParamChecker.checkId(param);
             }
 
             @Override
-            public Void execute(Long param) {
+            public void execute(Long param) {
                 kbQuestionAdminManager.delete(param);
-                return null;
-            }
-        });
-    }
-
-    /** 题库搜索。 */
-    @GetMapping("/search")
-    public ApiResult<KbQuestionSearchResponse> search(KbQuestionSearchRequest request) {
-        return ApiTemplate.execute(request, new ApiTemplate.Callback<KbQuestionSearchRequest,
-                KbQuestionSearchResponse>() {
-
-            @Override
-            public KbQuestionSearchResponse execute(KbQuestionSearchRequest param) {
-                int pageNum = param.getPageNum() == null ? 1 : param.getPageNum();
-                int pageSize = param.getPageSize() == null ? 10 : param.getPageSize();
-                KbQuestionSearchQuery query = new KbQuestionSearchQuery();
-                query.setKeyword(param.getKeyword());
-                query.setQuestionTypes(split(param.getQuestionType()));
-                query.setCategories(split(param.getCategory()));
-                query.setSubtopics(split(param.getSubtopic()));
-                query.setDifficulties(split(param.getDifficulty()));
-                query.setPageNum(pageNum);
-                query.setPageSize(pageSize);
-                KbQuestionSearchView view = kbQuestionSearchManager.search(query);
-                KbQuestionSearchResponse response = new KbQuestionSearchResponse();
-                response.setTotal(view.getTotal());
-                if (view.getFacets() != null) {
-                    Map<String, List<KbQuestionSearchResponse.Bucket>> facets = new LinkedHashMap<>();
-                    view.getFacets().forEach((name, buckets) -> {
-                        List<KbQuestionSearchResponse.Bucket> target = new ArrayList<>();
-                        if (buckets != null) {
-                            for (KbQuestionSearchView.Bucket b : buckets) {
-                                KbQuestionSearchResponse.Bucket bucket = new KbQuestionSearchResponse.Bucket();
-                                bucket.setKey(b.getKey());
-                                bucket.setCount(b.getCount());
-                                target.add(bucket);
-                            }
-                        }
-                        facets.put(name, target);
-                    });
-                    response.setFacets(facets);
-                }
-                List<KbQuestionSearchResponse.Item> items = view.getList().stream().map(item -> {
-                    KbQuestionSearchResponse.Item target = new KbQuestionSearchResponse.Item();
-                    target.setId(item.getId());
-                    target.setTitle(item.getTitle());
-                    target.setSnippet(item.getSnippet());
-                    target.setCategory(item.getCategory());
-                    target.setTags(item.getTags());
-                    target.setDifficulty(item.getDifficulty());
-                    target.setDocType(item.getDocType());
-                    return target;
-                }).toList();
-                response.setList(items);
-                return response;
             }
         });
     }
 
     /**
-     * 逗号分隔参数转列表。
+     * 题库搜索。
      *
-     * @param value 参数值
-     * @return 列表（空则 null）
+     * @param request 搜索请求
+     * @return 搜索结果
      */
-    private List<String> split(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        List<String> list = new ArrayList<>();
-        for (String item : value.split(",")) {
-            if (!item.isBlank()) {
-                list.add(item.trim());
-            }
-        }
-        return list.isEmpty() ? null : list;
-    }
-
-    /** 题目详情（完整解答，支持 Markdown）。 */
-    @GetMapping("/{id}")
-    public ApiResult<KbQuestionDetailResponse> detail(@PathVariable Long id) {
-        return ApiTemplate.execute(id, new ApiTemplate.Callback<Long, KbQuestionDetailResponse>() {
-
+    @GetMapping("/search")
+    public ApiResult<KbQuestionSearchResponse> search(KbQuestionSearchRequest request) {
+        return ApiTemplate.execute(request, new ApiTemplate.Callback<KbQuestionSearchRequest,
+                KbQuestionSearchResponse>() {
             @Override
-            public KbQuestionDetailResponse execute(Long param) {
-                KbQuestionDetailView view = kbQuestionSearchManager.detail(param);
-                KbQuestionDetailResponse response = new KbQuestionDetailResponse();
-                response.setId(view.getId());
-                response.setDocType(view.getDocType());
-                response.setCategory(view.getCategory());
-                response.setSubtopic(view.getSubtopic());
-                response.setTitle(view.getTitle());
-                response.setContent(view.getContent());
-                response.setOptions(view.getOptions());
-                response.setAnswer(view.getAnswer());
-                response.setExplanation(view.getExplanation());
-                response.setDifficulty(view.getDifficulty());
-                response.setTags(view.getTags());
-                response.setSourcePath(view.getSourcePath());
-                return response;
+            public KbQuestionSearchResponse execute(KbQuestionSearchRequest param) {
+                KbQuestionSearchView view = kbQuestionSearchManager.search(KbQuestionAdminAssembler.toSearchQuery(param));
+                return KbQuestionAdminAssembler.toSearchResponse(view);
             }
         });
     }
 
-    /** 题库筛选项（题型/技术方向/知识点/难度 + 数量）。 */
+    /**
+     * 题库筛选项（进页面即可用，无需先查询）。
+     *
+     * @return 筛选项
+     */
     @GetMapping("/facets")
-    public ApiResult<java.util.Map<String, List<KbQuestionSearchResponse.Bucket>>> facets() {
+    public ApiResult<Map<String, List<KbQuestionSearchResponse.Bucket>>> facets() {
         return ApiTemplate.execute("facets", new ApiTemplate.Callback<String,
-                java.util.Map<String, List<KbQuestionSearchResponse.Bucket>>>() {
-
+                Map<String, List<KbQuestionSearchResponse.Bucket>>>() {
             @Override
-            public java.util.Map<String, List<KbQuestionSearchResponse.Bucket>> execute(String param) {
-                java.util.Map<String, List<KbQuestionSearchResponse.Bucket>> result = new LinkedHashMap<>();
-                kbQuestionSearchManager.facets().forEach((name, buckets) -> {
-                    List<KbQuestionSearchResponse.Bucket> target = new ArrayList<>();
-                    if (buckets != null) {
-                        for (KbQuestionSearchView.Bucket b : buckets) {
-                            KbQuestionSearchResponse.Bucket bucket = new KbQuestionSearchResponse.Bucket();
-                            bucket.setKey(b.getKey());
-                            bucket.setCount(b.getCount());
-                            target.add(bucket);
-                        }
-                    }
-                    result.put(name, target);
-                });
-                return result;
+            public Map<String, List<KbQuestionSearchResponse.Bucket>> execute(String param) {
+                return KbQuestionAdminAssembler.toBucketResponse(kbQuestionSearchManager.facets());
+            }
+        });
+    }
+
+    /**
+     * 题目详情（含完整解答，列表接口不返回大字段）。
+     *
+     * @param id 题目ID
+     * @return 详情响应
+     */
+    @GetMapping("/{id}")
+    public ApiResult<KbQuestionDetailResponse> detail(@PathVariable Long id) {
+        return ApiTemplate.execute(id, new ApiTemplate.Callback<Long, KbQuestionDetailResponse>() {
+            @Override
+            public KbQuestionDetailResponse execute(Long param) {
+                KbQuestionDetailView view = kbQuestionSearchManager.detail(param);
+                return KbQuestionAdminAssembler.toDetailResponse(view);
             }
         });
     }

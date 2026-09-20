@@ -59,7 +59,7 @@ public class EsAdminClientImpl implements EsAdminClient {
         if (response.statusCode() / 100 != 2) {
             LoggerUtil.error(LogFileEnum.INTEGRATION, "【ES】查询索引列表失败 status={} body={}",
                     response.statusCode(), StrUtil.maxLength(response.body(), 200));
-            throw new AiIntegrationException(AiIntegrationErrorCode.UNKNOWN,
+            throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.UNKNOWN,
                     "Elasticsearch 索引列表查询失败（HTTP " + response.statusCode() + "）");
         }
         JSONArray array = JSONUtil.parseArray(response.body());
@@ -96,7 +96,7 @@ public class EsAdminClientImpl implements EsAdminClient {
             return httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         } catch (Exception e) {
             LoggerUtil.error(LogFileEnum.INTEGRATION, e, "【ES】请求异常 url={}", requestUrl);
-            throw new AiIntegrationException(AiIntegrationErrorCode.UNKNOWN,
+            throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.UNKNOWN,
                     "Elasticsearch 请求异常: " + e.getMessage(), e);
         }
     }

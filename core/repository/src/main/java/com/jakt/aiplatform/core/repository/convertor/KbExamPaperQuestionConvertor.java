@@ -41,6 +41,8 @@ public final class KbExamPaperQuestionConvertor {
         target.setExplanation(source.getExplanation());
         target.setDifficulty(source.getDifficulty());
         target.setScore(source.getScore());
+        target.setActualScore(source.getActualScore());
+        target.setAiComment(source.getAiComment());
         target.setUserAnswer(source.getUserAnswer());
         target.setIsCorrect(source.getIsCorrect());
         target.setAnswerCostSeconds(source.getAnswerCostSeconds());
@@ -72,6 +74,8 @@ public final class KbExamPaperQuestionConvertor {
         target.setExplanation(source.getExplanation());
         target.setDifficulty(source.getDifficulty());
         target.setScore(source.getScore());
+        target.setActualScore(source.getActualScore());
+        target.setAiComment(source.getAiComment());
         target.setUserAnswer(source.getUserAnswer());
         target.setIsCorrect(source.getIsCorrect());
         target.setAnswerCostSeconds(source.getAnswerCostSeconds());

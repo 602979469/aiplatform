@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.core.repository.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import com.jakt.aiplatform.common.dal.dataobject.ClusterPodConfigDO;
 import com.jakt.aiplatform.common.dal.mapper.ClusterPodConfigMapper;
 import com.jakt.aiplatform.common.dal.query.ClusterPodConfigDalQuery;
@@ -45,7 +47,7 @@ public class ClusterPodConfigRepositoryImpl implements ClusterPodConfigRepositor
     public ClusterPodConfig findOne(ClusterPodConfigQueryParam query) {
         ClusterPodConfigDalQuery dalQuery = ClusterPodConfigConvertor.toDalQuery(query);
         ClusterPodConfigDO row = clusterPodConfigMapper.selectOne(dalQuery);
-        return row == null ? null : ClusterPodConfigConvertor.toModel(row);
+        return ObjectUtil.isNull(row) ? null : ClusterPodConfigConvertor.toModel(row);
     }
 
     @Override

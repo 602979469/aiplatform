@@ -1,10 +1,15 @@
 package com.jakt.aiplatform.core.service.impl;
+
+import cn.hutool.core.collection.CollUtil;
+
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 import com.jakt.aiplatform.common.framework.result.Result;
 import com.jakt.aiplatform.common.framework.template.BizTemplate;
+import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.common.integration.k8s.K8sClient;
 import com.jakt.aiplatform.common.integration.k8s.K8sDeploymentInfo;
@@ -58,13 +63,13 @@ public class ClusterK8sServiceImpl implements ClusterK8sService {
                     List<K8sDeploymentInfo> deployments =
                             k8sClient.listDeploymentsByLabel(namespace, MANAGED_LABEL_KEY, MANAGED_LABEL_VALUE);
                     for (K8sDeploymentInfo deployment : deployments) {
-                        if (deployment.getSelectorLabels() == null || deployment.getSelectorLabels().isEmpty()) {
+                        if (ObjectUtil.isNull(deployment.getSelectorLabels()) || CollUtil.isEmpty(deployment.getSelectorLabels())) {
                             continue;
                         }
                         List<K8sPodInfo> pods =
                                 k8sClient.listPodsBySelector(namespace, deployment.getSelectorLabels());
                         for (K8sPodInfo pod : pods) {
-                            if (pod.getNodeName() == null) {
+                            if (ObjectUtil.isNull(pod.getNodeName())) {
                                 continue;
                             }
                             podCounts.computeIfAbsent(pod.getNodeName(), key -> new HashMap<>())
@@ -94,7 +99,7 @@ public class ClusterK8sServiceImpl implements ClusterK8sService {
                         .filter(m -> m.getNodeName().equals(nodeInfo.getNodeName()))
                         .findFirst()
                         .orElse(null);
-                if (metric != null) {
+                if (ObjectUtil.isNotNull(metric)) {
                     node.setCpuTotalMilli(metric.getCpuTotalMilli());
                     node.setCpuAllocatableMilli(metric.getCpuAllocatableMilli());
                     node.setCpuUsedMilli(metric.getCpuUsedMilli());
@@ -156,12 +161,10 @@ public class ClusterK8sServiceImpl implements ClusterK8sService {
     @Override
     public void delete(String namespace, String deploymentName) {
         Result<Void> result = BizTemplate.executeWithoutResult(() -> {
-            K8sDeploymentInfo deployment = k8sClient.getDeployment(namespace, deploymentName);
-            if (deployment == null) {
-                throw AiPlatformException.ofThrow(BizErrorCodeEnum.RESOURCE_NOT_FOUND,
+                K8sDeploymentInfo deployment = k8sClient.getDeployment(namespace, deploymentName);
+                AssertUtil.throwErrWhenNull(deployment, BizErrorCodeEnum.RESOURCE_NOT_FOUND,
                         "业务 pod 不存在: " + deploymentName);
-            }
-            k8sClient.deleteDeployment(namespace, deploymentName);
+                k8sClient.deleteDeployment(namespace, deploymentName);
         });
         checkResult(result, "删除业务 pod 失败");
     }
@@ -170,7 +173,7 @@ public class ClusterK8sServiceImpl implements ClusterK8sService {
     public String getPodLogs(String namespace, String deploymentName) {
         Result<String> result = BizTemplate.execute(() -> {
             K8sDeploymentInfo deployment = k8sClient.getDeployment(namespace, deploymentName);
-            if (deployment == null || deployment.getFirstPodName() == null) {
+            if (ObjectUtil.isNull(deployment) || ObjectUtil.isNull(deployment.getFirstPodName())) {
                 throw AiPlatformException.ofThrow(BizErrorCodeEnum.RESOURCE_NOT_FOUND,
                         "业务 pod 不存在或尚无运行实例: " + deploymentName);
             }
@@ -183,7 +186,7 @@ public class ClusterK8sServiceImpl implements ClusterK8sService {
     public List<ClusterRuntimeEvent> getPodEvents(String namespace, String deploymentName) {
         Result<List<ClusterRuntimeEvent>> result = BizTemplate.execute(() -> {
             K8sDeploymentInfo deployment = k8sClient.getDeployment(namespace, deploymentName);
-            if (deployment == null || deployment.getFirstPodName() == null) {
+            if (ObjectUtil.isNull(deployment) || ObjectUtil.isNull(deployment.getFirstPodName())) {
                 throw AiPlatformException.ofThrow(BizErrorCodeEnum.RESOURCE_NOT_FOUND,
                         "业务 pod 不存在或尚无运行实例: " + deploymentName);
             }
@@ -245,7 +248,7 @@ public class ClusterK8sServiceImpl implements ClusterK8sService {
      * @return 数值或 0
      */
     private long nullToZero(Long value) {
-        return value == null ? 0L : value;
+        return ObjectUtil.defaultIfNull(value, 0L);
     }
 
     /**
@@ -255,7 +258,7 @@ public class ClusterK8sServiceImpl implements ClusterK8sService {
      * @return 数值或 0
      */
     private int nullToZero(Integer value) {
-        return value == null ? 0 : value;
+        return ObjectUtil.defaultIfNull(value, 0);
     }
 
     /**

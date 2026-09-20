@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.web.checker;
 
+import cn.hutool.core.collection.CollUtil;
+
 import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.common.framework.error.CommonException;
@@ -59,7 +61,7 @@ public final class ClusterPodConfigParamChecker {
      * @param ids 主键列表
      */
     public static void checkIds(List<Long> ids) {
-        AssertUtil.throwErrWhenTrue(ObjectUtil.isNull(ids) || ids.isEmpty(),
+        AssertUtil.throwErrWhenTrue(ObjectUtil.isNull(ids) || CollUtil.isEmpty(ids),
                 ErrorCodeEnum.PARAM_INVALID, "业务pod配置表ID不能为空");
         for (Long id : ids) {
             checkId(id);
@@ -103,7 +105,7 @@ public final class ClusterPodConfigParamChecker {
                 // 逐个文档解析，任一非法即抛异常
             }
         } catch (YAMLException e) {
-            throw new CommonException(ErrorCodeEnum.PARAM_INVALID.getCode(),
+            throw CommonException.of(ErrorCodeEnum.PARAM_INVALID,
                     "Deployment YAML 格式不合法: " + e.getMessage());
         }
     }

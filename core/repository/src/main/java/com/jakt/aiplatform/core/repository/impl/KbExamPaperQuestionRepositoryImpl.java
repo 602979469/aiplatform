@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.core.repository.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import com.jakt.aiplatform.common.dal.dataobject.KbExamPaperQuestionDO;
 import com.jakt.aiplatform.common.dal.mapper.KbExamPaperQuestionMapper;
 import com.jakt.aiplatform.common.dal.query.KbExamPaperQuestionDalQuery;
@@ -45,7 +47,7 @@ public class KbExamPaperQuestionRepositoryImpl implements KbExamPaperQuestionRep
     public KbExamPaperQuestion findOne(KbExamPaperQuestionQueryParam query) {
         KbExamPaperQuestionDalQuery dalQuery = KbExamPaperQuestionConvertor.toDalQuery(query);
         KbExamPaperQuestionDO row = kbExamPaperQuestionMapper.selectOne(dalQuery);
-        return row == null ? null : KbExamPaperQuestionConvertor.toModel(row);
+        return ObjectUtil.isNull(row) ? null : KbExamPaperQuestionConvertor.toModel(row);
     }
 
     @Override
@@ -88,6 +90,23 @@ public class KbExamPaperQuestionRepositoryImpl implements KbExamPaperQuestionRep
         int affected = kbExamPaperQuestionMapper.deleteById(id);
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "KbExamPaperQuestionRepository.deleteById id={} 影响行数={}",
                 id, affected);
+        return affected;
+    }
+
+    @Override
+    public List<KbExamPaperQuestion> findByPaperId(Long paperId) {
+        KbExamPaperQuestionQueryParam query = new KbExamPaperQuestionQueryParam();
+        query.setPaperId(paperId);
+        KbExamPaperQuestionDalQuery dalQuery = KbExamPaperQuestionConvertor.toDalQuery(query);
+        List<KbExamPaperQuestionDO> doList = kbExamPaperQuestionMapper.selectList(dalQuery);
+        return ConvertUtil.map(doList, KbExamPaperQuestionConvertor::toModel);
+    }
+
+    @Override
+    public int deleteByPaperId(Long paperId) {
+        int affected = kbExamPaperQuestionMapper.deleteByPaperId(paperId);
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "KbExamPaperQuestionRepository.deleteByPaperId paperId={} 影响行数={}",
+                paperId, affected);
         return affected;
     }
 }

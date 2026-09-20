@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.web.controller;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.biz.service.AuthOnlineManager;
@@ -127,7 +129,7 @@ public class AuthOnlineController {
 
                     @Override
                     public void execute(AuthOnlineDisableRequest param) {
-                        long seconds = param.getSeconds() == null ? AiPlatformConstant.DEFAULT_DISABLE_SECONDS : param.getSeconds();
+                        long seconds = ObjectUtil.isNull(param.getSeconds()) ? AiPlatformConstant.DEFAULT_DISABLE_SECONDS : param.getSeconds();
                         authOnlineManager.disable(param.getUserId(), seconds);
                     }
                 });

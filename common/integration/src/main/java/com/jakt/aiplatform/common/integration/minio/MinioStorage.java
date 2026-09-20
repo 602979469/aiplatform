@@ -121,7 +121,7 @@ public class MinioStorage {
                 client.makeBucket(MakeBucketArgs.builder().bucket(properties.getBucket()).build());
             }
         } catch (Exception e) {
-            throw new IllegalStateException("MinIO 桶初始化失败: " + e.getMessage(), e);
+            throw toIntegrationException("桶初始化失败: {}", e, properties.getBucket());
         }
     }
 
@@ -135,7 +135,7 @@ public class MinioStorage {
      */
     private AiIntegrationException toIntegrationException(String message, Exception e, Object... args) {
         LoggerUtil.error(LogFileEnum.INTEGRATION, e, "【MinIO】" + message, args);
-        return new AiIntegrationException(AiIntegrationErrorCode.MINIO_ERROR,
+        return AiIntegrationException.ofThrow(AiIntegrationErrorCode.MINIO_ERROR,
                 "MinIO 操作失败: " + e.getMessage(), e);
     }
 }

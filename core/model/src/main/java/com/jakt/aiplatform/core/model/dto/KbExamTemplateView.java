@@ -1,5 +1,6 @@
-package com.jakt.aiplatform.biz.service;
+package com.jakt.aiplatform.core.model.dto;
 
+import com.jakt.aiplatform.core.model.param.KbExamRuleParam;
 import lombok.Data;
 
 import java.time.LocalDateTime;

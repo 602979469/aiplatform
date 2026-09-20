@@ -1,8 +1,9 @@
-package com.jakt.aiplatform.biz.service;
+package com.jakt.aiplatform.core.model.param;
 
 import lombok.Data;
 
 import java.util.List;
+import com.jakt.aiplatform.core.model.param.KbExamRuleParam;
 
 /**
  * 开始考试入参：可指定模板，也可直接给组卷规则（快速创建）。

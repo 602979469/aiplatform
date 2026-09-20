@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.common.util.tools;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import cn.hutool.core.util.StrUtil;
@@ -82,7 +84,7 @@ public final class CommandUtil {
             LoggerUtil.error(LogFileEnum.COMMON_ERROR, "{}命令执行异常: {} , 错误: {}",
                     LOG_TAG, String.join(" ", command), e.getMessage());
         } finally {
-            if (process != null) {
+            if (ObjectUtil.isNotNull(process)) {
                 process.destroy();
             }
         }

@@ -1,12 +1,13 @@
 package com.jakt.aiplatform.core.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import com.jakt.aiplatform.common.framework.context.UserContext;
 import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.core.model.domain.ClusterPodConfig;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 import com.jakt.aiplatform.core.model.enums.ClusterPodConfigStatusEnum;
-import com.jakt.aiplatform.core.model.domain.ClusterPodConfig;
 import com.jakt.aiplatform.core.model.param.ClusterPodConfigQueryParam;
 import com.jakt.aiplatform.core.repository.ClusterPodConfigRepository;
 import com.jakt.aiplatform.core.service.ClusterPodConfigService;
@@ -87,7 +88,7 @@ public class ClusterPodConfigServiceImpl implements ClusterPodConfigService {
                 status != ClusterPodConfigStatusEnum.DRAFT
                         && status != ClusterPodConfigStatusEnum.BUILD_FAILED,
                 BizErrorCodeEnum.STATUS_NOT_ALLOWED,
-                "当前状态(" + (status == null ? "未知" : status.getDesc()) + ")不允许修改");
+                "当前状态(" + (ObjectUtil.isNull(status) ? "未知" : status.getDesc()) + ")不允许修改");
     }
 
     @Override
@@ -97,7 +98,7 @@ public class ClusterPodConfigServiceImpl implements ClusterPodConfigService {
                 status != ClusterPodConfigStatusEnum.DRAFT
                         && status != ClusterPodConfigStatusEnum.BUILD_FAILED,
                 BizErrorCodeEnum.STATUS_NOT_ALLOWED,
-                "当前状态(" + (status == null ? "未知" : status.getDesc()) + ")不允许删除");
+                "当前状态(" + (ObjectUtil.isNull(status) ? "未知" : status.getDesc()) + ")不允许删除");
     }
 
     @Override
@@ -136,7 +137,7 @@ public class ClusterPodConfigServiceImpl implements ClusterPodConfigService {
      * 校验绑定的镜像必须为已发布（PUBLISHED），未绑定则跳过（兼容旧 git 流程）。
      */
     private void validateImageId(Long imageId) {
-        if (imageId == null) {
+        if (ObjectUtil.isNull(imageId)) {
             return;
         }
         clusterImageService.checkPublished(imageId);

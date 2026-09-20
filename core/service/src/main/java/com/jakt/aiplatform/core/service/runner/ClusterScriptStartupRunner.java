@@ -1,7 +1,9 @@
-package com.jakt.aiplatform.core.service;
+package com.jakt.aiplatform.core.service.runner;
 
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
+import com.jakt.aiplatform.core.service.ClusterScriptSyncService;
+import com.jakt.aiplatform.core.service.config.ClusterCiProperties;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;

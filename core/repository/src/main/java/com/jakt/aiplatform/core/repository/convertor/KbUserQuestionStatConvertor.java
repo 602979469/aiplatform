@@ -1,8 +1,10 @@
 package com.jakt.aiplatform.core.repository.convertor;
 
 import com.jakt.aiplatform.common.dal.dataobject.KbUserQuestionStatDO;
+import com.jakt.aiplatform.common.dal.query.KbQuestionStatDelta;
 import com.jakt.aiplatform.common.dal.query.KbUserQuestionStatDalQuery;
 import com.jakt.aiplatform.core.model.domain.KbUserQuestionStat;
+import com.jakt.aiplatform.core.model.param.KbUserQuestionStatDelta;
 import com.jakt.aiplatform.core.model.param.KbUserQuestionStatQueryParam;
 
 
@@ -92,6 +94,27 @@ public final class KbUserQuestionStatConvertor {
         target.setCreateTimeEnd(source.getCreateTimeEnd());
         target.setUpdateTimeBegin(source.getUpdateTimeBegin());
         target.setUpdateTimeEnd(source.getUpdateTimeEnd());
+        return target;
+    }
+
+    /**
+     * 掌握度增量（core-model）→ 掌握度增量（common-dal）。
+     *
+     * @param source 掌握度增量；为空返回 null
+     * @return common-dal 掌握度增量
+     */
+    public static KbQuestionStatDelta toDelta(KbUserQuestionStatDelta source) {
+        if (source == null) {
+            return null;
+        }
+        KbQuestionStatDelta target = new KbQuestionStatDelta();
+        target.setUserId(source.getUserId());
+        target.setQuestionId(source.getQuestionId());
+        target.setRightDelta(source.getRightDelta() == null ? 0 : source.getRightDelta());
+        target.setWrongDelta(source.getWrongDelta() == null ? 0 : source.getWrongDelta());
+        target.setLastResult(source.getLastResult());
+        target.setMastered(source.getMastered());
+        target.setInWrongBook(source.getInWrongBook());
         return target;
     }
 }

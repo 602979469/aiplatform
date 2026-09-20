@@ -29,6 +29,18 @@ public class AiPlatformException extends CommonException {
         return new AiPlatformException(errorCode.getCode(), message);
     }
 
+    /**
+     * 静态工厂（带自定义消息与根因）。
+     *
+     * @param errorCode 错误码
+     * @param message 错误消息
+     * @param cause 根因
+     * @return 业务异常
+     */
+    public static AiPlatformException ofThrow(ErrorCode errorCode, String message, Throwable cause) {
+        return new AiPlatformException(errorCode.getCode(), message, cause);
+    }
+
     public static AiPlatformException ofThrow(String errorCode, String message) {
         return new AiPlatformException(errorCode, message);
     }

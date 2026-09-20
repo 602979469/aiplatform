@@ -73,7 +73,7 @@ public class CanalAdapterClientImpl implements CanalAdapterClient {
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 LoggerUtil.error(LogFileEnum.INTEGRATION,
                         "【CANAL】调用失败 url={} status={} body={}", url, response.statusCode(), response.body());
-                throw new AiIntegrationException(AiIntegrationErrorCode.UNKNOWN,
+                throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.UNKNOWN,
                         "canal-adapter 调用失败（HTTP " + response.statusCode() + "）");
             }
             LoggerUtil.info(LogFileEnum.INTEGRATION, "【CANAL】调用成功 url={} status={}", url, response.statusCode());
@@ -82,7 +82,7 @@ public class CanalAdapterClientImpl implements CanalAdapterClient {
             throw e;
         } catch (Exception e) {
             LoggerUtil.error(LogFileEnum.INTEGRATION, e, "【CANAL】调用异常 url={}", url);
-            throw new AiIntegrationException(AiIntegrationErrorCode.UNKNOWN,
+            throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.UNKNOWN,
                     "canal-adapter 调用异常: " + e.getMessage(), e);
         }
     }

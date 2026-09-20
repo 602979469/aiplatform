@@ -1,5 +1,9 @@
 package com.jakt.aiplatform.common.integration.k8s;
 
+import cn.hutool.core.collection.CollUtil;
+
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
@@ -116,23 +120,23 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
                 metric.setPodAllocatable(parseCount(nodeQuantity(status, true, "pods")));
 
                 NodeAllocation allocation = allocations.get(metric.getNodeName());
-                metric.setPodCount(allocation == null ? 0 : allocation.podCount());
-                metric.setCpuRequestMilli(allocation == null ? 0L : allocation.cpuRequestMilli());
-                metric.setMemoryRequestBytes(allocation == null ? 0L : allocation.memoryRequestBytes());
+                metric.setPodCount(ObjectUtil.isNull(allocation) ? 0 : allocation.podCount());
+                metric.setCpuRequestMilli(ObjectUtil.isNull(allocation) ? 0L : allocation.cpuRequestMilli());
+                metric.setMemoryRequestBytes(ObjectUtil.isNull(allocation) ? 0L : allocation.memoryRequestBytes());
                 fillDiskUsage(metric);
                 result.add(metric);
             }
             // metrics-server 用量：metrics API 不可用（未安装 metrics-server）时降级，仅返回节点容量，不抛异常
             try {
                 NodeMetricsList nodeMetricsList = kubernetesClient.top().nodes().metrics();
-                if (nodeMetricsList != null && nodeMetricsList.getItems() != null) {
+                if (ObjectUtil.isNotNull(nodeMetricsList) && ObjectUtil.isNotNull(nodeMetricsList.getItems())) {
                     for (NodeMetrics nodeMetrics : nodeMetricsList.getItems()) {
-                        String nodeName = nodeMetrics.getMetadata() == null ? null : nodeMetrics.getMetadata().getName();
+                        String nodeName = ObjectUtil.isNull(nodeMetrics.getMetadata()) ? null : nodeMetrics.getMetadata().getName();
                         K8sNodeMetric metric = result.stream()
                                 .filter(m -> m.getNodeName().equals(nodeName))
                                 .findFirst()
                                 .orElse(null);
-                        if (metric == null || nodeMetrics.getUsage() == null) {
+                        if (ObjectUtil.isNull(metric) || ObjectUtil.isNull(nodeMetrics.getUsage())) {
                             continue;
                         }
                         metric.setCpuUsedMilli(parseCpuMilli(nodeMetrics.getUsage().get("cpu")));
@@ -157,11 +161,11 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
         Map<String, NodeAllocation> allocations = new HashMap<>();
         try {
             List<Pod> pods = kubernetesClient.pods().inAnyNamespace().list().getItems();
-            if (pods == null) {
+            if (ObjectUtil.isNull(pods)) {
                 return allocations;
             }
             for (Pod pod : pods) {
-                if (pod.getSpec() == null || pod.getSpec().getNodeName() == null || isTerminal(pod)) {
+                if (ObjectUtil.isNull(pod.getSpec()) || ObjectUtil.isNull(pod.getSpec().getNodeName()) || isTerminal(pod)) {
                     continue;
                 }
                 PodRequests requests = resolvePodRequests(pod);
@@ -185,7 +189,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
         long cpu = 0L;
         long memory = 0L;
         List<Container> containers = pod.getSpec().getContainers();
-        if (containers != null) {
+        if (ObjectUtil.isNotNull(containers)) {
             for (Container container : containers) {
                 cpu += nullToZero(requestCpuMilli(container));
                 memory += nullToZero(requestMemoryBytes(container));
@@ -194,7 +198,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
         long initCpu = 0L;
         long initMemory = 0L;
         List<Container> initContainers = pod.getSpec().getInitContainers();
-        if (initContainers != null) {
+        if (ObjectUtil.isNotNull(initContainers)) {
             for (Container container : initContainers) {
                 initCpu = Math.max(initCpu, nullToZero(requestCpuMilli(container)));
                 initMemory = Math.max(initMemory, nullToZero(requestMemoryBytes(container)));
@@ -203,7 +207,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
         cpu = Math.max(cpu, initCpu);
         memory = Math.max(memory, initMemory);
         Map<String, Quantity> overhead = pod.getSpec().getOverhead();
-        if (overhead != null) {
+        if (ObjectUtil.isNotNull(overhead)) {
             cpu += nullToZero(parseCpuMilli(overhead.get("cpu")));
             memory += nullToZero(parseMemoryBytes(overhead.get("memory")));
         }
@@ -217,7 +221,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
      * @return 毫核；未设置返回 null
      */
     private Long requestCpuMilli(Container container) {
-        return container.getResources() == null || container.getResources().getRequests() == null
+        return ObjectUtil.isNull(container.getResources()) || ObjectUtil.isNull(container.getResources().getRequests())
                 ? null : parseCpuMilli(container.getResources().getRequests().get("cpu"));
     }
 
@@ -228,7 +232,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
      * @return 字节；未设置返回 null
      */
     private Long requestMemoryBytes(Container container) {
-        return container.getResources() == null || container.getResources().getRequests() == null
+        return ObjectUtil.isNull(container.getResources()) || ObjectUtil.isNull(container.getResources().getRequests())
                 ? null : parseMemoryBytes(container.getResources().getRequests().get("memory"));
     }
 
@@ -244,15 +248,15 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
                 return;
             }
             JSONObject node = JSON.parseObject(summary).getJSONObject("node");
-            if (node == null) {
+            if (ObjectUtil.isNull(node)) {
                 return;
             }
             JSONObject fs = node.getJSONObject("fs");
-            if (fs == null) {
+            if (ObjectUtil.isNull(fs)) {
                 JSONObject runtime = node.getJSONObject("runtime");
-                fs = runtime == null ? null : runtime.getJSONObject("imageFs");
+            fs = ObjectUtil.isNull(runtime) ? null : runtime.getJSONObject("imageFs");
             }
-            if (fs == null) {
+            if (ObjectUtil.isNull(fs)) {
                 return;
             }
             metric.setDiskTotalBytes(fs.getLong("capacityBytes"));
@@ -272,11 +276,11 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
      * @return Quantity；不存在返回 null
      */
     private Quantity nodeQuantity(NodeStatus status, boolean allocatable, String key) {
-        if (status == null) {
+        if (ObjectUtil.isNull(status)) {
             return null;
         }
         Map<String, Quantity> quantities = allocatable ? status.getAllocatable() : status.getCapacity();
-        return quantities == null ? null : quantities.get(key);
+        return ObjectUtil.isNull(quantities) ? null : quantities.get(key);
     }
 
     /**
@@ -286,7 +290,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
      * @return 是否终态
      */
     private boolean isTerminal(Pod pod) {
-        String phase = pod.getStatus() == null ? null : pod.getStatus().getPhase();
+        String phase = ObjectUtil.isNull(pod.getStatus()) ? null : pod.getStatus().getPhase();
         return "Succeeded".equals(phase) || "Failed".equals(phase);
     }
 
@@ -297,7 +301,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
      * @return 数量；解析失败返回 null
      */
     private Integer parseCount(Quantity quantity) {
-        if (quantity == null || quantity.getAmount() == null) {
+        if (ObjectUtil.isNull(quantity) || ObjectUtil.isNull(quantity.getAmount())) {
             return null;
         }
         try {
@@ -315,7 +319,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
      * @return 非 null 值
      */
     private long nullToZero(Long value) {
-        return value == null ? 0L : value;
+        return ObjectUtil.defaultIfNull(value, 0L);
     }
 
     /**
@@ -348,11 +352,11 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
             List<io.fabric8.kubernetes.api.model.Namespace> namespaces =
                     kubernetesClient.namespaces().list().getItems();
             List<String> result = new ArrayList<>();
-            if (namespaces == null) {
+            if (ObjectUtil.isNull(namespaces)) {
                 return result;
             }
             for (io.fabric8.kubernetes.api.model.Namespace namespace : namespaces) {
-                if (namespace.getMetadata() != null && namespace.getMetadata().getName() != null) {
+                if (ObjectUtil.isNotNull(namespace.getMetadata()) && ObjectUtil.isNotNull(namespace.getMetadata().getName())) {
                     result.add(namespace.getMetadata().getName());
                 }
             }
@@ -368,14 +372,14 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
             List<Pod> pods = kubernetesClient.pods().inNamespace(namespace)
                     .withLabels(selectorLabels).list().getItems();
             List<K8sPodInfo> result = new ArrayList<>();
-            if (pods == null) {
+            if (ObjectUtil.isNull(pods)) {
                 return result;
             }
             for (Pod pod : pods) {
                 K8sPodInfo info = new K8sPodInfo();
                 info.setNamespace(namespace);
-                info.setPodName(pod.getMetadata() == null ? null : pod.getMetadata().getName());
-                info.setNodeName(pod.getSpec() == null ? null : pod.getSpec().getNodeName());
+                info.setPodName(ObjectUtil.isNull(pod.getMetadata()) ? null : pod.getMetadata().getName());
+                info.setNodeName(ObjectUtil.isNull(pod.getSpec()) ? null : pod.getSpec().getNodeName());
                 result.add(info);
             }
             return result;
@@ -390,7 +394,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
         try {
             Deployment deployment = kubernetesClient.apps().deployments().inNamespace(namespace)
                     .withName(name).get();
-            if (deployment == null) {
+            if (ObjectUtil.isNull(deployment)) {
                 return null;
             }
             return toDeploymentInfo(deployment);
@@ -481,7 +485,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
             List<Event> events = kubernetesClient.v1().events().inNamespace(namespace).list().getItems();
             List<K8sEventInfo> result = new ArrayList<>();
             for (Event event : events) {
-                if (event.getInvolvedObject() == null
+                if (ObjectUtil.isNull(event.getInvolvedObject())
                         || !Objects.equals(podName, event.getInvolvedObject().getName())) {
                     continue;
                 }
@@ -510,7 +514,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
         info.setNodeName(node.getMetadata().getName());
         Map<String, String> labels = node.getMetadata().getLabels();
         String role = "worker";
-        if (labels != null) {
+        if (ObjectUtil.isNotNull(labels)) {
             for (Map.Entry<String, String> entry : labels.entrySet()) {
                 if (entry.getKey().startsWith("node-role.kubernetes.io/")) {
                     role = entry.getKey().substring(entry.getKey().lastIndexOf('/') + 1);
@@ -531,7 +535,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
      * @return 是否 Ready
      */
     private boolean isReady(NodeStatus status) {
-        if (status == null || status.getConditions() == null) {
+        if (ObjectUtil.isNull(status) || ObjectUtil.isNull(status.getConditions())) {
             return false;
         }
         for (NodeCondition condition : status.getConditions()) {
@@ -555,23 +559,23 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
         info.setDesiredReplicas(deployment.getSpec().getReplicas());
         info.setReadyReplicas(deployment.getStatus().getReadyReplicas());
         List<Container> containers = deployment.getSpec().getTemplate().getSpec().getContainers();
-        if (containers != null && !containers.isEmpty()) {
+        if (ObjectUtil.isNotNull(containers) && CollUtil.isNotEmpty(containers)) {
             info.setImage(containers.get(0).getImage());
         }
         info.setLastDeployTime(parseTimestamp(deployment.getMetadata().getCreationTimestamp()));
-        if (deployment.getSpec() != null && deployment.getSpec().getSelector() != null) {
+        if (ObjectUtil.isNotNull(deployment.getSpec()) && ObjectUtil.isNotNull(deployment.getSpec().getSelector())) {
             info.setSelectorLabels(deployment.getSpec().getSelector().getMatchLabels());
         }
 
         List<Pod> pods = kubernetesClient.pods().inNamespace(info.getNamespace())
                 .withLabel("app", info.getName()).list().getItems();
-        if (pods != null && !pods.isEmpty()) {
+        if (ObjectUtil.isNotNull(pods) && CollUtil.isNotEmpty(pods)) {
             Pod firstPod = pods.get(0);
             info.setFirstPodName(firstPod.getMetadata().getName());
             info.setNodeName(firstPod.getSpec().getNodeName());
-            Map<String, String> nodeLabels = firstPod.getSpec().getNodeName() == null ? null
+            Map<String, String> nodeLabels = ObjectUtil.isNull(firstPod.getSpec().getNodeName()) ? null
                     : kubernetesClient.nodes().withName(firstPod.getSpec().getNodeName()).get().getMetadata().getLabels();
-            if (nodeLabels != null) {
+            if (ObjectUtil.isNotNull(nodeLabels)) {
                 info.setNodeArch(nodeLabels.getOrDefault("kubernetes.io/arch", ""));
             }
         }
@@ -586,7 +590,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
      * @return 毫核；解析失败返回 null
      */
     private Long parseCpuMilli(Quantity quantity) {
-        if (quantity == null) {
+        if (ObjectUtil.isNull(quantity)) {
             return null;
         }
         try {
@@ -613,7 +617,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
      * @return 字节；解析失败返回 null
      */
     private Long parseMemoryBytes(Quantity quantity) {
-        if (quantity == null) {
+        if (ObjectUtil.isNull(quantity)) {
             return null;
         }
         try {
@@ -631,7 +635,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
      * @return 本地时间；为空返回 null
      */
     private LocalDateTime toLocalDateTime(OffsetDateTime time) {
-        return time == null ? null : time.toLocalDateTime();
+        return ObjectUtil.isNull(time) ? null : time.toLocalDateTime();
     }
 
     /**
@@ -641,7 +645,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
      * @return 本地时间；解析失败返回 null
      */
     private LocalDateTime parseTimestamp(String value) {
-        if (value == null || value.isBlank()) {
+        if (ObjectUtil.isNull(value) || value.isBlank()) {
             return null;
         }
         try {
@@ -656,7 +660,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
     public Map<String, String> getConfigMapData(String namespace, String name) {
         try {
             ConfigMap configMap = kubernetesClient.configMaps().inNamespace(namespace).withName(name).get();
-            if (configMap == null || configMap.getData() == null) {
+            if (ObjectUtil.isNull(configMap) || ObjectUtil.isNull(configMap.getData())) {
                 return new HashMap<>();
             }
             return new HashMap<>(configMap.getData());
@@ -669,7 +673,7 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
     public void applyConfigMap(String namespace, String name, Map<String, String> data) {
         try {
             ConfigMap existing = kubernetesClient.configMaps().inNamespace(namespace).withName(name).get();
-            if (existing == null) {
+            if (ObjectUtil.isNull(existing)) {
                 ConfigMap configMap = new ConfigMapBuilder()
                         .withNewMetadata().withName(name).withNamespace(namespace).endMetadata()
                         .withData(data)
@@ -692,13 +696,13 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
     public void restartDeployment(String namespace, String name) {
         try {
             Deployment deployment = kubernetesClient.apps().deployments().inNamespace(namespace).withName(name).get();
-            if (deployment == null) {
+            if (ObjectUtil.isNull(deployment)) {
                 LoggerUtil.error(LogFileEnum.INTEGRATION, "【K8S】Deployment 不存在 {}/{}", namespace, name);
-                throw new AiIntegrationException(AiIntegrationErrorCode.K8S_API_ERROR,
+                throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.K8S_API_ERROR,
                         "Deployment 不存在: " + namespace + "/" + name);
             }
             ObjectMeta meta = deployment.getSpec().getTemplate().getMetadata();
-            Map<String, String> annotations = meta.getAnnotations() == null
+            Map<String, String> annotations = ObjectUtil.isNull(meta.getAnnotations())
                     ? new HashMap<>() : new HashMap<>(meta.getAnnotations());
             annotations.put("kubectl.kubernetes.io/restartedAt", String.valueOf(System.currentTimeMillis()));
             meta.setAnnotations(annotations);

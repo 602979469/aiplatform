@@ -75,4 +75,20 @@ public interface KbExamPaperQuestionRepository {
      * @return 受影响行数；0 表示未生效，由上层决定
      */
     int deleteById(Long id);
+
+    /**
+     * 按试卷ID查询全部答题明细（按题号正序）。
+     *
+     * @param paperId 试卷ID
+     * @return 试卷题目快照与作答列表
+     */
+    List<KbExamPaperQuestion> findByPaperId(Long paperId);
+
+    /**
+     * 按试卷ID删除全部答题明细（删除考试记录时使用）。
+     *
+     * @param paperId 试卷ID
+     * @return 受影响行数；0 表示未生效，由上层决定
+     */
+    int deleteByPaperId(Long paperId);
 }

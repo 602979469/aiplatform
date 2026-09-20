@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.web.template;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import com.jakt.aiplatform.web.result.ApiResult;
 import com.jakt.aiplatform.common.util.error.CommonErrorCode;
 import com.jakt.aiplatform.common.framework.error.CommonException;
@@ -51,7 +53,7 @@ public final class ApiTemplate {
                 result = ApiResult.fail(CommonErrorCode.SYSTEM_ERROR);
             }
 
-            if (result == null) {
+            if (ObjectUtil.isNull(result)) {
                 try {
                     data = callback.execute(param);
                     result = ApiResult.ok(data);

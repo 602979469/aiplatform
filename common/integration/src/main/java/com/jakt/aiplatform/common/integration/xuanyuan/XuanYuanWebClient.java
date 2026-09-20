@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.common.integration.xuanyuan;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
@@ -53,9 +55,9 @@ public class XuanYuanWebClient {
         String body = getWithRetry(url);
         try {
             JSONObject json = JSON.parseObject(body);
-            JSONArray results = json == null ? null : json.getJSONArray("results");
-            if (results == null) {
-                throw new AiIntegrationException(AiIntegrationErrorCode.XUANYUAN_API_ERROR,
+            JSONArray results = ObjectUtil.isNull(json) ? null : json.getJSONArray("results");
+            if (ObjectUtil.isNull(results)) {
+                throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.XUANYUAN_API_ERROR,
                         "轩辕加速器官网搜索响应无结果，请稍后重试");
             }
             List<JSONObject> repos = new ArrayList<>();
@@ -66,9 +68,9 @@ public class XuanYuanWebClient {
         } catch (AiIntegrationException e) {
             throw e;
         } catch (Exception e) {
-            LoggerUtil.warn(LogFileEnum.COMMON_ERROR, "【镜像加速器】【XUANYUAN-WEB】网页搜索失败, q={}, 错误={}",
+            LoggerUtil.warn(LogFileEnum.INTEGRATION, "【镜像加速器】【XUANYUAN-WEB】网页搜索失败, q={}, 错误={}",
                     query, e.getMessage());
-            throw new AiIntegrationException(AiIntegrationErrorCode.XUANYUAN_API_ERROR,
+            throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.XUANYUAN_API_ERROR,
                     "轩辕加速器官网搜索失败，请稍后重试", e);
         }
     }
@@ -91,9 +93,9 @@ public class XuanYuanWebClient {
         try {
             return JSON.parseObject(body);
         } catch (Exception e) {
-            LoggerUtil.warn(LogFileEnum.COMMON_ERROR, "【镜像加速器】【XUANYUAN-WEB】查询tags失败, repo={}/{}:{}, 错误={}",
+            LoggerUtil.warn(LogFileEnum.INTEGRATION, "【镜像加速器】【XUANYUAN-WEB】查询tags失败, repo={}/{}:{}, 错误={}",
                     namespace, name, tag, e.getMessage());
-            throw new AiIntegrationException(AiIntegrationErrorCode.XUANYUAN_API_ERROR,
+            throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.XUANYUAN_API_ERROR,
                     "轩辕加速器官网查询标签失败，请稍后重试", e);
         }
     }
@@ -113,7 +115,7 @@ public class XuanYuanWebClient {
             } catch (HttpStatusCodeException e) {
                 int status = e.getStatusCode().value();
                 if (status == 401 || status == 403) {
-                    throw new AiIntegrationException(AiIntegrationErrorCode.AUTH_ERROR,
+                    throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.AUTH_ERROR,
                             "轩辕加速器官网认证失败(HTTP " + status + ")，请检查账号配置", e);
                 }
                 lastError = e;
@@ -127,8 +129,9 @@ public class XuanYuanWebClient {
                 }
             }
         }
-        throw new AiIntegrationException(AiIntegrationErrorCode.XUANYUAN_API_ERROR,
-                "轩辕加速器官网接口请求失败: " + (lastError == null ? "unknown" : lastError.getMessage()), lastError);
+        throw AiIntegrationException.ofThrow(AiIntegrationErrorCode.XUANYUAN_API_ERROR,
+                "轩辕加速器官网接口请求失败: "
+                        + (ObjectUtil.isNull(lastError) ? "unknown" : lastError.getMessage()), lastError);
     }
 
     /**

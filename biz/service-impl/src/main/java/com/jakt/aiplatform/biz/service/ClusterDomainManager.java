@@ -1,6 +1,7 @@
 package com.jakt.aiplatform.biz.service;
 
 import java.util.List;
+import com.jakt.aiplatform.core.model.dto.ClusterDomainView;
 
 /**
  * 域名映射管理：公网 Caddy（公网入口）+ 集群 Ingress（内部路由）联动。

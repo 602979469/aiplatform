@@ -1,5 +1,10 @@
 package com.jakt.aiplatform.common.framework.tools;
 
+import cn.hutool.core.util.ObjectUtil;
+
+import cn.hutool.core.util.StrUtil;
+
+
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.common.framework.error.CommonException;
 import jakarta.validation.ConstraintViolation;
@@ -20,14 +25,14 @@ public final class ParamValidator {
     }
 
     public static void validate(Object param, Class<?>... groups) {
-        if (param == null) {
+        if (ObjectUtil.isNull(param)) {
             return;
         }
         Set<ConstraintViolation<Object>> violations = VALIDATOR.validate(param, groups);
         String message = violations.stream()
                 .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
                 .collect(Collectors.joining("; "));
-        if (!message.isEmpty()) {
+        if (StrUtil.isNotEmpty(message)) {
             throw CommonException.of(ErrorCodeEnum.PARAM_INVALID, message);
         }
     }

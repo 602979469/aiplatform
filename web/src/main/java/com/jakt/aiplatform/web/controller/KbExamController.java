@@ -1,15 +1,17 @@
 package com.jakt.aiplatform.web.controller;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import com.jakt.aiplatform.biz.service.KbExamManager;
-import com.jakt.aiplatform.biz.service.KbExamPaperView;
-import com.jakt.aiplatform.biz.service.KbExamResultView;
-import com.jakt.aiplatform.biz.service.KbExamRuleParam;
-import com.jakt.aiplatform.biz.service.KbExamStartParam;
+import com.jakt.aiplatform.core.model.dto.KbExamPaperView;
+import com.jakt.aiplatform.core.model.dto.KbExamResultView;
+import com.jakt.aiplatform.core.model.param.KbExamRuleParam;
+import com.jakt.aiplatform.core.model.param.KbExamStartParam;
 import com.jakt.aiplatform.biz.service.KbExamTemplateConfigManager;
-import com.jakt.aiplatform.biz.service.KbExamTemplateView;
-import com.jakt.aiplatform.biz.service.KbExamWrongView;
+import com.jakt.aiplatform.core.model.dto.KbExamTemplateView;
+import com.jakt.aiplatform.core.model.dto.KbExamWrongView;
 import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
@@ -104,7 +106,7 @@ public class KbExamController {
                 view.setObjectiveOnly(param.getObjectiveOnly());
                 view.setExcludeMastered(param.getExcludeMastered());
                 List<KbExamRuleParam> rules = new ArrayList<>();
-                if (param.getRules() != null) {
+                if (ObjectUtil.isNotNull(param.getRules())) {
                     for (KbExamStartRequest.Rule rule : param.getRules()) {
                         KbExamRuleParam item = new KbExamRuleParam();
                         item.setCategory(rule.getCategory());
@@ -153,7 +155,7 @@ public class KbExamController {
                 startParam.setExcludeMastered(param.getExcludeMastered());
                 startParam.setObjectiveOnly(param.getObjectiveOnly());
                 List<KbExamRuleParam> rules = new ArrayList<>();
-                if (param.getRules() != null) {
+                if (ObjectUtil.isNotNull(param.getRules())) {
                     for (KbExamStartRequest.Rule rule : param.getRules()) {
                         KbExamRuleParam item = new KbExamRuleParam();
                         item.setCategory(rule.getCategory());

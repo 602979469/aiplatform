@@ -2,6 +2,9 @@ package com.jakt.aiplatform.biz.service;
 
 import java.util.List;
 import java.util.Map;
+import com.jakt.aiplatform.core.model.dto.KbQuestionDetailView;
+import com.jakt.aiplatform.core.model.param.KbQuestionSearchQuery;
+import com.jakt.aiplatform.core.model.dto.KbQuestionSearchView;
 
 /**
  * 题库检索（走 Elasticsearch）。

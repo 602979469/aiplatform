@@ -15,5 +15,5 @@ public class MirrorSearchResponse {
     /** 客户端架构。 */
     private String arch;
     /** 搜索结果。 */
-    private List<MirrorImageResult> results;
+    private List<MirrorImageItemResponse> results;
 }

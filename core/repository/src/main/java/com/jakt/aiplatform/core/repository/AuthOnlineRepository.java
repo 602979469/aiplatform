@@ -5,7 +5,7 @@ import com.jakt.aiplatform.core.model.dto.AuthOnlineSnapshot;
 import java.util.List;
 
 /**
- * 在线会话快照仓储：封装 Redis 快照读写（key 见 {@code RedisKeyConstant}）。
+ * 在线会话快照仓储：封装 Redis 快照读写（key 前缀由上层传入，见 {@code AiPlatformConstant}）。
  */
 public interface AuthOnlineRepository {
 

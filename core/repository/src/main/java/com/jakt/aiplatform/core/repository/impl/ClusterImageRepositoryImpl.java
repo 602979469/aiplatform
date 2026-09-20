@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.core.repository.impl;
 
+import cn.hutool.core.collection.CollUtil;
+
 import com.jakt.aiplatform.common.dal.dataobject.ClusterImageDO;
 import com.jakt.aiplatform.common.dal.mapper.ClusterImageMapper;
 import com.jakt.aiplatform.common.framework.result.PageResult;
@@ -35,7 +37,7 @@ public class ClusterImageRepositoryImpl implements ClusterImageRepository {
     public ClusterImage findOne(ClusterImageQueryParam query) {
         List<ClusterImageDO> list = clusterImageMapper.selectList(ClusterImageConvertor.toDalQuery(query));
         AssertUtil.throwErrWhenTrue(list.size() > 1, BizErrorCodeEnum.RESULT_NOT_UNIQUE, "镜像记录不唯一");
-        return list.isEmpty() ? null : ClusterImageConvertor.toModel(list.get(0));
+        return CollUtil.isEmpty(list) ? null : ClusterImageConvertor.toModel(list.get(0));
     }
 
     @Override

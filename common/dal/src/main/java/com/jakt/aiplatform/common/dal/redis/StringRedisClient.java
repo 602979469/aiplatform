@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.common.dal.redis;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.json.JSONUtil;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -27,14 +29,16 @@ public class StringRedisClient implements RedisClient {
     @Override
     public <T> T get(String key, Class<T> type) {
         String json = stringRedisTemplate.opsForValue().get(key);
-        return json == null ? null : JSONUtil.toBean(json, type);
+        return ObjectUtil.isNull(json) ? null : JSONUtil.toBean(json, type);
     }
 
     @Override
     public <T> List<T> multiGet(List<String> keys, Class<T> type) {
         List<String> jsons = stringRedisTemplate.opsForValue().multiGet(keys);
-        return jsons == null ? List.of()
-                : jsons.stream().filter(json -> json != null).map(json -> JSONUtil.toBean(json, type)).toList();
+        return ObjectUtil.defaultIfNull(jsons, List.<String>of()).stream()
+                .filter((String json) -> ObjectUtil.isNotNull(json))
+                .map(json -> JSONUtil.toBean(json, type))
+                .toList();
     }
 
     @Override

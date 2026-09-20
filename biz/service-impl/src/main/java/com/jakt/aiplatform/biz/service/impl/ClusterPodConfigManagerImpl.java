@@ -1,4 +1,6 @@
 package com.jakt.aiplatform.biz.service.impl;
+
+import cn.hutool.core.util.ObjectUtil;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
 import com.jakt.aiplatform.common.framework.result.Result;
 import com.jakt.aiplatform.common.framework.template.BizTemplate;
@@ -301,7 +303,7 @@ public class ClusterPodConfigManagerImpl implements ClusterPodConfigManager {
      * @return 副本数
      */
     private int resolveReplicas(String deployYaml) {
-        if (deployYaml == null) {
+        if (ObjectUtil.isNull(deployYaml)) {
             return 1;
         }
         // TODO 待接入 YAML 解析：读取 spec.replicas，缺省默认 1

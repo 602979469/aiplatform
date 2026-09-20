@@ -1,7 +1,8 @@
 package com.jakt.aiplatform.biz.service;
 
-import com.jakt.aiplatform.common.dal.dataobject.KbQuestionDO;
 import com.jakt.aiplatform.common.framework.result.PageResult;
+import com.jakt.aiplatform.core.model.domain.KbQuestion;
+import com.jakt.aiplatform.core.model.dto.KbQuestionMetaView;
 import com.jakt.aiplatform.core.model.param.KbQuestionQueryParam;
 
 /**
@@ -15,30 +16,30 @@ public interface KbQuestionAdminManager {
      * @param query 查询参数
      * @return 分页结果
      */
-    PageResult<KbQuestionDO> page(KbQuestionQueryParam query);
+    PageResult<KbQuestion> page(KbQuestionQueryParam query);
 
     /**
      * 查询题目详情。
      *
      * @param id 题目ID
-     * @return 题目（不存在时抛业务异常）
+     * @return 题库题目领域模型（不存在时抛业务异常）
      */
-    KbQuestionDO get(Long id);
+    KbQuestion get(Long id);
 
     /**
      * 新增题目。
      *
-     * @param question 题目
+     * @param question 题库题目
      * @return 新增后的主键
      */
-    Long create(KbQuestionDO question);
+    Long create(KbQuestion question);
 
     /**
      * 修改题目（全量字段）。
      *
-     * @param question 题目（含 id）
+     * @param question 题库题目（含主键）
      */
-    void update(KbQuestionDO question);
+    void update(KbQuestion question);
 
     /**
      * 物理删除题目。

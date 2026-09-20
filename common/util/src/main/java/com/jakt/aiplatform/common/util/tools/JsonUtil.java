@@ -1,8 +1,13 @@
 package com.jakt.aiplatform.common.util.tools;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
+import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 
 import java.util.List;
 import java.util.Map;
@@ -24,13 +29,13 @@ public final class JsonUtil {
      * @return JSON 字符串
      */
     public static String toJson(Object obj) {
-        if (obj == null) {
+        if (ObjectUtil.isNull(obj)) {
             return null;
         }
         try {
             return MAPPER.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("JSON 序列化失败", e);
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "JSON 序列化失败", e);
         }
     }
 
@@ -43,13 +48,13 @@ public final class JsonUtil {
      * @return 数组列表
      */
     public static <T> List<T> parseArray(String json, Class<T> elementType) {
-        if (json == null) {
+        if (ObjectUtil.isNull(json)) {
             return null;
         }
         try {
             return MAPPER.readValue(json, MAPPER.getTypeFactory().constructCollectionType(List.class, elementType));
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("JSON 数组解析失败", e);
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "JSON 数组解析失败", e);
         }
     }
 
@@ -62,13 +67,13 @@ public final class JsonUtil {
      * @return 数组列表
      */
     public static <T> List<T> parseArray(String json, TypeReference<List<T>> type) {
-        if (json == null) {
+        if (ObjectUtil.isNull(json)) {
             return null;
         }
         try {
             return MAPPER.readValue(json, type);
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("JSON 数组解析失败", e);
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "JSON 数组解析失败", e);
         }
     }
 
@@ -81,13 +86,13 @@ public final class JsonUtil {
      * @return 对象
      */
     public static <T> T parseObject(String json, Class<T> type) {
-        if (json == null) {
+        if (ObjectUtil.isNull(json)) {
             return null;
         }
         try {
             return MAPPER.readValue(json, type);
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("JSON 对象解析失败", e);
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "JSON 对象解析失败", e);
         }
     }
 
@@ -100,13 +105,13 @@ public final class JsonUtil {
      * @return 对象
      */
     public static <T> T parseObject(String json, TypeReference<T> type) {
-        if (json == null) {
+        if (ObjectUtil.isNull(json)) {
             return null;
         }
         try {
             return MAPPER.readValue(json, type);
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("JSON 对象解析失败", e);
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "JSON 对象解析失败", e);
         }
     }
 
@@ -117,14 +122,14 @@ public final class JsonUtil {
      * @return Map
      */
     public static Map<String, Object> parseMap(String json) {
-        if (json == null) {
+        if (ObjectUtil.isNull(json)) {
             return null;
         }
         try {
             return MAPPER.readValue(json, new TypeReference<Map<String, Object>>() {
             });
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("JSON 对象解析失败", e);
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "JSON 对象解析失败", e);
         }
     }
 }

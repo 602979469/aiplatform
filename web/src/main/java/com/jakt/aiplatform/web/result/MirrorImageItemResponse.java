@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MirrorImageResult {
+public class MirrorImageItemResponse {
     /** 厂商。 */
     private String vendor;
     /** 仓库路径（如 library/mysql）。 */

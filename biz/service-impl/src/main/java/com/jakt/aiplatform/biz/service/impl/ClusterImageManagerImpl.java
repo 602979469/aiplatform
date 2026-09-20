@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.biz.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.core.util.StrUtil;
 import com.jakt.aiplatform.biz.service.ClusterImageManager;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
@@ -13,7 +15,7 @@ import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 import com.jakt.aiplatform.core.model.enums.ClusterImageStatusEnum;
 import com.jakt.aiplatform.core.model.enums.ClusterImageTypeEnum;
 import com.jakt.aiplatform.core.model.param.ClusterImageQueryParam;
-import com.jakt.aiplatform.core.service.ClusterCiProperties;
+import com.jakt.aiplatform.core.service.config.ClusterCiProperties;
 import com.jakt.aiplatform.core.service.ClusterImageService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -103,7 +105,7 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
     private void doBuild(Long id) {
         try {
             ClusterImage image = clusterImageService.getClusterImage(id);
-            if (image == null) {
+            if (ObjectUtil.isNull(image)) {
                 return;
             }
             if (image.getImageType() == ClusterImageTypeEnum.EXTERNAL) {
@@ -209,7 +211,7 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
     private void failWithRetry(Long id) {
         clusterImageService.markBuildResult(id, false);
         ClusterImage after = clusterImageService.getClusterImage(id);
-        if (after != null && after.getBuildStatus() == ClusterImageStatusEnum.BUILDING) {
+        if (ObjectUtil.isNotNull(after) && after.getBuildStatus() == ClusterImageStatusEnum.BUILDING) {
             doBuild(id);
         }
     }
@@ -232,7 +234,7 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
     @Override
     public String getBuildLog(Long id) {
         ClusterImage image = clusterImageService.getClusterImage(id);
-        if (image == null || StrUtil.isBlank(image.getBuildLogPath())) {
+        if (ObjectUtil.isNull(image) || StrUtil.isBlank(image.getBuildLogPath())) {
             return "";
         }
         SshResult result = sshClient.execute(ciProperties.getMasterHost(),
@@ -240,6 +242,12 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
         return result.isSuccess() ? result.getOutput() : "";
     }
 
+    /**
+     * 取输出文本的最后一行。
+     *
+     * @param output 命令输出
+     * @return 最后一行；输入为空返回空串
+     */
     private String lastLine(String output) {
         if (StrUtil.isBlank(output)) {
             return "";
@@ -248,8 +256,14 @@ public class ClusterImageManagerImpl implements ClusterImageManager {
         return lines[lines.length - 1].trim();
     }
 
+    /**
+     * 截断过长的命令输出，避免响应体过大。
+     *
+     * @param output 命令输出
+     * @return 截断后的输出
+     */
     private String shortOutput(String output) {
-        if (output == null || output.length() <= 300) {
+        if (ObjectUtil.isNull(output) || output.length() <= 300) {
             return output;
         }
         return output.substring(output.length() - 300);

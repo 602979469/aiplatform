@@ -1,5 +1,7 @@
 package com.jakt.aiplatform.core.service.impl;
 
+import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.DigestUtil;
 import com.jakt.aiplatform.common.framework.enums.ErrorCodeEnum;
@@ -8,7 +10,7 @@ import com.jakt.aiplatform.common.framework.exception.AiPlatformException;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.common.integration.ssh.SshClient;
 import com.jakt.aiplatform.common.integration.ssh.SshResult;
-import com.jakt.aiplatform.core.service.ClusterCiProperties;
+import com.jakt.aiplatform.core.service.config.ClusterCiProperties;
 import com.jakt.aiplatform.core.service.ClusterScriptSyncService;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -93,7 +95,7 @@ public class ClusterScriptSyncServiceImpl implements ClusterScriptSyncService {
         } catch (IOException e) {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR, "脚本同步失败: " + name + " " + e.getMessage());
         } finally {
-            if (tmp != null) {
+            if (ObjectUtil.isNotNull(tmp)) {
                 try {
                     Files.deleteIfExists(tmp);
                 } catch (IOException e) {
