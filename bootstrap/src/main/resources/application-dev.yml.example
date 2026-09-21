@@ -1,0 +1,58 @@
+# 本地开发配置模板
+#
+# 用法：
+#   1. 复制成 application-dev.yml（该文件名已被 .gitignore 忽略，不会提交，里面可以放真实密码）
+#   2. 填好下面的占位符
+#   3. 启动：./run-dev.sh          （java -jar + 外置配置，改配置不用重新打包）
+#      或者：mvn -o -pl bootstrap -am spring-boot:run -Dspring-boot.run.profiles=dev
+#
+# 连接地址怎么填：
+#   - 在 k8s 集群的那台虚拟机上开发：用 ClusterIP（宿主机不是 Pod，解析不了 *.svc.cluster.local）
+#       mysql-dev  10.100.39.208:3306   （为宿主机访问额外建的普通 ClusterIP Service）
+#       redis-dev  10.110.178.153:6379
+#       minio      10.107.169.82:9000
+#       es         10.102.25.172:9200
+#     这些 IP 会随 Service 重建变化，变了用 kubectl get svc -n tsk 重新确认
+#   - 在集群外的机器（比如 Mac）上开发：ClusterIP 不可达，需先建 SSH 隧道
+#       ssh -N -L 13306:10.100.39.208:3306 -L 16379:10.110.178.153:6379 k8s-master
+#     然后这里填 127.0.0.1:13306 / 127.0.0.1:16379
+
+spring:
+  datasource:
+    url: jdbc:mysql://<mysql-host>:3306/aiplatform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: <mysql-password>          # 集群：kubectl get secret mysql-secret -n tsk -o jsonpath='{.data.root-password}' | base64 -d
+  data:
+    redis:
+      host: <redis-host>
+      port: 6379
+      password: <redis-password>        # 集群：kubectl get secret redis-secret -n tsk -o jsonpath='{.data.redis-password}' | base64 -d
+      database: 0
+
+ai:
+  deepseek:
+    api-key: <deepseek-api-key>         # 集群：kubectl get secret deepseek-api-key -n tsk -o jsonpath='{.data.DEEPSEEK_API_KEY}' | base64 -d
+  mirror:
+    ssh-host: <镜像加速所在主机>          # 一般就是 k8s master 的 IP
+  minio:
+    endpoint: http://<minio-host>:9000
+    access-key: <minio-access-key>      # 集群：kubectl get secret minio-credentials -n tsk -o jsonpath='{.data.MINIO_ACCESS_KEY}' | base64 -d
+    secret-key: <minio-secret-key>
+    bucket: aiplatform
+  ssh:
+    username: ubuntu
+    private-key-path: /home/<user>/.ssh/id_rsa   # 本机真实存在的私钥路径（注意不是 Mac 上的路径）
+
+log:
+  file:
+    path: /home/<user>/workspace/aiplatform/logs/
+
+cluster:
+  ci:
+    work-dir: /home/ubuntu/cluster-ci
+    master-host: <master-ip>
+    worker-host: <worker-ip>
+    # 本地调试时不要让启动流程覆盖服务器上的脚本
+    sync-on-startup: false
+
+# 说明：不配置 k8s.master-url / k8s.token 时，dev 下会自动使用 ~/.kube/config
