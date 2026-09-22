@@ -432,3 +432,32 @@ BizTemplate.execute(transactionTemplate, callback);
 - 生成器不生成测试代码；
 - 业务模块不写 Mockito 单元测试；
 - 后期测试统一放独立测试模块，连真实测试数据库，一路打到 Mapper。
+
+## 13. 开发环境与提交流程
+
+本仓库的开发环境是 **k8s-master 虚拟机**（`ssh k8s-master`，即 `ubuntu@192.168.3.131`），不是 Mac。
+
+### 13.1 唯一代码位置
+
+- 代码在虚拟机里：`/home/ubuntu/workspace/aiplatform`（同目录下还有 `aiplatform-vue`、`code-generate-template`）。
+- `/Users/jakt/IdeaProjects/*`（Mac）只作为历史副本保留，**不要在 Mac 上改代码**——两边同时改会分叉，任何改动以虚拟机里的副本为准。
+
+### 13.2 怎么写、怎么跑
+
+- 写代码：JetBrains Gateway 通过 SSH 连到虚拟机（IDE 后端跑在虚拟机内），打开 `/home/ubuntu/workspace/aiplatform`。
+- 跑后端：用运行配置 `.idea/runConfigurations/AiPlatform__dev_.xml`（关键是 `-Dspring.profiles.active=dev`），或命令行 `./run-dev.sh`。
+  - **不带 dev profile 一定启动失败**：`application.yml` 里的 `${MYSQL_HOST}` 等占位符只能由 `application-dev.yml` 提供。
+- 跑前端：`cd ~/workspace/aiplatform-vue && pnpm dev`（Node 20 装在 `~/.local/node20`，`pnpm` 有全局包装器；系统 Node 18 保留给 CI，不要动）。
+
+### 13.3 提交与部署
+
+- 提交：在虚拟机里执行 `git add/commit/push`。
+- 推送通道：`origin` 是 HTTPS + token（凭证文件 `/home/ubuntu/.git-credentials-workspace`）；`github-ssh` 是 SSH（需要 `~/.ssh/id_ed25519` 已加到 GitHub 账号）。
+  这台机器访问 github.com 是**间歇性**的：HTTPS 偶发超时就重试，或改用 `git push github-ssh`。
+- 部署：push 后由宿主机 cron 上的 CI（`/home/ubuntu/aiplatform-ci`、`aiplatform-vue-ci`，每 2 分钟轮询）拉取最新提交、构建镜像并部署到 k8s，**不需要手动执行**。
+
+### 13.4 中间件与数据库
+
+- 集群里的 MySQL / Redis / MinIO / ES 在虚拟机上用 **ClusterIP** 访问（`kubectl get svc -n tsk` 查当前 IP），配置见 `application-dev.yml`（已被 gitignore，字段说明见 `application-dev.yml.example`）。
+- **Mac 上连不了 ClusterIP**，需要 SSH 隧道或 NodePort。
+- 本地开发实例连的是集群同一套 MySQL，调试时的写操作会影响线上数据，需要干净环境请先申请独立测试库。
