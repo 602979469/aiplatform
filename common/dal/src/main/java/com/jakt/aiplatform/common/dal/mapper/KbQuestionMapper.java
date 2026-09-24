@@ -105,6 +105,14 @@ public interface KbQuestionMapper {
     List<Long> selectPickIds(KbQuestionPickQuery query);
 
     /**
+     * 组卷容量统计：按知识点筛选条件汇总各题型的可用题量。
+     *
+     * @param query 抽题条件（与 {@link #selectPickIds} 同一套条件）
+     * @return 每行包含 questionType / total
+     */
+    List<Map<String, Object>> countPickByType(KbQuestionPickQuery query);
+
+    /**
      * 按 id 集合批量查询（组卷快照用）。
      *
      * @param ids 题目ID列表

@@ -3,6 +3,7 @@ package com.jakt.aiplatform.core.repository;
 import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.model.domain.KbQuestion;
 import com.jakt.aiplatform.core.model.dto.KbQuestionCategoryStat;
+import com.jakt.aiplatform.core.model.dto.KbQuestionTypeStat;
 import com.jakt.aiplatform.core.model.param.KbQuestionPickParam;
 import com.jakt.aiplatform.core.model.param.KbQuestionQueryParam;
 
@@ -76,6 +77,14 @@ public interface KbQuestionRepository {
      * @return 题目ID列表
      */
     List<Long> pickIds(KbQuestionPickParam param);
+
+    /**
+     * 组卷容量统计：知识点范围内各题型的可用题量（与 {@link #pickIds} 同一套筛选口径）。
+     *
+     * @param param 抽题参数（limit 字段不参与统计）
+     * @return 题型题量统计列表
+     */
+    List<KbQuestionTypeStat> countPickByType(KbQuestionPickParam param);
 
     /**
      * 分类 / 子主题题量汇总（知识点下拉数据源）。

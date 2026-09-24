@@ -24,7 +24,6 @@ import com.jakt.aiplatform.core.model.param.KbExamPaperQueryParam;
 import com.jakt.aiplatform.core.model.param.KbExamPaperQuestionQueryParam;
 import com.jakt.aiplatform.core.model.param.KbExamRuleParam;
 import com.jakt.aiplatform.core.model.param.KbExamStartParam;
-import com.jakt.aiplatform.core.model.param.KbQuestionPickParam;
 import com.jakt.aiplatform.core.model.param.KbUserQuestionStatDelta;
 import com.jakt.aiplatform.core.repository.KbExamPaperQuestionRepository;
 import com.jakt.aiplatform.core.repository.KbExamPaperRepository;
@@ -42,7 +41,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -60,11 +58,6 @@ public class KbExamServiceImpl implements KbExamService {
 
     /** 解答题型集合。 */
     private static final List<String> GROUP_ESSAY = List.of(KbExamConstant.QUESTION_TYPE_ESSAY);
-
-    /** 客观题类型（补足题量时使用）。 */
-    private static final Set<String> OBJECTIVE_TYPES =
-            Set.of(KbExamConstant.QUESTION_TYPE_SINGLE, KbExamConstant.QUESTION_TYPE_MULTI,
-                    KbExamConstant.QUESTION_TYPE_JUDGE);
 
     /** 超时兜底扫描的进行中试卷条数。 */
     private static final int EXPIRED_SCAN_LIMIT = 50;
@@ -134,22 +127,23 @@ public class KbExamServiceImpl implements KbExamService {
                 : ObjectUtil.isNull(template) || ObjectUtil.isNull(template.getExcludeMastered()) || template.getExcludeMastered() == 1;
         int questionCount = kbExamRuleService.resolveQuestionCount(param, rules);
 
-        // 题型配额：优先用模板的 typeMix，没配则回退固定配比 5:2:1
-        int[] quotas = kbExamRuleService.resolveTypeQuotas(param, questionCount);
+        // 题型配额：优先用模板的 typeMix，没配则回退固定配比 5:2:1；
+        // 再按所选知识点实际可用的题型收敛，避免"知识点没有解答题却硬留解答题配额"
+        int[] desiredQuotas = kbExamRuleService.resolveTypeQuotas(param, questionCount);
+        Map<String, Integer> availableByType = kbExamRuleService.countAvailableByType(rules, userId, excludeMastered);
+        int[] quotas = kbExamRuleService.allocateTypeQuotas(desiredQuotas, availableByType, questionCount);
         List<Long> picked = new ArrayList<>();
         picked.addAll(kbExamRuleService.pickByGroup(GROUP_SELECT, quotas[0], rules, userId, excludeMastered, picked));
         picked.addAll(kbExamRuleService.pickByGroup(GROUP_QA, quotas[1], rules, userId, excludeMastered, picked));
         picked.addAll(kbExamRuleService.pickByGroup(GROUP_ESSAY, quotas[2], rules, userId, excludeMastered, picked));
 
-        // 某类题量不足时用客观题补足，保证整卷题量
+        // 题型配额没抽满时继续补题，但只在所选知识点范围内补（不限题型），绝不跨知识点抽题
         if (picked.size() < questionCount) {
-            KbExamRuleParam fill = new KbExamRuleParam();
-            picked.addAll(kbExamRuleService.pick(fill, OBJECTIVE_TYPES, userId, excludeMastered,
+            picked.addAll(kbExamRuleService.pickWithinRules(rules, userId, excludeMastered,
                     questionCount - picked.size(), picked));
         }
-        if (CollUtil.isEmpty(picked)) {
-            assertPickReason(rules);
-        }
+        // 题量仍不足：明确失败，不再静默拿其它知识点的题凑成一张混科卷
+        assertEnoughQuestions(rules, excludeMastered, questionCount, picked.size(), availableByType);
 
         Map<Long, KbQuestion> questionMap = new LinkedHashMap<>();
         for (KbQuestion row : kbQuestionRepository.findByIds(picked)) {
@@ -467,30 +461,48 @@ public class KbExamServiceImpl implements KbExamService {
     }
 
     /**
-     * 抽题为空时给出可区分的失败原因。
+     * 校验题量是否凑得齐：不足时给出可执行的失败原因，避免静默跨知识点补题。
      *
      * @param rules 知识点规则
+     * @param excludeMastered 是否排除了已做对的题目
+     * @param questionCount 目标题量
+     * @param pickedSize 实际抽到的题量
+     * @param availableByType 知识点范围内的题型容量
      */
-    private void assertPickReason(List<KbExamRuleParam> rules) {
-        for (KbExamRuleParam rule : rules) {
-            KbQuestionPickParam probe = new KbQuestionPickParam();
-            probe.setCategory(StrUtil.trimToNull(rule.getCategory()));
-            probe.setSubtopic(StrUtil.trimToNull(rule.getSubtopic()));
-            probe.setQuestionType(StrUtil.trimToNull(rule.getQuestionType()));
-            probe.setDifficulty(StrUtil.trimToNull(rule.getDifficulty()));
-            probe.setExcludeMastered(false);
-            probe.setLimit(1);
-            List<Long> exists = kbQuestionRepository.pickIds(probe);
-            if (CollUtil.isEmpty(exists)) {
-                String target = StrUtil.isBlank(rule.getSubtopic())
-                        ? rule.getCategory()
-                        : rule.getCategory() + "/" + rule.getSubtopic();
-                throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID,
-                        "知识点「" + target + "」下暂无题目，请重新配置试卷");
-            }
+    private void assertEnoughQuestions(List<KbExamRuleParam> rules, boolean excludeMastered,
+                                       int questionCount, int pickedSize,
+                                       Map<String, Integer> availableByType) {
+        if (pickedSize >= questionCount) {
+            return;
         }
+        String scope = describeScope(rules);
+        int available = availableByType.values().stream().mapToInt(Integer::intValue).sum();
+        if (available <= 0) {
+            throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID,
+                    "知识点「" + scope + "」下暂无题目，请重新配置试卷");
+        }
+        String hint = excludeMastered ? "，可减少题量或关闭「排除已做对」" : "，请减少题量或补充题库";
         throw AiPlatformException.ofThrow(ErrorCodeEnum.PARAM_INVALID,
-                "没有可用题目：所选知识点下的题目可能都已做对（可切换复习模式）");
+                "知识点「" + scope + "」可用题目不足：需要 " + questionCount + " 题，实际只有 "
+                        + available + " 题" + hint);
+    }
+
+    /**
+     * 描述知识点范围，多知识点用顿号连接，用于失败提示。
+     *
+     * @param rules 知识点规则
+     * @return 知识点描述
+     */
+    private String describeScope(List<KbExamRuleParam> rules) {
+        if (CollUtil.isEmpty(rules)) {
+            return "未指定";
+        }
+        return rules.stream()
+                .map(rule -> StrUtil.isBlank(rule.getSubtopic())
+                        ? StrUtil.blankToDefault(rule.getCategory(), "未指定")
+                        : rule.getCategory() + "/" + rule.getSubtopic())
+                .distinct()
+                .collect(Collectors.joining("、"));
     }
 
     /**

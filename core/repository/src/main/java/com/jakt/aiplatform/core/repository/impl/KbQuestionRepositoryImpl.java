@@ -12,6 +12,7 @@ import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.core.model.domain.KbQuestion;
 import com.jakt.aiplatform.core.model.dto.KbQuestionCategoryStat;
+import com.jakt.aiplatform.core.model.dto.KbQuestionTypeStat;
 import com.jakt.aiplatform.core.model.param.KbQuestionPickParam;
 import com.jakt.aiplatform.core.model.param.KbQuestionQueryParam;
 import com.jakt.aiplatform.core.repository.KbQuestionRepository;
@@ -95,6 +96,22 @@ public class KbQuestionRepositoryImpl implements KbQuestionRepository {
     public List<Long> pickIds(KbQuestionPickParam param) {
         List<Long> ids = kbQuestionMapper.selectPickIds(KbQuestionConvertor.toPickQuery(param));
         return ObjectUtil.defaultIfNull(ids, new ArrayList<>());
+    }
+
+    @Override
+    public List<KbQuestionTypeStat> countPickByType(KbQuestionPickParam param) {
+        List<Map<String, Object>> rows = kbQuestionMapper.countPickByType(KbQuestionConvertor.toPickQuery(param));
+        List<KbQuestionTypeStat> list = new ArrayList<>();
+        if (CollUtil.isEmpty(rows)) {
+            return list;
+        }
+        for (Map<String, Object> row : rows) {
+            KbQuestionTypeStat stat = new KbQuestionTypeStat();
+            stat.setQuestionType(String.valueOf(row.get("questionType")));
+            stat.setTotal(Long.parseLong(String.valueOf(row.get("total"))));
+            list.add(stat);
+        }
+        return list;
     }
 
     @Override
