@@ -1,8 +1,6 @@
 package com.jakt.aiplatform.web.controller;
 
-import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 
-import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 
 import cn.dev33.satoken.annotation.SaIgnore;
 import cn.hutool.core.io.IoUtil;
@@ -140,8 +138,6 @@ public class FileInfoController {
         FileInfoParamChecker.checkId(id);
         FileInfoParamChecker.checkNamespace(namespace);
         FileInfo fileInfo = fileInfoManager.getFile(id, namespace);
-        LoggerUtil.info(LogFileEnum.COMMON_DIGEST, "文件下载 fileId={} namespace={} fileName={}",
-                id, namespace, fileInfo.getOriginalName());
         response.setContentType("application/octet-stream");
         response.setHeader("Content-Disposition",
                 "attachment; filename*=UTF-8''" + URLEncoder.encode(fileInfo.getOriginalName(), StandardCharsets.UTF_8));
@@ -166,7 +162,6 @@ public class FileInfoController {
     public void avatar(@PathVariable Long id, HttpServletResponse response) throws Exception {
         FileInfoParamChecker.checkId(id);
         FileInfo fileInfo = fileInfoManager.getFile(id, FileNamespaceEnum.USER_AVATAR.getCode());
-        LoggerUtil.info(LogFileEnum.COMMON_DIGEST, "读取头像 fileId={} fileName={}", id, fileInfo.getOriginalName());
         response.setContentType(resolveImageContentType(fileInfo.getFileType()));
         response.setContentLengthLong(fileInfoManager.getContentSize(id, FileNamespaceEnum.USER_AVATAR.getCode()));
         try (InputStream inputStream = fileInfoManager.openContentStream(id, FileNamespaceEnum.USER_AVATAR.getCode());

@@ -7,8 +7,12 @@ import com.jakt.aiplatform.common.util.error.CommonErrorCode;
 import com.jakt.aiplatform.common.framework.error.CommonException;
 import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ValidationException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -72,10 +76,13 @@ public final class ApiTemplate {
             } catch (Exception e) {
                 LoggerUtil.error(LogFileEnum.COMMON_ERROR, e, "afterService 执行异常 caller={}", caller);
             }
-            // 请求摘要（common-digest.log）：时间/traceId 由日志 pattern 输出，这里只记基础信息 + 入参 + 最终返回值（非异常）
-            LoggerUtil.info(LogFileEnum.COMMON_DIGEST,
-                    "请求摘要 接口信息={} 时间={} 请求参数={} 返回值={}",
-                    caller, startTime, param, result);
+            // 查询类接口（HTTP GET）不写请求摘要，避免读流量污染 common-digest.log
+            if (!isQueryRequest()) {
+                // 请求摘要（common-digest.log）：时间/traceId 由日志 pattern 输出，这里只记基础信息 + 入参 + 最终返回值（非异常）
+                LoggerUtil.info(LogFileEnum.COMMON_DIGEST,
+                        "请求摘要 接口信息={} 时间={} 请求参数={} 返回值={}",
+                        caller, startTime, param, result);
+            }
         }
         return result;
     }
@@ -159,5 +166,20 @@ public final class ApiTemplate {
             }
         }
         return "unknown";
+    }
+
+    /**
+     * 当前请求是否为查询类接口（HTTP GET）。
+     * 查询接口只读，不写 common-digest，避免列表/详情等读流量把摘要日志刷满。
+     *
+     * @return true=查询类请求；无请求上下文（内部调用）返回 false，保持原有记录行为
+     */
+    private static boolean isQueryRequest() {
+        RequestAttributes attributes = RequestContextHolder.getRequestAttributes();
+        if (attributes instanceof ServletRequestAttributes servletAttributes) {
+            HttpServletRequest request = servletAttributes.getRequest();
+            return request != null && "GET".equalsIgnoreCase(request.getMethod());
+        }
+        return false;
     }
 }
