@@ -461,7 +461,7 @@ public class KbExamServiceImpl implements KbExamService {
      * @return 答题明细列表
      */
     private List<KbExamPaperQuestion> listQuestions(Long paperId) {
-        List<KbExamPaperQuestion> rows = kbExamPaperQuestionRepository.findByPaperId(paperId);
+        List<KbExamPaperQuestion> rows = new ArrayList<>(kbExamPaperQuestionRepository.findByPaperId(paperId));
         rows.sort((a, b) -> Integer.compare(a.getSeq(), b.getSeq()));
         return rows;
     }
