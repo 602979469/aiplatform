@@ -50,7 +50,7 @@ VALUES (1,   'AI 应用',    0, 1, '/ai',        '',                            
        (402, '配置管理',    400, 3, 'config',   'cluster/config/index',        'C', '0', '0', 'cluster:config:list',     'el-icon-s-tools',         '业务pod配置菜单'),
        (403, '实例管理',    400, 4, 'runtime',  'cluster/runtime/index',       'C', '0', '0', 'cluster:runtime:list',    'el-icon-monitor',         '实例管理菜单'),
        (404, '密钥管理',    400, 5, 'secret',   'cluster/secret/index',        'C', '0', '0', 'cluster:secret:list',     'el-icon-lock',            '集群密钥管理菜单'),
-       (405, '域名映射',    400, 6, 'domain',   'cluster/domain/index',        'C', '0', '0', 'cluster:domain:list',     'el-icon-link',            '集群域名映射菜单'),
+       (406, '域名映射',    400, 6, 'domain',   'cluster/domain/index',        'C', '0', '0', 'cluster:domain:list',     'el-icon-link',            '集群域名映射菜单'),
        (500, '文件管理',    200, 4, 'file',     'ParentView',                  'M', '0', '0', null,                      'el-icon-folder',          '文件管理目录（系统管理下）'),
        (501, '文件列表',    500, 1, 'list',     'file/index',                  'C', '0', '0', 'file:list',               'el-icon-folder-opened',   '文件管理列表'),
        (601, '题库搜索',    610, 4, 'search',   'kb/question/index',           'C', '0', '0', 'kb:question:search',      'el-icon-search',          '题库搜索菜单'),
@@ -117,7 +117,7 @@ SELECT 1, menu_id FROM auth_menu WHERE status = '0';
 INSERT IGNORE INTO auth_role_menu (role_id, menu_id)
 SELECT 2, menu_id FROM auth_menu
 WHERE status = '0'
-  AND menu_id IN (100, 101, 200, 204, 303, 400, 401, 402, 403, 404, 405, 500, 501, 601,
+  AND menu_id IN (100, 101, 200, 204, 303, 400, 401, 402, 403, 404, 405, 406, 500, 501, 601,
                   610, 611, 612, 613);
 
 -- 6. AI 能力（镜像加速器：版本匹配）
