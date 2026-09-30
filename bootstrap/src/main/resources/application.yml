@@ -102,3 +102,74 @@ es:
   username: ${ES_USERNAME:elastic}
   password: ${ES_PASSWORD:}
   question-index: ${ES_QUESTION_INDEX:java-kb}
+
+# 家庭装修采购（家具采购清单 / 预算报告）
+aiplatform:
+  home:
+    # 家具类型树（大类 → 小类）。整体覆盖用环境变量 AIPLATFORM_HOME_FURNITURE_TYPES（同样格式的 JSON 字符串）。
+    # icon 是给前端的简易素材标识（emoji 或图标名），前端直接渲染。
+    furniture-types: |
+      [
+        {"code":"hardcover","name":"硬装","icon":"🧱","children":[
+          {"code":"water_electric","name":"水电改造","icon":"💧"},
+          {"code":"waterproof","name":"防水","icon":"🛡️"},
+          {"code":"tile","name":"瓷砖/泥瓦","icon":"🧿"},
+          {"code":"floor","name":"地板","icon":"🪵"},
+          {"code":"wall_paint","name":"墙面/乳胶漆","icon":"🎨"},
+          {"code":"ceiling","name":"吊顶","icon":"🔲"},
+          {"code":"switch_socket","name":"开关插座","icon":"🔌"},
+          {"code":"hardware","name":"五金配件","icon":"🔩"},
+          {"code":"bathroom","name":"卫浴洁具","icon":"🚿"},
+          {"code":"kitchen_ware","name":"厨房水槽/龙头","icon":"🍽️"}
+        ]},
+        {"code":"door_window","name":"门窗","icon":"🚪","children":[
+          {"code":"entry_door","name":"入户门","icon":"🚪"},
+          {"code":"interior_door","name":"室内门","icon":"🛎️"},
+          {"code":"sliding_door","name":"推拉门","icon":"↔️"},
+          {"code":"window","name":"窗户/断桥铝","icon":"🪟"},
+          {"code":"balcony_enclosure","name":"封阳台","icon":"🏠"},
+          {"code":"screen_net","name":"纱窗/防盗网","icon":"🕸️"}
+        ]},
+        {"code":"custom","name":"全屋定制","icon":"🧰","children":[
+          {"code":"cabinet","name":"橱柜","icon":"🍳"},
+          {"code":"wardrobe","name":"衣柜","icon":"👕"},
+          {"code":"shoe_cabinet","name":"玄关柜/鞋柜","icon":"👟"},
+          {"code":"tv_cabinet","name":"电视柜","icon":"📺"},
+          {"code":"bookcase","name":"书柜","icon":"📚"},
+          {"code":"tatami","name":"榻榻米","icon":"🛏️"},
+          {"code":"balcony_cabinet","name":"阳台柜","icon":"🧺"},
+          {"code":"other_custom","name":"其他定制","icon":"🧰"}
+        ]},
+        {"code":"soft","name":"软装","icon":"🛋️","children":[
+          {"code":"sofa","name":"沙发","icon":"🛋️"},
+          {"code":"bed","name":"床","icon":"🛏️"},
+          {"code":"mattress","name":"床垫","icon":"🛌"},
+          {"code":"dining_set","name":"餐桌椅","icon":"🍽️"},
+          {"code":"coffee_table","name":"茶几","icon":"🪑"},
+          {"code":"curtain","name":"窗帘","icon":"🧵"},
+          {"code":"lamp","name":"灯具","icon":"💡"},
+          {"code":"rug_painting","name":"地毯/装饰画","icon":"🖼️"},
+          {"code":"plant","name":"绿植","icon":"🪴"}
+        ]},
+        {"code":"appliance","name":"家电","icon":"🔌","children":[
+          {"code":"air_conditioner","name":"空调","icon":"❄️"},
+          {"code":"fridge","name":"冰箱","icon":"🧊"},
+          {"code":"washer","name":"洗衣机","icon":"🌀"},
+          {"code":"dryer","name":"烘干机","icon":"♨️"},
+          {"code":"tv","name":"电视","icon":"📺"},
+          {"code":"hood_stove","name":"油烟机/灶具","icon":"🔥"},
+          {"code":"water_heater","name":"热水器","icon":"🚿"},
+          {"code":"water_purifier","name":"净水器","icon":"🚰"},
+          {"code":"dishwasher","name":"洗碗机","icon":"🍽️"},
+          {"code":"robot_vacuum","name":"扫地机器人","icon":"🤖"}
+        ]},
+        {"code":"digital","name":"数码智能","icon":"📱","children":[
+          {"code":"computer","name":"电脑","icon":"💻"},
+          {"code":"monitor","name":"显示器","icon":"🖥️"},
+          {"code":"router","name":"路由器/组网","icon":"📶"},
+          {"code":"printer","name":"打印机","icon":"🖨️"},
+          {"code":"smart_lock","name":"智能门锁","icon":"🔐"},
+          {"code":"smart_home","name":"智能家居","icon":"🏠"},
+          {"code":"projector","name":"投影仪","icon":"📽️"}
+        ]}
+      ]

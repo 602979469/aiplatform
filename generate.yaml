@@ -80,3 +80,32 @@ tables:
     model_name: FileInfo
     model_comment: "文件信息表"
     generateController: true
+
+  - db_table_name: home_purchase_item
+    model_name: HomePurchaseItem
+    model_comment: "家庭装修采购项"
+    generateController: true
+    logicDelete:
+      enable: true
+      column_name: del_flag
+      normal_value: 0
+      delete_value: 2
+    columns:
+      budget_text:
+        comment: "预算原文（800~1200 或 999）"
+      budget_min:
+        comment: "预算下限（单件）"
+      budget_max:
+        comment: "预算上限（单件）"
+      install_fee:
+        comment: "安装费（单件）"
+      big_type_name:
+        comment: "大类名称（如 硬装）"
+      type_name:
+        comment: "小类名称（如 空调）"
+
+  # 采购项图片：内部表，不生成 Controller/Manager，由采购项服务在事务里编排
+  - db_table_name: home_purchase_item_image
+    model_name: HomePurchaseItemImage
+    model_comment: "家庭装修采购项图片"
+    generateController: false

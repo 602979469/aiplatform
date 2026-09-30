@@ -152,7 +152,7 @@ public class KbExamServiceImpl implements KbExamService {
         List<KbQuestion> questions = picked.stream()
                 .map(questionMap::get)
                 .filter(ObjectUtil::isNotNull)
-                .collect(Collectors.toList());
+                .toList();
         int count = questions.size();
         int totalScore = 0;
         for (KbQuestion question : questions) {

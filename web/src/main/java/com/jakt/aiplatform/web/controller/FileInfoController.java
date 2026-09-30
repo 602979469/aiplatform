@@ -172,6 +172,31 @@ public class FileInfoController {
     }
 
     /**
+     * 预览图片（inline 图片流，公开访问）：家具参考图等需要直接放进 img 标签的场景。
+     *
+     * <p>与 {@link #download} 的区别是不带 Content-Disposition: attachment，浏览器直接渲染；
+     * 与 {@link #avatar} 的区别是命名空间由调用方指定。
+     *
+     * @param id        文件主键
+     * @param namespace 业务命名空间
+     * @param response  HttpServletResponse
+     */
+    @GetMapping("/{id}/preview")
+    @SaIgnore
+    public void preview(@PathVariable Long id, @RequestParam String namespace, HttpServletResponse response) throws Exception {
+        FileInfoParamChecker.checkId(id);
+        FileInfoParamChecker.checkNamespace(namespace);
+        FileInfo fileInfo = fileInfoManager.getFile(id, namespace);
+        response.setContentType(resolveImageContentType(fileInfo.getFileType()));
+        response.setContentLengthLong(fileInfoManager.getContentSize(id, namespace));
+        try (InputStream inputStream = fileInfoManager.openContentStream(id, namespace);
+             OutputStream outputStream = response.getOutputStream()) {
+            IoUtil.copy(inputStream, outputStream);
+            outputStream.flush();
+        }
+    }
+
+    /**
      * 更新文件元信息（改名/备注）。
      *
      * @param id      文件主键

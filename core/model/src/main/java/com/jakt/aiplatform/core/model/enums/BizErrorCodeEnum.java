@@ -95,7 +95,16 @@ public enum BizErrorCodeEnum implements ErrorCode {
     /** 当前状态不允许该操作。 */
     IMAGE_EXISTS("镜像名+版本已存在"),
 
-    STATUS_NOT_ALLOWED("当前状态不允许该操作");
+    STATUS_NOT_ALLOWED("当前状态不允许该操作"),
+
+    /** 采购预算格式不正确。 */
+    PURCHASE_BUDGET_INVALID("采购预算格式不正确"),
+
+    /** 采购类型不在配置范围内。 */
+    PURCHASE_TYPE_NOT_MATCHED("采购类型不在配置范围内"),
+
+    /** 采购项图片数量超出上限。 */
+    PURCHASE_IMAGE_LIMIT_EXCEEDED("采购项图片数量超出上限");
 
     private final String message;
 

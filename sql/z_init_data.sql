@@ -62,7 +62,14 @@ VALUES (1,   'AI 应用',    0, 1, '/ai',        '',                            
        (611, '开始考试',    610, 1, 'start',    'kb/exam/start/index',         'C', '0', '0', 'kb:exam:start',           'el-icon-video-play',      '开始考试（组卷/答题）'),
        (612, '考试记录',    610, 2, 'history',  'kb/exam/history/index',       'C', '0', '0', 'kb:exam:start',           'el-icon-time',            '考试记录'),
        (613, '错题集',      610, 3, 'wrong',    'kb/exam/wrong/index',         'C', '0', '0', 'kb:exam:start',           'el-icon-warning-outline', '错题集'),
-       (614, '配置管理',    610, 6, 'template', 'kb/exam/template/index',      'C', '0', '0', 'kb:exam:template:edit',   'el-icon-setting',         '试卷模板（配置管理）')
+       (614, '配置管理',    610, 6, 'template', 'kb/exam/template/index',      'C', '0', '0', 'kb:exam:template:edit',   'el-icon-setting',         '试卷模板（配置管理）'),
+       (620, '装修采购',    0,   8, '/home-purchase', '',                        'M', '0', '0', null,                      'shopping',                '装修采购目录（家具采购清单 / 预算报告）'),
+       (621, '采购清单',    620, 1, 'list',    'homePurchase/index',          'C', '0', '0', 'home:purchase:list',      'list',                    '家具采购项清单（移动端/电脑端共用）'),
+       (622, '预算报告',    620, 2, 'report',  'homePurchase/report',         'C', '0', '0', 'home:purchase:report',    'documentation',           '预算报告（可打印/导出 PDF）'),
+       (6211, '采购项新增', 621, 1, '',        '',                            'F', '0', '0', 'home:purchase:add',       '',                        '采购项新增按钮'),
+       (6212, '采购项修改', 621, 2, '',        '',                            'F', '0', '0', 'home:purchase:edit',      '',                        '采购项修改按钮'),
+       (6213, '采购项删除', 621, 3, '',        '',                            'F', '0', '0', 'home:purchase:remove',    '',                        '采购项删除按钮'),
+       (6221, 'AI 推荐',    621, 4, '',        '',                            'F', '0', '0', 'home:purchase:recommend', '',                        'AI 推荐产品按钮')
 ON DUPLICATE KEY UPDATE
     menu_name = VALUES(menu_name),
     parent_id = VALUES(parent_id),
@@ -118,7 +125,7 @@ INSERT IGNORE INTO auth_role_menu (role_id, menu_id)
 SELECT 2, menu_id FROM auth_menu
 WHERE status = '0'
   AND menu_id IN (100, 101, 200, 204, 303, 400, 401, 402, 403, 404, 405, 406, 500, 501, 601,
-                  610, 611, 612, 613);
+                  610, 611, 612, 613, 620, 621, 622);
 
 -- 6. AI 能力（镜像加速器：版本匹配）
 INSERT INTO sys_ai_capability
@@ -128,6 +135,11 @@ VALUES
     ('MIRROR_ACCELERATOR', 'IMAGE_VERSION_MATCH', '镜像版本匹配',
      '镜像搜索时从厂商 tag 列表选出符合用户期望版本的 tag',
      '你是 Docker 镜像 tag 版本匹配专家。用户会提供：基础镜像名、用户期望版本（如 17、8.0、11）、以及一个厂商镜像的 tag 列表。\n你的任务：从 tag 列表中挑选 1~2 个最符合用户期望版本的 tag。\n硬性规则（违反即拒绝）：\n1. 期望版本不是 latest 时，候选 tag 必须满足以下之一：与期望版本完全相等（如 11 == 11）；或以前缀“期望版本.”开头（如 11 -> 11.0.32、11.0.13-jdk）；或以前缀“期望版本-”开头（如 11 -> 11-jdk、11-jdk-slim）。\n2. 期望版本只是 tag 的子串不算匹配（如 27-ea-11-trixie 对 11 是误判，必须拒绝）。\n3. 期望版本是 latest 时，优先选名为 latest 的 tag；没有则选最新稳定版。\n4. 有 jre/jdk/debian/alpine 等变体时优先主流变体；同版本下优先常规变体。\n只输出严格 JSON（不要输出 JSON 以外的内容）：\n{"matches":[{"tag":"11.0.32-jdk","reason":"主版本 11 前缀匹配","confidence":0.98}],"fallback":""}\n说明：matches 最多 2 个按优先级排序；没有任何合法匹配时 matches 为空数组且 fallback 返回空字符串。',
+     '0', 'admin', NOW(), NOW())
+    ,
+    ('HOME_PURCHASE', 'PRODUCT_RECOMMEND', '家具产品推荐',
+     '装修采购场景：按家具/家电类型推荐 3 款经济性好、销量高的在售产品',
+     '你是一个中国市场家电领域的资深从业者，能为客户选择一款经济型好、销量高、产品优秀的选项。\n输入会给出：家具/家电类型（如空调）、用户预算区间（可能未提供）、用户的补充说明。\n推荐规则：\n1. 只推荐中国市场在售的主流品牌型号，不虚构型号；拿不准的型号宁可不写。\n2. 优先“经济性好 + 销量高 + 口碑好”的组合，不要只堆高端旗舰。\n3. 用户给了预算就落在预算区间内；预算明显不现实时如实说明，并给出最接近的选择。\n4. 三款要有梯度：最省钱、最均衡、品质最好，并说明各自适合谁。\n只输出严格 JSON 数组（不要 Markdown 代码块、不要任何多余文字）：\n[{"name":"品牌 型号","priceRange":"2999~3599","reason":"不超过 60 字的中文推荐理由","highlights":["一级能效","销量靠前"]}]\n说明：必须正好 3 项；priceRange 用「下限~上限」或单一金额；highlights 每项 2~3 个短标签。',
      '0', 'admin', NOW(), NOW())
     ,
     ('EXAM', 'ANSWER_GRADING', '解答题判分',
