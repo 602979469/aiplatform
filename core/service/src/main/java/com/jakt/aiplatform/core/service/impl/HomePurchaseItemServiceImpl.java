@@ -266,17 +266,22 @@ public class HomePurchaseItemServiceImpl implements HomePurchaseItemService {
 
     /**
      * 提取回复中的 JSON 数组（允许模型包 ```json 代码块或加前后说明）。
+     *
+     * <p>必须按「第一个 [ 到最后一个 ]」截取：元素内部可能还有嵌套数组（如 highlights），
+     * 用第一个 ] 会截断成非法 JSON。
      */
     private List<ProductSuggestionView> parseJsonArray(String reply) {
         if (StrUtil.isBlank(reply)) {
             return List.of();
         }
-        String json = StrUtil.subBetween(reply, "[", "]");
-        if (StrUtil.isBlank(json)) {
+        int start = reply.indexOf('[');
+        int end = reply.lastIndexOf(']');
+        if (start < 0 || end <= start) {
             return List.of();
         }
+        String json = reply.substring(start, end + 1);
         try {
-            return JsonUtil.parseArray("[" + json + "]", ProductSuggestionView.class);
+            return JsonUtil.parseArray(json, ProductSuggestionView.class);
         } catch (Exception e) {
             LoggerUtil.warn(LogFileEnum.BIZ_SERVICE, "AI 推荐 JSON 解析失败：{}", e.getMessage());
             return List.of();
