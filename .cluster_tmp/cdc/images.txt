@@ -1,0 +1,6 @@
+# CDC 方案（Canal）镜像清单 —— 只需 1 个
+# canal-server 镜像同时用于 canal-server 与 canal-adapter（adapter 用官方 tar.gz 包挂载运行）
+canal/canal-server:v1.1.8    -> docker.xuanyuan.run/canal/canal-server:v1.1.8   [镜像站已有]
+
+# 非镜像依赖（已就位，无需你处理）
+# - canal.adapter-1.1.8.tar.gz 已解压到 /home/ubuntu/cdc/adapter（含 MySQL 驱动 + es8 插件）

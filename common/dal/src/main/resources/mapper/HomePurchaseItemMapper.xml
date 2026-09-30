@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.HomePurchaseItemMapper">
+
+    <sql id="selectColumns">
+        id, big_type_code, big_type_name, type_code, type_name, product_name, quantity, budget_text, budget_min, budget_max, install_fee, remark, user_id, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="bigTypeCode != null and bigTypeCode != ''">
+                AND big_type_code = #{bigTypeCode}
+            </if>
+            <if test="bigTypeName != null and bigTypeName != ''">
+                AND big_type_name = #{bigTypeName}
+            </if>
+            <if test="typeCode != null and typeCode != ''">
+                AND type_code = #{typeCode}
+            </if>
+            <if test="typeName != null and typeName != ''">
+                AND type_name = #{typeName}
+            </if>
+            <if test="productName != null and productName != ''">
+                AND product_name LIKE CONCAT('%', #{productName}, '%')
+            </if>
+            <if test="quantity != null">
+                AND quantity = #{quantity}
+            </if>
+            <if test="budgetText != null and budgetText != ''">
+                AND budget_text = #{budgetText}
+            </if>
+            <if test="budgetMin != null">
+                AND budget_min = #{budgetMin}
+            </if>
+            <if test="budgetMax != null">
+                AND budget_max = #{budgetMax}
+            </if>
+            <if test="installFee != null">
+                AND install_fee = #{installFee}
+            </if>
+            <if test="remark != null and remark != ''">
+                AND remark = #{remark}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            AND del_flag = '0'
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemDO">
+        SELECT <include refid="selectColumns"/>
+        FROM home_purchase_item
+        WHERE id = #{id}
+        AND del_flag = '0'
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemDO">
+        SELECT <include refid="selectColumns"/>
+        FROM home_purchase_item
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemDO">
+        SELECT <include refid="selectColumns"/>
+        FROM home_purchase_item
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectOne" resultType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemDO">
+        SELECT <include refid="selectColumns"/>
+        FROM home_purchase_item
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM home_purchase_item
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO home_purchase_item (big_type_code, big_type_name, type_code, type_name, product_name, quantity, budget_text, budget_min, budget_max, install_fee, remark, user_id, create_time, update_time)
+        VALUES (#{bigTypeCode}, #{bigTypeName}, #{typeCode}, #{typeName}, #{productName}, #{quantity}, #{budgetText}, #{budgetMin}, #{budgetMax}, #{installFee}, #{remark}, #{userId}, NOW(), NOW())
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemDO">
+        UPDATE home_purchase_item
+        SET big_type_code = #{bigTypeCode},
+            big_type_name = #{bigTypeName},
+            type_code = #{typeCode},
+            type_name = #{typeName},
+            product_name = #{productName},
+            quantity = #{quantity},
+            budget_text = #{budgetText},
+            budget_min = #{budgetMin},
+            budget_max = #{budgetMax},
+            install_fee = #{installFee},
+            remark = #{remark},
+            user_id = #{userId}, update_time = NOW()
+        WHERE id = #{id}
+        AND del_flag = '0'
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemDO">
+        <if test="bigTypeCode != null or bigTypeName != null or typeCode != null or typeName != null or productName != null or quantity != null or budgetText != null or budgetMin != null or budgetMax != null or installFee != null or remark != null or userId != null">
+            UPDATE home_purchase_item
+        <set>
+            <if test="bigTypeCode != null">
+                big_type_code = #{bigTypeCode},
+            </if>
+            <if test="bigTypeName != null">
+                big_type_name = #{bigTypeName},
+            </if>
+            <if test="typeCode != null">
+                type_code = #{typeCode},
+            </if>
+            <if test="typeName != null">
+                type_name = #{typeName},
+            </if>
+            <if test="productName != null">
+                product_name = #{productName},
+            </if>
+            <if test="quantity != null">
+                quantity = #{quantity},
+            </if>
+            <if test="budgetText != null">
+                budget_text = #{budgetText},
+            </if>
+            <if test="budgetMin != null">
+                budget_min = #{budgetMin},
+            </if>
+            <if test="budgetMax != null">
+                budget_max = #{budgetMax},
+            </if>
+            <if test="installFee != null">
+                install_fee = #{installFee},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+            <if test="userId != null">
+                user_id = #{userId},
+            </if>
+            update_time = NOW(),
+        </set>
+            WHERE id = #{id}
+            AND del_flag = '0'
+        </if>
+    </update>
+
+    <update id="deleteById" parameterType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemDO">
+        UPDATE home_purchase_item
+        SET del_flag = '2'
+        WHERE id = #{id} AND del_flag = '0'
+    </update>
+</mapper>

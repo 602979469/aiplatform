@@ -1,0 +1,154 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: canal-adapter-conf
+  namespace: cdc
+data:
+  application.yml: |
+    server:
+      port: 8081
+    spring:
+      jackson:
+        date-format: yyyy-MM-dd HH:mm:ss
+        time-zone: GMT+8
+        default-property-inclusion: non_null
+    canal.conf:
+      mode: tcp
+      flatMessage: true
+      syncBatchSize: 1000
+      retries: -1
+      # canal 1.1.8 的 AdapterProcessor 会对 accessKey/secretKey 做 Properties.put，
+      # 值为 null 会直接抛 NPE（TCP 模式不参与认证，给非空占位即可）
+      accessKey: canal
+      secretKey: canal
+      consumerProperties:
+        canal.tcp.server.host: canal-server:11111
+        canal.tcp.batch.size: 500
+      srcDataSources:
+        defaultDS:
+          url: jdbc:mysql://mysql.tsk.svc.cluster.local:3306/aiplatform?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+          username: canal
+          password: ${CANAL_DB_PASSWORD}
+      canalAdapters:
+        - instance: example
+          groups:
+            - groupId: g1
+              outerAdapters:
+                - name: es8
+                  hosts: elasticsearch.efk.svc.cluster.local:9200
+                  properties:
+                    security.auth: elastic:${ES_PASSWORD}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: canal-adapter-es8-mapping
+  namespace: cdc
+data:
+  # PoC：同步 cluster_pod_config 表到 ES 索引 biz_cluster_pod_config
+  cluster_pod_config.yml: |
+    dataSourceKey: defaultDS
+    destination: example
+    groupId: g1
+    esMapping:
+      _index: biz_cluster_pod_config
+      _id: id
+      upsert: true
+      pk: id
+      sql: "select id, resource_name, pod_name, namespace, image_id, last_built_commit, status, remark from cluster_pod_config"
+      commitBatch: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: canal-adapter
+  namespace: cdc
+  labels:
+    app: canal-adapter
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: canal-adapter
+  template:
+    metadata:
+      labels:
+        app: canal-adapter
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-master
+      initContainers:
+        # hostPath 上残留的 pid 文件（bin/adapter.pid）会让 startup.sh 拒绝启动，这里每次清掉
+        - name: clean-pid
+          image: docker.io/canal/canal-server:v1.1.8
+          command: ["sh", "-c", "rm -f /opt/adapter/bin/adapter.pid /opt/adapter/logs/adapter.pid"]
+          volumeMounts:
+            - name: adapter
+              mountPath: /opt/adapter
+      containers:
+        - name: canal-adapter
+          # adapter 官方只有 tar.gz 包，这里复用 canal-server 镜像自带的 Java 8 跑挂载的 adapter
+          image: docker.io/canal/canal-server:v1.1.8
+          imagePullPolicy: IfNotPresent
+          # 不用 startup.sh：它是后台起 JVM 再退出，容器会被判为退出而反复重启。
+          # 这里直接前台跑主类，日志进 stdout，容器生命周期与 JVM 一致。
+          command:
+            - sh
+            - -c
+            - exec /usr/bin/java -server -Xms256m -Xmx512m -Xss512k -Djava.awt.headless=true -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8 -DappName=canal-adapter -classpath "/opt/adapter/conf:/opt/adapter/lib/*" com.alibaba.otter.canal.adapter.launcher.CanalAdapterApplication
+          env:
+            - name: CANAL_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cdc-secret
+                  key: canal-db-password
+            - name: ES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cdc-secret
+                  key: es-password
+          ports:
+            - name: http
+              containerPort: 8081
+          resources:
+            requests:
+              memory: 512Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: adapter
+              mountPath: /opt/adapter
+            - name: adapter-conf
+              mountPath: /opt/adapter/conf/application.yml
+              subPath: application.yml
+            - name: adapter-es8
+              mountPath: /opt/adapter/conf/es8/cluster_pod_config.yml
+              subPath: cluster_pod_config.yml
+      volumes:
+        - name: adapter
+          hostPath:
+            path: /home/ubuntu/cdc/adapter
+            type: Directory
+        - name: adapter-conf
+          configMap:
+            name: canal-adapter-conf
+        - name: adapter-es8
+          configMap:
+            name: canal-adapter-es8-mapping
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: canal-adapter
+  namespace: cdc
+  labels:
+    app: canal-adapter
+spec:
+  selector:
+    app: canal-adapter
+  ports:
+    - name: http
+      port: 8081
+      targetPort: 8081

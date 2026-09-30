@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jakt.aiplatform.common.dal.mapper.HomePurchaseItemImageMapper">
+
+    <sql id="selectColumns">
+        id, item_id, file_id, order_num, create_time, update_time
+    </sql>
+
+    <sql id="queryConditions">
+        <where>
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="itemId != null">
+                AND item_id = #{itemId}
+            </if>
+            <if test="itemIds != null and itemIds.size() > 0">
+                AND item_id IN
+                <foreach collection="itemIds" item="itemIdValue" open="(" separator="," close=")">
+                    #{itemIdValue}
+                </foreach>
+            </if>
+            <if test="fileId != null">
+                AND file_id = #{fileId}
+            </if>
+            <if test="orderNum != null">
+                AND order_num = #{orderNum}
+            </if>
+            <if test="createTimeBegin != null">
+                AND create_time &gt;= #{createTimeBegin}
+            </if>
+            <if test="createTimeEnd != null">
+                AND create_time &lt;= #{createTimeEnd}
+            </if>
+            <if test="updateTimeBegin != null">
+                AND update_time &gt;= #{updateTimeBegin}
+            </if>
+            <if test="updateTimeEnd != null">
+                AND update_time &lt;= #{updateTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectById" resultType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemImageDO">
+        SELECT <include refid="selectColumns"/>
+        FROM home_purchase_item_image
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectPage" resultType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemImageDO">
+        SELECT <include refid="selectColumns"/>
+        FROM home_purchase_item_image
+        <include refid="queryConditions"/>
+        ORDER BY order_num ASC, id ASC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="selectList" resultType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemImageDO">
+        SELECT <include refid="selectColumns"/>
+        FROM home_purchase_item_image
+        <include refid="queryConditions"/>
+        ORDER BY order_num ASC, id ASC
+    </select>
+
+    <select id="selectOne" resultType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemImageDO">
+        SELECT <include refid="selectColumns"/>
+        FROM home_purchase_item_image
+        <include refid="queryConditions"/>
+        ORDER BY id DESC
+    </select>
+
+    <select id="countByQuery" resultType="long">
+        SELECT COUNT(*)
+        FROM home_purchase_item_image
+        <include refid="queryConditions"/>
+    </select>
+
+    <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemImageDO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO home_purchase_item_image (item_id, file_id, order_num, create_time, update_time)
+        VALUES (#{itemId}, #{fileId}, #{orderNum}, NOW(), NOW())
+    </insert>
+
+    <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemImageDO">
+        UPDATE home_purchase_item_image
+        SET item_id = #{itemId},
+            file_id = #{fileId},
+            order_num = #{orderNum}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.HomePurchaseItemImageDO">
+        <if test="itemId != null or fileId != null or orderNum != null">
+            UPDATE home_purchase_item_image
+        <set>
+            <if test="itemId != null">
+                item_id = #{itemId},
+            </if>
+            <if test="fileId != null">
+                file_id = #{fileId},
+            </if>
+            <if test="orderNum != null">
+                order_num = #{orderNum},
+            </if>
+            update_time = NOW(),
+        </set>
+            WHERE id = #{id}
+        </if>
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM home_purchase_item_image WHERE id = #{id}
+    </delete>
+
+    <!-- 采购项图片全量替换：先按采购项清空，再按入参重建 -->
+    <delete id="deleteByItemId">
+        DELETE FROM home_purchase_item_image WHERE item_id = #{itemId}
+    </delete>
+</mapper>
