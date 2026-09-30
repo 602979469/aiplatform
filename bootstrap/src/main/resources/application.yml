@@ -170,6 +170,9 @@ aiplatform:
           {"code":"printer","name":"打印机","icon":"🖨️"},
           {"code":"smart_lock","name":"智能门锁","icon":"🔐"},
           {"code":"smart_home","name":"智能家居","icon":"🏠"},
-          {"code":"projector","name":"投影仪","icon":"📽️"}
-        ]}
+        {"code":"projector","name":"投影仪","icon":"📽️"}
+      ]},
+      {"code":"pending","name":"待分类","icon":"❓","children":[
+        {"code":"pending","name":"待设计师归类","icon":"❓"}
+      ]}
       ]
