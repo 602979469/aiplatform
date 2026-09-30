@@ -179,8 +179,17 @@ public class HomePurchaseItemServiceImpl implements HomePurchaseItemService {
 
     /**
      * 预算原文入库，同时解析出单件上下限供报表统计。
+     *
+     * <p>预算允许先留空（先录入大类型/类型/产品名称，手机端再补）：此时区间置空，
+     * 原文按空串入库（列 NOT NULL），报表侧按「待定」处理、不计入合计。
      */
     private void fillBudget(HomePurchaseItem homePurchaseItem) {
+        if (StrUtil.isBlank(homePurchaseItem.getBudgetText())) {
+            homePurchaseItem.setBudgetText(StrUtil.EMPTY);
+            homePurchaseItem.setBudgetMin(null);
+            homePurchaseItem.setBudgetMax(null);
+            return;
+        }
         BudgetRange budgetRange = BudgetRange.parse(homePurchaseItem.getBudgetText());
         homePurchaseItem.setBudgetMin(budgetRange.getMin());
         homePurchaseItem.setBudgetMax(budgetRange.getMax());

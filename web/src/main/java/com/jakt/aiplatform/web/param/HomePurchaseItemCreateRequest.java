@@ -34,8 +34,7 @@ public class HomePurchaseItemCreateRequest extends BaseRequest {
     /** 采购数量；不传按 1 处理。 */
     private Integer quantity;
 
-    /** 预算：区间（800~1200）或精确值（999）都可。 */
-    @NotBlank(message = "预算不能为空")
+    /** 预算：区间（800~1200）或精确值（999）都可；可以先留空，之后在手机端补填。 */
     @Size(max = 64, message = "预算长度不能超过 64")
     private String budgetText;
 
