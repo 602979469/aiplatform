@@ -39,6 +39,13 @@ class BudgetRangeTest {
     }
 
     @Test
+    void parseUnitPrice() {
+        BudgetRange range = BudgetRange.parse("150 元/㎡ ~ 280 元/㎡");
+        assertEquals(0, new BigDecimal("150").compareTo(range.getMin()));
+        assertEquals(0, new BigDecimal("280").compareTo(range.getMax()));
+    }
+
+    @Test
     void parseReversedInput() {
         BudgetRange range = BudgetRange.parse("1200-800");
         assertEquals(0, new BigDecimal("800").compareTo(range.getMin()));

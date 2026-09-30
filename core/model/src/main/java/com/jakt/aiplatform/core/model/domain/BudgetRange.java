@@ -20,8 +20,13 @@ public final class BudgetRange {
     /** 区间分隔符：全角/半角/中文写法，顺序即匹配优先级。 */
     private static final String[] SEPARATORS = {"~", "～", "≈", "—", "–", "...", "-", "到", "至"};
 
-    /** 需要剔除的货币与口语单位。 */
-    private static final String[] NOISE_TOKENS = {"￥", "¥", "$", ",", "元", "块", "人民币", "RMB", "rmb", "左右", "约"};
+    /**
+     * 需要剔除的货币与计量单位（装修报价常写「150 元/㎡」「800-1200 每平」）：
+     * 长词在前，避免先删掉短词后残留半个单位。
+     */
+    private static final String[] NOISE_TOKENS = {
+            "人民币", "RMB", "rmb", "左右", "平米", "平方", "㎡", "m²", "m2", "延米",
+            "￥", "¥", "$", ",", "/", "元", "块", "米", "平", "每", "约", "个", "套", "件", "台", "张"};
 
     /** 金额（单件）下限。 */
     private final BigDecimal min;
