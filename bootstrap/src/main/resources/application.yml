@@ -130,7 +130,8 @@ aiplatform:
           {"code":"dining_set","name":"餐桌椅","icon":"🍽️"},
           {"code":"bed","name":"床","icon":"🛏️"},
           {"code":"mattress","name":"床垫","icon":"🛌"},
-          {"code":"curtain","name":"窗帘","icon":"🧵"}
+          {"code":"curtain","name":"窗帘","icon":"🧵"},
+          {"code":"other_soft","name":"其他软装","icon":"📦"}
         ]},
         {"code":"appliance","name":"家电","icon":"🔌","children":[
           {"code":"air_conditioner","name":"空调","icon":"❄️"},
@@ -148,6 +149,7 @@ aiplatform:
           {"code":"water_purifier","name":"净水器","icon":"🚰"},
           {"code":"gas_stove","name":"燃气灶","icon":"🔥"},
           {"code":"water_heater","name":"热水器","icon":"🛁"},
-          {"code":"robot_vacuum","name":"扫地机器人","icon":"🤖"}
+          {"code":"robot_vacuum","name":"扫地机器人","icon":"🤖"},
+          {"code":"other_appliance","name":"其他家电","icon":"📦"}
         ]}
       ]

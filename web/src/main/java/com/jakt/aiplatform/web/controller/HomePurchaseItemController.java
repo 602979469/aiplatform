@@ -8,16 +8,19 @@ import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.core.model.domain.HomePurchaseItem;
 import com.jakt.aiplatform.core.model.dto.ProductSuggestionView;
+import com.jakt.aiplatform.core.model.dto.PurchaseItemDraftView;
 import com.jakt.aiplatform.web.assembler.HomePurchaseItemAssembler;
 import com.jakt.aiplatform.web.checker.HomePurchaseItemParamChecker;
 import com.jakt.aiplatform.web.param.HomePurchaseItemCreateRequest;
 import com.jakt.aiplatform.web.param.HomePurchaseItemQueryRequest;
 import com.jakt.aiplatform.web.param.HomePurchaseItemRecommendRequest;
+import com.jakt.aiplatform.web.param.HomePurchaseItemParseRequest;
 import com.jakt.aiplatform.web.param.HomePurchaseItemUpdateRequest;
 import com.jakt.aiplatform.web.result.ApiResult;
 import com.jakt.aiplatform.web.result.FurnitureTypeResponse;
 import com.jakt.aiplatform.web.result.HomePurchaseItemResponse;
 import com.jakt.aiplatform.web.result.ProductSuggestionResponse;
+import com.jakt.aiplatform.web.result.PurchaseItemDraftResponse;
 import com.jakt.aiplatform.web.template.ApiTemplate;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -186,7 +189,34 @@ public class HomePurchaseItemController {
     }
 
     /**
+     * 一句话录入：把用户口语转成采购项草稿（移动端专用，只做抽取不落库）。
+     *
+     * <p>返回给用户确认；确认后走 {@code POST /api/v1/homePurchaseItems} 落库，校验逻辑与手动录入一致。
+     *
+     * @param request 一句话请求体
+     * @return 解析草稿（给用户看的预期效果）
+     */
+    @PostMapping("/parse")
+    public ApiResult<PurchaseItemDraftResponse> parse(@RequestBody HomePurchaseItemParseRequest request) {
+        return ApiTemplate.execute(request, new ApiTemplate.Callback<>() {
+
+            @Override
+            public void beforeService(HomePurchaseItemParseRequest param) {
+                HomePurchaseItemParamChecker.checkHomePurchaseItemParseRequest(param);
+            }
+
+            @Override
+            public PurchaseItemDraftResponse execute(HomePurchaseItemParseRequest param) {
+                PurchaseItemDraftView draft = homePurchaseItemManager.parseByText(param.getText());
+                return HomePurchaseItemAssembler.toDraftResponse(draft);
+            }
+        });
+    }
+
+    /**
      * 更新家庭装修采购项（全量）：类型名称与预算区间由服务端重算，图片整体替换。
+     *
+     * <p>一句话录入解析出的草稿，最终也是走这个接口落库，校验逻辑完全一致。
      *
      * @param id 主键
      * @param request 更新内容

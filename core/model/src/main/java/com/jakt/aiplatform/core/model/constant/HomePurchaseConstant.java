@@ -11,6 +11,9 @@ public final class HomePurchaseConstant {
     /** 产品推荐能力编码（sys_ai_capability.capability_code）。 */
     public static final String CAPABILITY_PRODUCT_RECOMMEND = "PRODUCT_RECOMMEND";
 
+    /** 一句话录入能力编码（sys_ai_capability.capability_code）。 */
+    public static final String CAPABILITY_ITEM_PARSE = "ITEM_PARSE";
+
     /** 单个采购项最多图片数。 */
     public static final int MAX_IMAGE_COUNT = 10;
 

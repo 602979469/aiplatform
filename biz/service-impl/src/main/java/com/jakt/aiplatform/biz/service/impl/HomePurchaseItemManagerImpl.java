@@ -7,6 +7,7 @@ import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.core.model.domain.FurnitureTypeGroup;
 import com.jakt.aiplatform.core.model.domain.HomePurchaseItem;
 import com.jakt.aiplatform.core.model.dto.ProductSuggestionView;
+import com.jakt.aiplatform.core.model.dto.PurchaseItemDraftView;
 import com.jakt.aiplatform.core.model.param.HomePurchaseItemQueryParam;
 import com.jakt.aiplatform.core.service.FurnitureTypeService;
 import com.jakt.aiplatform.core.service.HomePurchaseItemService;
@@ -83,5 +84,13 @@ public class HomePurchaseItemManagerImpl implements HomePurchaseItemManager {
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "AI 产品推荐完成 类型={} 返回条数={}",
                 typeCode, suggestions.size());
         return suggestions;
+    }
+
+    @Override
+    public PurchaseItemDraftView parseByText(String text) {
+        PurchaseItemDraftView draft = homePurchaseItemService.parseByText(text);
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "一句话录入解析完成 类型={} 名称={}",
+                draft.getTypeName(), draft.getProductName());
+        return draft;
     }
 }

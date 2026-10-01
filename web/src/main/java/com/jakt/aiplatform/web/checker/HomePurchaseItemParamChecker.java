@@ -7,6 +7,7 @@ import com.jakt.aiplatform.common.framework.tools.ParamValidator;
 import com.jakt.aiplatform.web.param.HomePurchaseItemCreateRequest;
 import com.jakt.aiplatform.web.param.HomePurchaseItemQueryRequest;
 import com.jakt.aiplatform.web.param.HomePurchaseItemRecommendRequest;
+import com.jakt.aiplatform.web.param.HomePurchaseItemParseRequest;
 import com.jakt.aiplatform.web.param.HomePurchaseItemUpdateRequest;
 
 /**
@@ -67,6 +68,16 @@ public final class HomePurchaseItemParamChecker {
      */
     public static void checkHomePurchaseItemRecommendRequest(HomePurchaseItemRecommendRequest request) {
         AssertUtil.throwErrWhenNull(request, ErrorCodeEnum.PARAM_INVALID, "推荐参数不能为空");
+        ParamValidator.validate(request);
+    }
+
+    /**
+     * 检查一句话录入参数。
+     *
+     * @param request 一句话录入请求
+     */
+    public static void checkHomePurchaseItemParseRequest(HomePurchaseItemParseRequest request) {
+        AssertUtil.throwErrWhenNull(request, ErrorCodeEnum.PARAM_INVALID, "参数不能为空");
         ParamValidator.validate(request);
     }
 }

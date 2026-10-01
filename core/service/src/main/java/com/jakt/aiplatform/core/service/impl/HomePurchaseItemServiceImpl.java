@@ -22,6 +22,7 @@ import com.jakt.aiplatform.core.model.domain.FurnitureTypeItem;
 import com.jakt.aiplatform.core.model.domain.HomePurchaseItem;
 import com.jakt.aiplatform.core.model.domain.HomePurchaseItemImage;
 import com.jakt.aiplatform.core.model.dto.ProductSuggestionView;
+import com.jakt.aiplatform.core.model.dto.PurchaseItemDraftView;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 import com.jakt.aiplatform.core.model.param.HomePurchaseItemImageQueryParam;
 import com.jakt.aiplatform.core.model.param.HomePurchaseItemQueryParam;
@@ -149,6 +150,123 @@ public class HomePurchaseItemServiceImpl implements HomePurchaseItemService {
         String reply = aiCapabilityService.invoke(HomePurchaseConstant.SCENE_CODE,
                 HomePurchaseConstant.CAPABILITY_PRODUCT_RECOMMEND, input);
         return parseSuggestions(reply);
+    }
+
+    @Override
+    public PurchaseItemDraftView parseByText(String text) {
+        AssertUtil.throwErrWhenBlank(text, ErrorCodeEnum.PARAM_INVALID, "说一句要添加什么吧");
+        PurchaseItemDraftView draft = parseDraft(aiCapabilityService.invoke(
+                HomePurchaseConstant.SCENE_CODE, HomePurchaseConstant.CAPABILITY_ITEM_PARSE, buildParseInput(text)));
+        // 模型判定"这句话跟新增采购项无关" → 把原因原样抛给用户
+        AssertUtil.throwErrWhenTrue(Boolean.FALSE.equals(draft.getValid()),
+                BizErrorCodeEnum.PURCHASE_TYPE_NOT_MATCHED,
+                StrUtil.blankToDefault(draft.getReason(), "没听懂要添加什么，换个说法试试"));
+
+        FurnitureTypeGroup group = furnitureTypeService.findGroup(draft.getBigTypeCode());
+        FurnitureTypeItem type = furnitureTypeService.findType(draft.getBigTypeCode(), draft.getTypeCode());
+        // 模型偶尔只回名称不回编码：按原话兜底匹配一次
+        if (ObjectUtil.isNull(type)) {
+            FurnitureTypeItem matched = matchTypeByText(text);
+            if (ObjectUtil.isNotNull(matched)) {
+                type = matched;
+                group = findGroupByTypeCode(matched.getCode());
+            }
+        }
+        AssertUtil.throwErrWhenNull(group, BizErrorCodeEnum.PURCHASE_TYPE_NOT_MATCHED,
+                "这句话里没找到对应的采购类型，换个说法试试");
+        AssertUtil.throwErrWhenNull(type, BizErrorCodeEnum.PURCHASE_TYPE_NOT_MATCHED,
+                "这句话里没找到对应的采购类型，换个说法试试");
+        AssertUtil.throwErrWhenBlank(draft.getProductName(), ErrorCodeEnum.PARAM_INVALID, "没听清要添加什么，再说一遍？");
+
+        // 与手动录入同一套校验：预算能解析、数量至少 1
+        if (StrUtil.isBlank(draft.getBudgetText())) {
+            draft.setBudgetText(StrUtil.EMPTY);
+        } else {
+            draft.setBudgetText(StrUtil.trim(draft.getBudgetText()));
+            BudgetRange.parse(draft.getBudgetText());
+        }
+        if (ObjectUtil.isNull(draft.getQuantity()) || draft.getQuantity() < 1) {
+            draft.setQuantity(HomePurchaseConstant.DEFAULT_QUANTITY);
+        }
+        draft.setBigTypeCode(group.getCode());
+        draft.setBigTypeName(group.getName());
+        draft.setTypeCode(type.getCode());
+        draft.setTypeName(type.getName());
+        draft.setProductName(StrUtil.trim(draft.getProductName()));
+        draft.setValid(true);
+        return draft;
+    }
+
+    /**
+     * 把当前类型配置喂给模型：模型只负责"对号入座"，类型编码不允许自由发挥。
+     */
+    private String buildParseInput(String text) {
+        StringBuilder catalog = new StringBuilder();
+        for (FurnitureTypeGroup group : furnitureTypeService.listGroups()) {
+            if (CollUtil.isEmpty(group.getChildren())) {
+                continue;
+            }
+            for (FurnitureTypeItem type : group.getChildren()) {
+                catalog.append(group.getCode()).append('|').append(group.getName()).append('|')
+                        .append(type.getCode()).append('|').append(type.getName()).append('\n');
+            }
+        }
+        return "可选类型清单：\n" + catalog + "\n用户原话：" + text;
+    }
+
+    /**
+     * 按小类名称在原话里兜底匹配；匹配不到返回 null。
+     */
+    private FurnitureTypeItem matchTypeByText(String text) {
+        for (FurnitureTypeGroup group : furnitureTypeService.listGroups()) {
+            for (FurnitureTypeItem type : CollUtil.emptyIfNull(group.getChildren())) {
+                if (StrUtil.contains(text, type.getName())) {
+                    return type;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 按小类编码反查所属大类。
+     */
+    private FurnitureTypeGroup findGroupByTypeCode(String typeCode) {
+        for (FurnitureTypeGroup group : furnitureTypeService.listGroups()) {
+            if (CollUtil.emptyIfNull(group.getChildren()).stream()
+                    .anyMatch(type -> StrUtil.equals(type.getCode(), typeCode))) {
+                return group;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 解析模型返回的 JSON 对象；解析不出来时按"没听懂"处理。
+     */
+    private PurchaseItemDraftView parseDraft(String reply) {
+        PurchaseItemDraftView draft = new PurchaseItemDraftView();
+        if (StrUtil.isBlank(reply)) {
+            return invalidDraft();
+        }
+        int start = reply.indexOf('{');
+        int end = reply.lastIndexOf('}');
+        if (start < 0 || end <= start) {
+            return invalidDraft();
+        }
+        try {
+            draft = JsonUtil.parseObject(reply.substring(start, end + 1), PurchaseItemDraftView.class);
+        } catch (Exception e) {
+            LoggerUtil.warn(LogFileEnum.BIZ_SERVICE, "一句话录入 JSON 解析失败：{}", e.getMessage());
+        }
+        return ObjectUtil.isNull(draft) ? invalidDraft() : draft;
+    }
+
+    private PurchaseItemDraftView invalidDraft() {
+        PurchaseItemDraftView draft = new PurchaseItemDraftView();
+        draft.setValid(Boolean.FALSE);
+        draft.setReason("没听清，再说一遍？");
+        return draft;
     }
 
     /**

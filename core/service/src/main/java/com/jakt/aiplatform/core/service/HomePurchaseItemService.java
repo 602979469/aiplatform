@@ -3,6 +3,7 @@ package com.jakt.aiplatform.core.service;
 import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.model.domain.HomePurchaseItem;
 import com.jakt.aiplatform.core.model.dto.ProductSuggestionView;
+import com.jakt.aiplatform.core.model.dto.PurchaseItemDraftView;
 import com.jakt.aiplatform.core.model.param.HomePurchaseItemQueryParam;
 
 import java.util.List;
@@ -70,4 +71,12 @@ public interface HomePurchaseItemService {
      * @return 候选产品列表；模型未按约定返回 JSON 时，原文放在单条建议的 reason 中
      */
     List<ProductSuggestionView> recommendProducts(String bigTypeCode, String typeCode, String budgetText, String remark);
+
+    /**
+     * 一句话录入：把用户口语转成采购项草稿（只做抽取，不落库，由用户确认后再走新增）。
+     *
+     * @param text 用户原话
+     * @return 解析草稿；类型/预算非法或与录入无关时抛业务异常
+     */
+    PurchaseItemDraftView parseByText(String text);
 }

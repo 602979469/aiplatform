@@ -8,6 +8,7 @@ import com.jakt.aiplatform.core.model.domain.FurnitureTypeItem;
 import com.jakt.aiplatform.core.model.domain.HomePurchaseItem;
 import com.jakt.aiplatform.core.model.domain.HomePurchaseItemImage;
 import com.jakt.aiplatform.core.model.dto.ProductSuggestionView;
+import com.jakt.aiplatform.core.model.dto.PurchaseItemDraftView;
 import com.jakt.aiplatform.core.model.param.HomePurchaseItemQueryParam;
 import com.jakt.aiplatform.web.param.HomePurchaseItemCreateRequest;
 import com.jakt.aiplatform.web.param.HomePurchaseItemQueryRequest;
@@ -16,6 +17,7 @@ import com.jakt.aiplatform.web.result.FurnitureTypeResponse;
 import com.jakt.aiplatform.web.result.HomePurchaseItemImageResponse;
 import com.jakt.aiplatform.web.result.HomePurchaseItemResponse;
 import com.jakt.aiplatform.web.result.ProductSuggestionResponse;
+import com.jakt.aiplatform.web.result.PurchaseItemDraftResponse;
 
 import java.util.List;
 
@@ -161,6 +163,28 @@ public final class HomePurchaseItemAssembler {
             response.setHighlights(suggestion.getHighlights());
             return response;
         }).toList();
+    }
+
+    /**
+     * 一句话录入草稿 → 响应 VO（给用户确认的预期效果）。
+     *
+     * @param draft 解析草稿；为空返回 null
+     * @return 草稿响应
+     */
+    public static PurchaseItemDraftResponse toDraftResponse(PurchaseItemDraftView draft) {
+        if (draft == null) {
+            return null;
+        }
+        PurchaseItemDraftResponse response = new PurchaseItemDraftResponse();
+        response.setValid(draft.getValid());
+        response.setBigTypeCode(draft.getBigTypeCode());
+        response.setBigTypeName(draft.getBigTypeName());
+        response.setTypeCode(draft.getTypeCode());
+        response.setTypeName(draft.getTypeName());
+        response.setProductName(draft.getProductName());
+        response.setBudgetText(draft.getBudgetText());
+        response.setQuantity(draft.getQuantity());
+        return response;
     }
 
     /**

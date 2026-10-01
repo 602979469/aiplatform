@@ -4,6 +4,7 @@ import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.model.domain.FurnitureTypeGroup;
 import com.jakt.aiplatform.core.model.domain.HomePurchaseItem;
 import com.jakt.aiplatform.core.model.dto.ProductSuggestionView;
+import com.jakt.aiplatform.core.model.dto.PurchaseItemDraftView;
 import com.jakt.aiplatform.core.model.param.HomePurchaseItemQueryParam;
 
 import java.util.List;
@@ -79,4 +80,12 @@ public interface HomePurchaseItemManager {
      */
     List<ProductSuggestionView> recommendProducts(String bigTypeCode, String typeCode,
                                                   String budgetText, String remark);
+
+    /**
+     * 一句话录入：把用户口语转成采购项草稿（不落库，等用户确认）。
+     *
+     * @param text 用户原话
+     * @return 解析草稿
+     */
+    PurchaseItemDraftView parseByText(String text);
 }
