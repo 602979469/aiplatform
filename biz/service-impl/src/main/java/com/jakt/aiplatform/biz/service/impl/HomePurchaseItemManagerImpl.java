@@ -78,9 +78,9 @@ public class HomePurchaseItemManagerImpl implements HomePurchaseItemManager {
 
     @Override
     public List<ProductSuggestionView> recommendProducts(String bigTypeCode, String typeCode,
-                                                         String budgetText, String remark) {
+                                                         String budgetText, String remark, String preference) {
         List<ProductSuggestionView> suggestions =
-                homePurchaseItemService.recommendProducts(bigTypeCode, typeCode, budgetText, remark);
+                homePurchaseItemService.recommendProducts(bigTypeCode, typeCode, budgetText, remark, preference);
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "AI 产品推荐完成 类型={} 返回条数={}",
                 typeCode, suggestions.size());
         return suggestions;

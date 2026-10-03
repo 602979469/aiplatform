@@ -182,7 +182,8 @@ public class HomePurchaseItemController {
             @Override
             public List<ProductSuggestionResponse> execute(HomePurchaseItemRecommendRequest param) {
                 List<ProductSuggestionView> suggestions = homePurchaseItemManager.recommendProducts(
-                        param.getBigTypeCode(), param.getTypeCode(), param.getBudgetText(), param.getRemark());
+                        param.getBigTypeCode(), param.getTypeCode(), param.getBudgetText(),
+                        param.getRemark(), param.getPreference());
                 return HomePurchaseItemAssembler.toSuggestionResponses(suggestions);
             }
         });

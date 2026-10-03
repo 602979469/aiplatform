@@ -68,9 +68,11 @@ public interface HomePurchaseItemService {
      * @param typeCode 小类编码
      * @param budgetText 用户填写的预算原文，可为空
      * @param remark 用户补充说明，可为空
+     * @param preference 本次推荐偏好（如「小米的」），可为空
      * @return 候选产品列表；模型未按约定返回 JSON 时，原文放在单条建议的 reason 中
      */
-    List<ProductSuggestionView> recommendProducts(String bigTypeCode, String typeCode, String budgetText, String remark);
+    List<ProductSuggestionView> recommendProducts(String bigTypeCode, String typeCode, String budgetText,
+                                                  String remark, String preference);
 
     /**
      * 一句话录入：把用户口语转成采购项草稿（只做抽取，不落库，由用户确认后再走新增）。

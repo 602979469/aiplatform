@@ -139,14 +139,15 @@ public class HomePurchaseItemServiceImpl implements HomePurchaseItemService {
 
     @Override
     public List<ProductSuggestionView> recommendProducts(String bigTypeCode, String typeCode,
-                                                         String budgetText, String remark) {
+                                                         String budgetText, String remark, String preference) {
         FurnitureTypeItem type = furnitureTypeService.findType(bigTypeCode, typeCode);
         AssertUtil.throwErrWhenNull(type, BizErrorCodeEnum.PURCHASE_TYPE_NOT_MATCHED,
                 "家具类型不在配置范围内：" + typeCode);
-        String input = StrUtil.format("家具类型：{}\n预算区间：{}\n补充说明：{}",
+        String input = StrUtil.format("家具类型：{}\n预算区间：{}\n补充说明：{}\n本次偏好：{}",
                 type.getName(),
                 StrUtil.blankToDefault(budgetText, "未提供"),
-                StrUtil.blankToDefault(remark, "无"));
+                StrUtil.blankToDefault(remark, "无"),
+                StrUtil.blankToDefault(preference, "无（按经济型/销量/口碑通用推荐）"));
         String reply = aiCapabilityService.invoke(HomePurchaseConstant.SCENE_CODE,
                 HomePurchaseConstant.CAPABILITY_PRODUCT_RECOMMEND, input);
         return parseSuggestions(reply);

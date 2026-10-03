@@ -76,10 +76,11 @@ public interface HomePurchaseItemManager {
      * @param typeCode 小类编码
      * @param budgetText 预算原文，可为空
      * @param remark 补充说明，可为空
+     * @param preference 本次推荐偏好，可为空
      * @return 候选产品列表
      */
     List<ProductSuggestionView> recommendProducts(String bigTypeCode, String typeCode,
-                                                  String budgetText, String remark);
+                                                  String budgetText, String remark, String preference);
 
     /**
      * 一句话录入：把用户口语转成采购项草稿（不落库，等用户确认）。
