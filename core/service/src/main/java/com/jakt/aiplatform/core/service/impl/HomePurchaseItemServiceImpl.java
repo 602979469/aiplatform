@@ -26,6 +26,7 @@ import com.jakt.aiplatform.core.model.dto.PurchaseItemDraftView;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 import com.jakt.aiplatform.core.model.param.HomePurchaseItemImageQueryParam;
 import com.jakt.aiplatform.core.model.param.HomePurchaseItemQueryParam;
+import com.jakt.aiplatform.core.model.param.ProductRecommendParam;
 import com.jakt.aiplatform.core.repository.HomePurchaseItemImageRepository;
 import com.jakt.aiplatform.core.repository.HomePurchaseItemRepository;
 import com.jakt.aiplatform.core.service.AiCapabilityService;
@@ -138,16 +139,16 @@ public class HomePurchaseItemServiceImpl implements HomePurchaseItemService {
     }
 
     @Override
-    public List<ProductSuggestionView> recommendProducts(String bigTypeCode, String typeCode,
-                                                         String budgetText, String remark, String preference) {
-        FurnitureTypeItem type = furnitureTypeService.findType(bigTypeCode, typeCode);
+    public List<ProductSuggestionView> recommendProducts(ProductRecommendParam param) {
+        FurnitureTypeItem type = furnitureTypeService.findType(param.getBigTypeCode(), param.getTypeCode());
         AssertUtil.throwErrWhenNull(type, BizErrorCodeEnum.PURCHASE_TYPE_NOT_MATCHED,
-                "家具类型不在配置范围内：" + typeCode);
-        String input = StrUtil.format("家具类型：{}\n预算区间：{}\n补充说明：{}\n本次偏好：{}",
+                "家具类型不在配置范围内：" + param.getTypeCode());
+        String input = StrUtil.format("家具类型：{}\n目标产品/关键词：{}\n预算区间：{}\n补充说明：{}\n本次偏好：{}",
                 type.getName(),
-                StrUtil.blankToDefault(budgetText, "未提供"),
-                StrUtil.blankToDefault(remark, "无"),
-                StrUtil.blankToDefault(preference, "无（按经济型/销量/口碑通用推荐）"));
+                StrUtil.blankToDefault(param.getProductName(), "无（只按类型推荐）"),
+                StrUtil.blankToDefault(param.getBudgetText(), "未提供"),
+                StrUtil.blankToDefault(param.getRemark(), "无"),
+                StrUtil.blankToDefault(param.getPreference(), "无（按经济型/销量/口碑通用推荐）"));
         String reply = aiCapabilityService.invoke(HomePurchaseConstant.SCENE_CODE,
                 HomePurchaseConstant.CAPABILITY_PRODUCT_RECOMMEND, input);
         return parseSuggestions(reply);

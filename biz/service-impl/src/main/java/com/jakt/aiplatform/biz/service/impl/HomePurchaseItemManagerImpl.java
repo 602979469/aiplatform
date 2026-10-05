@@ -9,6 +9,7 @@ import com.jakt.aiplatform.core.model.domain.HomePurchaseItem;
 import com.jakt.aiplatform.core.model.dto.ProductSuggestionView;
 import com.jakt.aiplatform.core.model.dto.PurchaseItemDraftView;
 import com.jakt.aiplatform.core.model.param.HomePurchaseItemQueryParam;
+import com.jakt.aiplatform.core.model.param.ProductRecommendParam;
 import com.jakt.aiplatform.core.service.FurnitureTypeService;
 import com.jakt.aiplatform.core.service.HomePurchaseItemService;
 import org.springframework.stereotype.Service;
@@ -77,12 +78,10 @@ public class HomePurchaseItemManagerImpl implements HomePurchaseItemManager {
     }
 
     @Override
-    public List<ProductSuggestionView> recommendProducts(String bigTypeCode, String typeCode,
-                                                         String budgetText, String remark, String preference) {
-        List<ProductSuggestionView> suggestions =
-                homePurchaseItemService.recommendProducts(bigTypeCode, typeCode, budgetText, remark, preference);
-        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "AI 产品推荐完成 类型={} 返回条数={}",
-                typeCode, suggestions.size());
+    public List<ProductSuggestionView> recommendProducts(ProductRecommendParam param) {
+        List<ProductSuggestionView> suggestions = homePurchaseItemService.recommendProducts(param);
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "AI 产品推荐完成 类型={} 关键词={} 偏好={} 返回条数={}",
+                param.getTypeCode(), param.getProductName(), param.getPreference(), suggestions.size());
         return suggestions;
     }
 

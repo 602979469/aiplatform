@@ -6,6 +6,7 @@ import com.jakt.aiplatform.core.model.domain.HomePurchaseItem;
 import com.jakt.aiplatform.core.model.dto.ProductSuggestionView;
 import com.jakt.aiplatform.core.model.dto.PurchaseItemDraftView;
 import com.jakt.aiplatform.core.model.param.HomePurchaseItemQueryParam;
+import com.jakt.aiplatform.core.model.param.ProductRecommendParam;
 
 import java.util.List;
 
@@ -72,15 +73,10 @@ public interface HomePurchaseItemManager {
     /**
      * AI 推荐 3 款候选产品。
      *
-     * @param bigTypeCode 大类编码
-     * @param typeCode 小类编码
-     * @param budgetText 预算原文，可为空
-     * @param remark 补充说明，可为空
-     * @param preference 本次推荐偏好，可为空
+     * @param param 推荐入参：类型 + 目标产品关键词 + 预算 + 说明 + 偏好
      * @return 候选产品列表
      */
-    List<ProductSuggestionView> recommendProducts(String bigTypeCode, String typeCode,
-                                                  String budgetText, String remark, String preference);
+    List<ProductSuggestionView> recommendProducts(ProductRecommendParam param);
 
     /**
      * 一句话录入：把用户口语转成采购项草稿（不落库，等用户确认）。

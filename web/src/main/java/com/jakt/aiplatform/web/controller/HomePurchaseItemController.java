@@ -9,6 +9,7 @@ import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.core.model.domain.HomePurchaseItem;
 import com.jakt.aiplatform.core.model.dto.ProductSuggestionView;
 import com.jakt.aiplatform.core.model.dto.PurchaseItemDraftView;
+import com.jakt.aiplatform.core.model.param.ProductRecommendParam;
 import com.jakt.aiplatform.web.assembler.HomePurchaseItemAssembler;
 import com.jakt.aiplatform.web.checker.HomePurchaseItemParamChecker;
 import com.jakt.aiplatform.web.param.HomePurchaseItemCreateRequest;
@@ -181,9 +182,14 @@ public class HomePurchaseItemController {
 
             @Override
             public List<ProductSuggestionResponse> execute(HomePurchaseItemRecommendRequest param) {
-                List<ProductSuggestionView> suggestions = homePurchaseItemManager.recommendProducts(
-                        param.getBigTypeCode(), param.getTypeCode(), param.getBudgetText(),
-                        param.getRemark(), param.getPreference());
+                ProductRecommendParam recommendParam = new ProductRecommendParam();
+                recommendParam.setBigTypeCode(param.getBigTypeCode());
+                recommendParam.setTypeCode(param.getTypeCode());
+                recommendParam.setProductName(param.getProductName());
+                recommendParam.setBudgetText(param.getBudgetText());
+                recommendParam.setRemark(param.getRemark());
+                recommendParam.setPreference(param.getPreference());
+                List<ProductSuggestionView> suggestions = homePurchaseItemManager.recommendProducts(recommendParam);
                 return HomePurchaseItemAssembler.toSuggestionResponses(suggestions);
             }
         });

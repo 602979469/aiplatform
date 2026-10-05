@@ -26,6 +26,10 @@ public class HomePurchaseItemRecommendRequest extends BaseRequest {
     /** 用户补充说明（户型、品牌偏好等），可为空。 */
     private String remark;
 
+    /** 目标产品/关键词（如「海尔法式双开门冰箱」），可为空；给了就围绕它推荐。 */
+    @Size(max = 100, message = "目标产品不要超过 100 字")
+    private String productName;
+
     /** 本次推荐的口味偏好（如「小米的」「要静音的」，可为空，空则按经济型/销量/口碑通用推荐）。 */
     @Size(max = 100, message = "偏好不要超过 100 字")
     private String preference;
