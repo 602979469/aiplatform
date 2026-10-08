@@ -1,6 +1,10 @@
 package com.jakt.aiplatform.core.service.impl;
 
 import cn.hutool.core.io.file.FileNameUtil;
+import cn.hutool.core.io.IoUtil;
+import cn.hutool.cache.CacheUtil;
+import cn.hutool.cache.impl.LRUCache;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.StrUtil;
@@ -9,11 +13,15 @@ import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.common.integration.minio.MinioStorage;
 import com.jakt.aiplatform.core.model.domain.FileInfo;
+import com.jakt.aiplatform.core.model.dto.FileThumbnailView;
 import com.jakt.aiplatform.core.model.enums.BizErrorCodeEnum;
 import com.jakt.aiplatform.core.model.param.FileInfoQueryParam;
 import com.jakt.aiplatform.core.repository.FileInfoRepository;
 import com.jakt.aiplatform.core.service.FileInfoService;
 import com.jakt.aiplatform.core.service.checker.FileInfoBizChecker;
+import com.jakt.aiplatform.common.framework.enums.LogFileEnum;
+import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
+import com.jakt.aiplatform.common.util.tools.ImageUtil;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -78,6 +86,36 @@ public class FileInfoServiceImpl implements FileInfoService {
     @Override
     public PageResult<FileInfo> findPage(FileInfoQueryParam query) {
         return fileInfoRepository.findPage(query);
+    }
+
+    /** 缩略图内存缓存：key=fileId:width，1 小时过期、最多 500 张，避免重复缩放吃 CPU。 */
+    private final LRUCache<String, byte[]> thumbnailCache = CacheUtil.newLRUCache(500, 60 * 60 * 1000L);
+
+    @Override
+    public FileThumbnailView getThumbnail(Long id, String namespace, Integer width) {
+        FileInfo fileInfo = getFile(id, namespace);
+        FileThumbnailView view = new FileThumbnailView();
+        // 内容变化（重传/替换）时 fileSize 会变，ETag 随之变化
+        view.setEtag("\"" + fileInfo.getId() + "-" + width + "-" + fileInfo.getFileSize() + "\"");
+        String cacheKey = id + ":" + width;
+        byte[] cached = thumbnailCache.get(cacheKey, false);
+        if (ObjectUtil.isNotNull(cached)) {
+            view.setContent(cached);
+            return view;
+        }
+        try (InputStream inputStream = openContentStream(id, namespace)) {
+            byte[] resized = ImageUtil.resizeToWidth(IoUtil.readBytes(inputStream), width);
+            if (ObjectUtil.isNull(resized)) {
+                // 不是图片或缩放失败：content 为空，由调用方回退原图
+                return view;
+            }
+            thumbnailCache.put(cacheKey, resized);
+            view.setContent(resized);
+            return view;
+        } catch (Exception e) {
+            LoggerUtil.warn(LogFileEnum.BIZ_SERVICE, "缩略图生成失败 id={} width={}：{}", id, width, e.getMessage());
+            return view;
+        }
     }
 
     @Override

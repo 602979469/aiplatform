@@ -1,6 +1,9 @@
 package com.jakt.aiplatform.biz.service.impl;
 
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.cache.CacheUtil;
+import cn.hutool.cache.impl.TimedCache;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -37,8 +40,21 @@ public class ClusterDomainManagerImpl implements ClusterDomainManager {
         this.ciProperties = ciProperties;
     }
 
+    /**
+     * 域名列表缓存：list() 要 SSH 到 master 执行脚本（约 4~5 秒），30 秒内重复调用直接返回；
+     * 增删改后立即清缓存，保证改完立刻能看到最新结果。
+     */
+    private final TimedCache<String, List<ClusterDomainView>> listCache = CacheUtil.newTimedCache(30 * 1000L);
+
+    /** 列表缓存 key。 */
+    private static final String LIST_CACHE_KEY = "all";
+
     @Override
     public List<ClusterDomainView> list() {
+        List<ClusterDomainView> cached = listCache.get(LIST_CACHE_KEY, false);
+        if (CollUtil.isNotEmpty(cached)) {
+            return cached;
+        }
         SshResult result = sshClient.execute(ciProperties.getMasterHost(),
                 "bash " + scriptPath() + " list", 60);
         if (!result.isSuccess()) {
@@ -60,6 +76,7 @@ public class ClusterDomainManagerImpl implements ClusterDomainManager {
             view.setPort(obj.getStr("port"));
             views.add(view);
         }
+        listCache.put(LIST_CACHE_KEY, views);
         return views;
     }
 
@@ -75,6 +92,7 @@ public class ClusterDomainManagerImpl implements ClusterDomainManager {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
                     "开启公网映射失败: " + StrUtil.maxLength(result.getOutput(), 300));
         }
+        listCache.remove(LIST_CACHE_KEY);
     }
 
     @Override
@@ -85,6 +103,7 @@ public class ClusterDomainManagerImpl implements ClusterDomainManager {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
                     "关闭公网映射失败: " + StrUtil.maxLength(result.getOutput(), 300));
         }
+        listCache.remove(LIST_CACHE_KEY);
     }
 
     @Override
@@ -95,6 +114,7 @@ public class ClusterDomainManagerImpl implements ClusterDomainManager {
             throw AiPlatformException.ofThrow(ErrorCodeEnum.SYSTEM_ERROR,
                     "删除公网映射失败: " + StrUtil.maxLength(result.getOutput(), 300));
         }
+        listCache.remove(LIST_CACHE_KEY);
     }
 
     /**

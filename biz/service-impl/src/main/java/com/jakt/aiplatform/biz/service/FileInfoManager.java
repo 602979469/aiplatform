@@ -2,6 +2,7 @@ package com.jakt.aiplatform.biz.service;
 
 import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.core.model.domain.FileInfo;
+import com.jakt.aiplatform.core.model.dto.FileThumbnailView;
 import com.jakt.aiplatform.core.model.param.FileInfoQueryParam;
 
 import java.io.InputStream;
@@ -51,6 +52,16 @@ public interface FileInfoManager {
      * @return 分页结果
      */
     PageResult<FileInfo> page(FileInfoQueryParam query);
+
+    /**
+     * 取图片缩略图（列表页用，避免直接拉原图）。
+     *
+     * @param id 文件主键
+     * @param namespace 业务命名空间
+     * @param width 目标宽度（像素）
+     * @return 缩略图（含 ETag）；content 为空表示不是图片，调用方回退原图
+     */
+    FileThumbnailView getThumbnail(Long id, String namespace, Integer width);
 
     /**
      * 获取文件元信息。

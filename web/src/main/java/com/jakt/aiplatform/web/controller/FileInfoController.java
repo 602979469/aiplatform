@@ -10,6 +10,7 @@ import com.jakt.aiplatform.biz.service.FileInfoManager;
 import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.common.util.tools.ConvertUtil;
 import com.jakt.aiplatform.core.model.domain.FileInfo;
+import com.jakt.aiplatform.core.model.dto.FileThumbnailView;
 import com.jakt.aiplatform.core.model.enums.FileNamespaceEnum;
 import com.jakt.aiplatform.web.assembler.FileInfoAssembler;
 import com.jakt.aiplatform.web.checker.FileInfoParamChecker;
@@ -21,6 +22,7 @@ import com.jakt.aiplatform.web.result.FileInfoResponse;
 import com.jakt.aiplatform.web.template.ApiTemplate;
 import com.jakt.aiplatform.web.util.MultipartFileUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -183,10 +185,40 @@ public class FileInfoController {
      */
     @GetMapping("/{id}/preview")
     @SaIgnore
-    public void preview(@PathVariable Long id, @RequestParam String namespace, HttpServletResponse response) throws Exception {
+    public void preview(@PathVariable Long id, @RequestParam String namespace,
+                        @RequestParam(required = false) Integer w,
+                        HttpServletRequest request, HttpServletResponse response) throws Exception {
         FileInfoParamChecker.checkId(id);
         FileInfoParamChecker.checkNamespace(namespace);
+        // 带 w 参数时走缩略图（列表页用）：原图几 MB，列表只需要几十 KB
+        if (ObjectUtil.isNotNull(w) && w > 0) {
+            // 防止有人拿它当图片处理器用：宽度收敛到 32~1600
+            int width = Math.min(Math.max(w, 32), 1600);
+            FileThumbnailView thumbnail = fileInfoManager.getThumbnail(id, namespace, width);
+            if (ObjectUtil.isNotNull(thumbnail.getContent())) {
+                response.setHeader("ETag", thumbnail.getEtag());
+                response.setHeader("Cache-Control", "public, max-age=604800");
+                if (thumbnail.getEtag().equals(request.getHeader("If-None-Match"))) {
+                    response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+                    return;
+                }
+                response.setContentType("image/jpeg");
+                response.setContentLength(thumbnail.getContent().length);
+                response.getOutputStream().write(thumbnail.getContent());
+                response.getOutputStream().flush();
+                return;
+            }
+            // 缩放失败（非图片等）：回退原图
+        }
         FileInfo fileInfo = fileInfoManager.getFile(id, namespace);
+        // 原图同样加缓存头 + ETag：不带的话每次进列表都会重下几 MB
+        String etag = "\"" + fileInfo.getId() + "-full-" + fileInfo.getFileSize() + "\"";
+        response.setHeader("ETag", etag);
+        response.setHeader("Cache-Control", "public, max-age=604800");
+        if (etag.equals(request.getHeader("If-None-Match"))) {
+            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+            return;
+        }
         response.setContentType(resolveImageContentType(fileInfo.getFileType()));
         response.setContentLengthLong(fileInfoManager.getContentSize(id, namespace));
         try (InputStream inputStream = fileInfoManager.openContentStream(id, namespace);

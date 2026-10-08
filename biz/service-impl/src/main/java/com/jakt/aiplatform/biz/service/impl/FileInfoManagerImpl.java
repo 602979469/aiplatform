@@ -7,6 +7,7 @@ import com.jakt.aiplatform.common.framework.result.PageResult;
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
 import com.jakt.aiplatform.core.model.domain.FileInfo;
+import com.jakt.aiplatform.core.model.dto.FileThumbnailView;
 import com.jakt.aiplatform.core.model.enums.FileNamespaceEnum;
 import com.jakt.aiplatform.core.model.param.FileInfoQueryParam;
 import com.jakt.aiplatform.core.service.FileInfoService;
@@ -71,6 +72,11 @@ public class FileInfoManagerImpl implements FileInfoManager {
             checkNamespace(query.getNamespace());
         }
         return fileInfoService.findPage(query);
+    }
+
+    @Override
+    public FileThumbnailView getThumbnail(Long id, String namespace, Integer width) {
+        return fileInfoService.getThumbnail(id, namespace, width);
     }
 
     @Override
