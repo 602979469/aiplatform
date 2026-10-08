@@ -17,16 +17,19 @@ public final class ClientInfoUtil {
     /**
      * 获取客户端 IP。
      *
-     * <p>读取顺序：可信代理写入的 X-Real-IP → X-Forwarded-For 最左侧 → 缺省 127.0.0.1。
-     * 公网入口为 Caddy（frp 隧道）时，Caddy 已把真实客户端 IP 写入 X-Real-IP，避免
-     * ingress-nginx 透传后只剩 127.0.0.1。
+     * <p>读取顺序：X-Forwarded-For 最左侧（可信代理写入的真实客户端）→ X-Real-IP → 缺省 127.0.0.1。
+     * 公网链路为 Caddy（frp 隧道）→ ingress-nginx：frp 会把连接源地址改成内网地址（如 10.244.0.1），
+     * nginx 据此回填的 X-Real-IP 同样是内网地址，只有 Caddy 追加在 X-Forwarded-For 最左侧的才是真实客户端。
      *
      * @return 客户端 IP
      */
     public static String getClientIp() {
-        String ip = SaHolder.getRequest().getHeader("X-Real-IP");
+        // 优先取 X-Forwarded-For：公网链路是 Caddy（frp 隧道）→ ingress-nginx，
+        // frp 会把连接源地址改成内网地址（如 10.244.0.1），nginx 据此回填的 X-Real-IP 也是内网地址，
+        // 只有 Caddy 追加在 X-Forwarded-For 最左侧的才是真实客户端 IP。
+        String ip = SaHolder.getRequest().getHeader("X-Forwarded-For");
         if (isInvalidIp(ip)) {
-            ip = SaHolder.getRequest().getHeader("X-Forwarded-For");
+            ip = SaHolder.getRequest().getHeader("X-Real-IP");
         }
         if (isInvalidIp(ip)) {
             return "127.0.0.1";
