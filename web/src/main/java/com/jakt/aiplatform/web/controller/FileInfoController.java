@@ -94,7 +94,7 @@ public class FileInfoController {
             public FileInfoResponse execute(FileUploadRequest param) {
                 FileInfo fileInfo = fileInfoManager.upload(param.getNamespace(),
                         MultipartFileUtil.readBytes(param.getFile()),
-                        param.getFile().getOriginalFilename(), param.getRemark());
+                        param.getFile().getOriginalFilename(), param.getRemark(), param.getCategory());
                 return FileInfoAssembler.toResponse(fileInfo);
             }
         });
@@ -216,7 +216,8 @@ public class FileInfoController {
 
             @Override
             public void execute(FileInfoUpdateRequest param) {
-                fileInfoManager.update(id, param.getNamespace(), param.getOriginalName(), param.getRemark());
+                fileInfoManager.update(id, param.getNamespace(), param.getOriginalName(),
+                        param.getRemark(), param.getCategory());
             }
         });
     }

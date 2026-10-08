@@ -18,4 +18,7 @@ public class FileInfoUpdateRequest extends BaseRequest {
 
     /** 新的备注；为空表示不修改。 */
     private String remark;
+
+    /** 新的素材类别；为空表示不修改。 */
+    private String category;
 }

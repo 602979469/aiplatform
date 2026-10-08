@@ -19,4 +19,7 @@ public class FileUploadRequest extends BaseRequest {
 
     /** 备注。 */
     private String remark;
+
+    /** 素材类别（素材库分类，可选）。 */
+    private String category;
 }

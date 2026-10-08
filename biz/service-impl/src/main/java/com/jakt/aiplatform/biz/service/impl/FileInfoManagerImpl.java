@@ -53,9 +53,15 @@ public class FileInfoManagerImpl implements FileInfoManager {
 
     @Override
     public FileInfo upload(String namespace, byte[] content, String originalName, String remark) {
+        return upload(namespace, content, originalName, remark, null);
+    }
+
+    @Override
+    public FileInfo upload(String namespace, byte[] content, String originalName, String remark, String category) {
         checkNamespace(namespace);
-        FileInfo created = fileInfoService.upload(namespace, content, originalName, remark);
-        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "文件上传成功 id={} namespace={}", created.getId(), namespace);
+        FileInfo created = fileInfoService.upload(namespace, content, originalName, remark, category);
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "文件上传成功 id={} namespace={} category={}",
+                created.getId(), namespace, category);
         return created;
     }
 
@@ -84,7 +90,12 @@ public class FileInfoManagerImpl implements FileInfoManager {
 
     @Override
     public void update(Long id, String namespace, String originalName, String remark) {
-        fileInfoService.updateMeta(id, namespace, originalName, remark);
+        update(id, namespace, originalName, remark, null);
+    }
+
+    @Override
+    public void update(Long id, String namespace, String originalName, String remark, String category) {
+        fileInfoService.updateMeta(id, namespace, originalName, remark, category);
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "文件元信息更新成功 id={} namespace={}", id, namespace);
     }
 

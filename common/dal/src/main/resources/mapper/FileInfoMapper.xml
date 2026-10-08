@@ -3,7 +3,7 @@
 <mapper namespace="com.jakt.aiplatform.common.dal.mapper.FileInfoMapper">
 
     <sql id="selectColumns">
-        id, namespace, original_name, file_size, file_type, object_key, remark, create_by, update_by, create_time, update_time
+        id, namespace, original_name, file_size, file_type, object_key, category, remark, create_by, update_by, create_time, update_time
     </sql>
 
     <sql id="queryConditions">
@@ -13,6 +13,13 @@
             </if>
             <if test="originalName != null and originalName != ''">
                 AND original_name LIKE CONCAT('%', #{originalName}, '%')
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+            <!-- 素材库：只看图片文件 -->
+            <if test="imageOnly != null and imageOnly == true">
+                AND file_type IN ('jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp')
             </if>
         </where>
     </sql>
@@ -52,8 +59,8 @@
 
     <insert id="insert" parameterType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO"
             useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO file_info (namespace, original_name, file_size, file_type, object_key, remark, create_by, update_by, create_time, update_time)
-        VALUES (#{namespace}, #{originalName}, #{fileSize}, #{fileType}, #{objectKey}, #{remark}, #{createBy}, #{updateBy}, NOW(), NOW())
+        INSERT INTO file_info (namespace, original_name, file_size, file_type, object_key, category, remark, create_by, update_by, create_time, update_time)
+        VALUES (#{namespace}, #{originalName}, #{fileSize}, #{fileType}, #{objectKey}, #{category}, #{remark}, #{createBy}, #{updateBy}, NOW(), NOW())
     </insert>
 
     <update id="update" parameterType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
@@ -63,6 +70,7 @@
             file_size = #{fileSize},
             file_type = #{fileType},
             object_key = #{objectKey},
+            category = #{category},
             remark = #{remark},
             create_by = #{createBy},
             update_by = #{updateBy}, update_time = NOW()
@@ -70,7 +78,7 @@
     </update>
 
     <update id="updateByCondition" parameterType="com.jakt.aiplatform.common.dal.dataobject.FileInfoDO">
-        <if test="originalName != null or fileSize != null or fileType != null or remark != null or updateBy != null">
+        <if test="originalName != null or fileSize != null or fileType != null or category != null or remark != null or updateBy != null">
             UPDATE file_info
             <set>
                 <if test="originalName != null">
@@ -84,6 +92,9 @@
                 </if>
                 <if test="remark != null">
                     remark = #{remark},
+                </if>
+                <if test="category != null">
+                    category = #{category},
                 </if>
                 <if test="updateBy != null">
                     update_by = #{updateBy},

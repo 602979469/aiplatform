@@ -44,17 +44,29 @@ public class FileInfoServiceImpl implements FileInfoService {
 
     @Override
     public FileInfo upload(String namespace, byte[] content, String originalName, String remark) {
-        return uploadStream(namespace, new ByteArrayInputStream(content), content.length, originalName, remark);
+        return upload(namespace, content, originalName, remark, null);
+    }
+
+    @Override
+    public FileInfo upload(String namespace, byte[] content, String originalName, String remark, String category) {
+        return uploadStream(namespace, new ByteArrayInputStream(content), content.length, originalName, remark, category);
     }
 
     @Override
     public FileInfo uploadStream(String namespace, InputStream content, long size, String originalName, String remark) {
+        return uploadStream(namespace, content, size, originalName, remark, null);
+    }
+
+    @Override
+    public FileInfo uploadStream(String namespace, InputStream content, long size, String originalName,
+                                 String remark, String category) {
         FileInfo fileInfo = new FileInfo();
         fileInfo.setNamespace(namespace);
         fileInfo.setOriginalName(originalName);
         fileInfo.setObjectKey(buildObjectKey(namespace));
         fileInfo.setFileSize(size);
         fileInfo.setFileType(StrUtil.nullToEmpty(FileNameUtil.extName(originalName)).toLowerCase());
+        fileInfo.setCategory(StrUtil.nullToEmpty(category));
         fileInfo.setRemark(remark);
         fileInfo.setCreateBy(Convert.toStr(UserContext.getUserId(), ""));
         fileInfo.setUpdateBy(Convert.toStr(UserContext.getUserId(), ""));
@@ -91,12 +103,21 @@ public class FileInfoServiceImpl implements FileInfoService {
 
     @Override
     public void updateMeta(Long id, String namespace, String originalName, String remark) {
+        updateMeta(id, namespace, originalName, remark, null);
+    }
+
+    @Override
+    public void updateMeta(Long id, String namespace, String originalName, String remark, String category) {
         FileInfo fileInfo = getFile(id, namespace);
         if (StrUtil.isNotBlank(originalName)) {
             fileInfo.setOriginalName(originalName);
         }
         if (StrUtil.isNotBlank(remark)) {
             fileInfo.setRemark(remark);
+        }
+        // 素材库分类：只支持设置/修改，暂不支持清空（updateByCondition 只更新非空字段）
+        if (StrUtil.isNotBlank(category)) {
+            fileInfo.setCategory(category);
         }
         fileInfo.setUpdateBy(Convert.toStr(UserContext.getUserId(), ""));
         int affected = fileInfoRepository.updateByCondition(fileInfo);

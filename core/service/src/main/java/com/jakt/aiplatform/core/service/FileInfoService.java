@@ -23,6 +23,18 @@ public interface FileInfoService {
     FileInfo upload(String namespace, byte[] content, String originalName, String remark);
 
     /**
+     * 上传文件并打素材类别（素材库用）。
+     *
+     * @param namespace 业务命名空间
+     * @param content 文件内容
+     * @param originalName 原始文件名
+     * @param remark 备注
+     * @param category 素材类别，可为空
+     * @return 文件元信息
+     */
+    FileInfo upload(String namespace, byte[] content, String originalName, String remark, String category);
+
+    /**
      * 流式上传文件（大文件走 MinIO 流式写入，不占内存）。
      *
      * @param namespace    业务命名空间
@@ -33,6 +45,20 @@ public interface FileInfoService {
      * @return 上传后的文件信息（主键已回填）
      */
     FileInfo uploadStream(String namespace, InputStream content, long size, String originalName, String remark);
+
+    /**
+     * 流式上传文件并打素材类别。
+     *
+     * @param namespace 业务命名空间
+     * @param content 文件输入流
+     * @param size 文件大小
+     * @param originalName 原始文件名
+     * @param remark 备注
+     * @param category 素材类别，可为空
+     * @return 文件元信息
+     */
+    FileInfo uploadStream(String namespace, InputStream content, long size, String originalName,
+                          String remark, String category);
 
     /**
      * 按 namespace 分页查询文件列表。
@@ -78,6 +104,17 @@ public interface FileInfoService {
      * @param remark       新的备注；为空表示不修改
      */
     void updateMeta(Long id, String namespace, String originalName, String remark);
+
+    /**
+     * 更新文件元信息（改名/备注/素材类别）。
+     *
+     * @param id 文件主键
+     * @param namespace 业务命名空间
+     * @param originalName 新文件名，为空不修改
+     * @param remark 新备注，为空不修改
+     * @param category 新素材类别，为空不修改
+     */
+    void updateMeta(Long id, String namespace, String originalName, String remark, String category);
 
     /**
      * 删除文件：先删磁盘文件，再删元数据。

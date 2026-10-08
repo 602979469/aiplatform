@@ -30,6 +30,7 @@ public final class FileInfoConvertor {
         target.setNamespace(source.getNamespace());
         target.setOriginalName(source.getOriginalName());
         target.setObjectKey(source.getObjectKey());
+        target.setCategory(source.getCategory());
         target.setFileSize(source.getFileSize());
         target.setFileType(source.getFileType());
         target.setRemark(source.getRemark());
@@ -52,6 +53,7 @@ public final class FileInfoConvertor {
         target.setNamespace(source.getNamespace());
         target.setOriginalName(source.getOriginalName());
         target.setObjectKey(source.getObjectKey());
+        target.setCategory(source.getCategory());
         target.setFileSize(source.getFileSize());
         target.setFileType(source.getFileType());
         target.setRemark(source.getRemark());
@@ -77,6 +79,8 @@ public final class FileInfoConvertor {
         target.setPageSize(source.getPageSize());
         target.setNamespace(source.getNamespace());
         target.setOriginalName(source.getOriginalName());
+        target.setCategory(source.getCategory());
+        target.setImageOnly(source.getImageOnly());
         return target;
     }
 }

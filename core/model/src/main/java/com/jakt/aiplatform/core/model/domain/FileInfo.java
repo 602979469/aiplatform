@@ -23,6 +23,9 @@ public class FileInfo extends BaseModel {
     /** MinIO 对象键（内容存对象存储，DB 只存元数据）。 */
     private String objectKey;
 
+    /** 素材类别（素材库分类，可空）。 */
+    private String category;
+
     /** 文件大小（字节）。 */
     private Long fileSize;
 

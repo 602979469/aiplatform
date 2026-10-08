@@ -69,7 +69,8 @@ VALUES (1,   'AI 应用',    0, 1, '/ai',        '',                            
        (6211, '采购项新增', 621, 1, '',        '',                            'F', '0', '0', 'home:purchase:add',       '',                        '采购项新增按钮'),
        (6212, '采购项修改', 621, 2, '',        '',                            'F', '0', '0', 'home:purchase:edit',      '',                        '采购项修改按钮'),
        (6213, '采购项删除', 621, 3, '',        '',                            'F', '0', '0', 'home:purchase:remove',    '',                        '采购项删除按钮'),
-       (6221, 'AI 推荐',    621, 4, '',        '',                            'F', '0', '0', 'home:purchase:recommend', '',                        'AI 推荐产品按钮')
+       (6221, 'AI 推荐',    621, 4, '',        '',                            'F', '0', '0', 'home:purchase:recommend', '',                        'AI 推荐产品按钮'),
+       (205, '素材库',      200, 6, 'material', 'system/material/index',       'C', '0', '0', 'system:material:list',    'picture',                 '素材库（图片素材分类管理）')
 ON DUPLICATE KEY UPDATE
     menu_name = VALUES(menu_name),
     parent_id = VALUES(parent_id),
@@ -124,7 +125,7 @@ SELECT 1, menu_id FROM auth_menu WHERE status = '0';
 INSERT IGNORE INTO auth_role_menu (role_id, menu_id)
 SELECT 2, menu_id FROM auth_menu
 WHERE status = '0'
-  AND menu_id IN (100, 101, 200, 204, 303, 400, 401, 402, 403, 404, 405, 406, 500, 501, 601,
+  AND menu_id IN (100, 101, 200, 204, 205, 303, 400, 401, 402, 403, 404, 405, 406, 500, 501, 601,
                   610, 611, 612, 613, 620, 621, 622);
 
 -- 6. AI 能力（镜像加速器：版本匹配）

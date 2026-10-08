@@ -15,4 +15,10 @@ public class FileInfoQueryRequest extends PageQueryRequest {
 
     /** 原始文件名（模糊匹配，可选）。 */
     private String fileName;
+
+    /** 素材类别（素材库分类，可选）。 */
+    private String category;
+
+    /** 只看图片文件（素材库列表用，可选）。 */
+    private Boolean imageOnly;
 }

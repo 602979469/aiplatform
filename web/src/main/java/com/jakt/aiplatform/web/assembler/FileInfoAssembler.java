@@ -28,6 +28,8 @@ public final class FileInfoAssembler {
         FileInfoQueryParam param = new FileInfoQueryParam();
         param.setNamespace(request.getNamespace());
         param.setOriginalName(request.getFileName());
+        param.setCategory(request.getCategory());
+        param.setImageOnly(request.getImageOnly());
         param.setPageNum(ObjectUtil.defaultIfNull(request.getPageNum(), PageConstants.DEFAULT_PAGE_NUM));
         param.setPageSize(ObjectUtil.defaultIfNull(request.getPageSize(), PageConstants.DEFAULT_PAGE_SIZE));
         return param;
@@ -50,6 +52,7 @@ public final class FileInfoAssembler {
         response.setFileSize(fileInfo.getFileSize());
         response.setFileType(fileInfo.getFileType());
         response.setRemark(fileInfo.getRemark());
+        response.setCategory(fileInfo.getCategory());
         response.setCreateBy(fileInfo.getCreateBy());
         response.setCreateTime(fileInfo.getCreateTime());
         response.setUpdateTime(fileInfo.getUpdateTime());

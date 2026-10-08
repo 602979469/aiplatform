@@ -28,6 +28,9 @@ public class FileInfoResponse extends BaseResult {
     /** 备注。 */
     private String remark;
 
+    /** 素材类别（素材库分类）。 */
+    private String category;
+
     /** 创建者。 */
     private String createBy;
 }

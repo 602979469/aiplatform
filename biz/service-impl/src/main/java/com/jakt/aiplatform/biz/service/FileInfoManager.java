@@ -33,6 +33,18 @@ public interface FileInfoManager {
     FileInfo upload(String namespace, byte[] content, String originalName, String remark);
 
     /**
+     * 上传文件并打素材类别（素材库用）。
+     *
+     * @param namespace 业务命名空间
+     * @param content 文件内容
+     * @param originalName 原始文件名
+     * @param remark 备注
+     * @param category 素材类别，可为空
+     * @return 文件元信息
+     */
+    FileInfo upload(String namespace, byte[] content, String originalName, String remark, String category);
+
+    /**
      * 按 namespace 分页查询文件列表。
      *
      * @param query 查询参数
@@ -76,6 +88,17 @@ public interface FileInfoManager {
      * @param remark       新的备注；为空表示不修改
      */
     void update(Long id, String namespace, String originalName, String remark);
+
+    /**
+     * 更新文件元信息（含素材类别）。
+     *
+     * @param id 文件主键
+     * @param namespace 业务命名空间
+     * @param originalName 新文件名，为空不修改
+     * @param remark 新备注，为空不修改
+     * @param category 新素材类别，为空不修改
+     */
+    void update(Long id, String namespace, String originalName, String remark, String category);
 
     /**
      * 删除文件。

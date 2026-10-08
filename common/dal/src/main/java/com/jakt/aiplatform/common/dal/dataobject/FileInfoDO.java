@@ -21,6 +21,9 @@ public class FileInfoDO extends BaseDO {
     /** MinIO 对象键。 */
     private String objectKey;
 
+    /** 素材类别（素材库分类，可空）。 */
+    private String category;
+
     /** 文件大小（字节）。 */
     private Long fileSize;
 
