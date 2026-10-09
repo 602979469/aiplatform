@@ -158,3 +158,22 @@ ON DUPLICATE KEY UPDATE
     `skill_rules`     = VALUES(`skill_rules`),
     `status`          = '0',
     `update_time`     = NOW();
+
+-- 6.1 Dify 工作流能力（provider=DIFY）：把 Dify 工作流当"一个函数"接进能力表
+--     链路自检用；provider_config 里的 apiKey 留空则取环境变量 DIFY_API_KEY。
+--     注意：故意不在 ON DUPLICATE KEY UPDATE 里覆盖 provider_config，避免反复初始化把线上配的 Key 冲掉。
+INSERT INTO sys_ai_capability
+    (`scene_code`, `capability_code`, `capability_name`, `description`, `skill_rules`,
+     `provider`, `provider_config`, `status`, `create_by`, `create_time`, `update_time`)
+VALUES
+    ('SYSTEM', 'DIFY_DEMO_WORKFLOW', 'Dify 演示工作流（链路自检）',
+     'Dify 工作流接入示例：入参映射到工作流变量，取指定输出变量作为能力返回值',
+     NULL, 'DIFY',
+     '{"inputVariable":"topic","outputVariable":"report","fixedInputs":{"audience":"开发者","count":3,"seed":"请用中文简述"}}',
+     '0', 'admin', NOW(), NOW())
+ON DUPLICATE KEY UPDATE
+    `capability_name` = VALUES(`capability_name`),
+    `description`     = VALUES(`description`),
+    `provider`        = VALUES(`provider`),
+    `status`          = '0',
+    `update_time`     = NOW();

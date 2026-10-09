@@ -27,6 +27,12 @@ public class AiCapabilityDO extends BaseDO {
     /** 能力约束规则（system提示词）。 */
     private String skillRules;
 
+    /** 能力提供方（DEEPSEEK/DIFY）。 */
+    private String provider;
+
+    /** 提供方配置（JSON，可能含密钥）。 */
+    private String providerConfig;
+
     /** 状态（0正常 1停用）。 */
     private String status;
 

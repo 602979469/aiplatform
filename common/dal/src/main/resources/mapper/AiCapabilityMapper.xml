@@ -3,7 +3,7 @@
 <mapper namespace="com.jakt.aiplatform.common.dal.mapper.AiCapabilityMapper">
 
     <sql id="selectColumns">
-        capability_id, scene_code, capability_code, capability_name, description, skill_rules, status, remark, create_time, update_time
+        capability_id, scene_code, capability_code, capability_name, description, skill_rules, provider, provider_config, status, remark, create_time, update_time
     </sql>
 
     <select id="selectBySceneAndCode" resultType="com.jakt.aiplatform.common.dal.dataobject.AiCapabilityDO">

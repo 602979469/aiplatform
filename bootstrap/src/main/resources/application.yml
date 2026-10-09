@@ -59,6 +59,15 @@ ai:
     max-tokens: 4096
     connect-timeout: 30
     read-timeout: 180
+  # Dify 工作流（AI 能力的另一个提供方，见 sys_ai_capability.provider）
+  dify:
+    # Service API 地址（注意带 /v1）
+    base-url: ${DIFY_BASE_URL:https://dify.jakt.online/v1}
+    # 默认 API Key（app-xxx）；能力可用 provider_config.apiKey 单独覆盖
+    api-key: ${DIFY_API_KEY:}
+    connect-timeout: 10
+    # 工作流可能多步调用模型，读超时给宽一点
+    read-timeout: 180
   xuanyuan:
     registry-url: https://docker.xuanyuan.run
     web-url: https://xuanyuan.cloud

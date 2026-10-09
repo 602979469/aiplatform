@@ -3,6 +3,7 @@ import com.jakt.aiplatform.common.framework.model.BaseModel;
 
 
 import com.jakt.aiplatform.core.model.enums.EnableStatusEnum;
+import com.jakt.aiplatform.core.model.enums.AiCapabilityProviderEnum;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -29,6 +30,12 @@ public class AiCapability extends BaseModel {
 
     /** 能力约束规则（system提示词）。 */
     private String skillRules;
+
+    /** 能力提供方（DEEPSEEK 直连 / DIFY 工作流）。 */
+    private AiCapabilityProviderEnum provider;
+
+    /** 提供方配置（DIFY 时是 JSON：apiKey/inputVariable/outputVariable/fixedInputs；可能含密钥，禁止外泄）。 */
+    private String providerConfig;
 
     /** 状态（0正常 1停用）。 */
     private EnableStatusEnum status;

@@ -8,6 +8,7 @@ import com.jakt.aiplatform.common.framework.error.ErrorCode;
 public enum AiIntegrationErrorCode implements ErrorCode {
 
     DEEPSEEK_API_ERROR("DeepSeek 接口调用失败"),
+    DIFY_API_ERROR("Dify 工作流调用失败"),
     XUANYUAN_API_ERROR("镜像加速器接口调用失败"),
     K8S_API_ERROR("Kubernetes 集群接口调用失败"),
     SSH_ERROR("SSH 远程执行失败"),

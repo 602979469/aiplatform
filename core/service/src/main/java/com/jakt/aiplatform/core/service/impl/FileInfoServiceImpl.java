@@ -68,17 +68,35 @@ public class FileInfoServiceImpl implements FileInfoService {
     @Override
     public FileInfo uploadStream(String namespace, InputStream content, long size, String originalName,
                                  String remark, String category) {
+        String fileType = StrUtil.nullToEmpty(FileNameUtil.extName(originalName)).toLowerCase();
+        // 图片落库前压缩：手机直出/截图动辄几 MB，压到肉眼够用即可（列表/详情都不需要原图）
+        byte[] uploadBytes = null;
+        if (isCompressibleImage(fileType, size)) {
+            byte[] sourceBytes = IoUtil.readBytes(content);
+            byte[] compressed = ImageUtil.compressForStorage(sourceBytes, IMAGE_MAX_WIDTH, IMAGE_MAX_HEIGHT,
+                    IMAGE_JPEG_QUALITY);
+            if (ObjectUtil.isNotNull(compressed)) {
+                originalName = toJpegName(originalName);
+                fileType = JPEG_EXTENSION;
+                size = compressed.length;
+                uploadBytes = compressed;
+            } else {
+                // 压不动（已经很小或是异形图）：仍用原字节，避免流被读空
+                uploadBytes = sourceBytes;
+            }
+        }
         FileInfo fileInfo = new FileInfo();
         fileInfo.setNamespace(namespace);
         fileInfo.setOriginalName(originalName);
         fileInfo.setObjectKey(buildObjectKey(namespace));
         fileInfo.setFileSize(size);
-        fileInfo.setFileType(StrUtil.nullToEmpty(FileNameUtil.extName(originalName)).toLowerCase());
+        fileInfo.setFileType(fileType);
         fileInfo.setCategory(StrUtil.nullToEmpty(category));
         fileInfo.setRemark(remark);
         fileInfo.setCreateBy(Convert.toStr(UserContext.getUserId(), ""));
         fileInfo.setUpdateBy(Convert.toStr(UserContext.getUserId(), ""));
-        minioStorage.putObject(fileInfo.getObjectKey(), content, size,
+        InputStream uploadStream = ObjectUtil.isNotNull(uploadBytes) ? new ByteArrayInputStream(uploadBytes) : content;
+        minioStorage.putObject(fileInfo.getObjectKey(), uploadStream, size,
                 resolveContentType(fileInfo.getFileType()));
         return fileInfoRepository.insert(fileInfo);
     }
@@ -90,6 +108,24 @@ public class FileInfoServiceImpl implements FileInfoService {
 
     /** 缩略图内存缓存：key=fileId:width，1 小时过期、最多 500 张，避免重复缩放吃 CPU。 */
     private final LRUCache<String, byte[]> thumbnailCache = CacheUtil.newLRUCache(500, 60 * 60 * 1000L);
+
+    /** 小于该大小的图片不压缩（收益不大）。 */
+    private static final long IMAGE_COMPRESS_MIN_BYTES = 300 * 1024L;
+
+    /** 超过该大小的图片不放进内存压缩（避免大图打爆堆）。 */
+    private static final long IMAGE_COMPRESS_MAX_BYTES = 30 * 1024 * 1024L;
+
+    /** 压缩后最大宽度：手机截图宽度一般不超过 1600，因此截图只重编码不缩尺寸，字依然清晰。 */
+    private static final int IMAGE_MAX_WIDTH = 1600;
+
+    /** 压缩后最大高度。 */
+    private static final int IMAGE_MAX_HEIGHT = 4000;
+
+    /** JPEG 质量：0.86 肉眼基本无感，体积通常降到原图 1/5 ~ 1/20。 */
+    private static final float IMAGE_JPEG_QUALITY = 0.86F;
+
+    /** 压缩后统一使用的扩展名。 */
+    private static final String JPEG_EXTENSION = "jpg";
 
     @Override
     public FileThumbnailView getThumbnail(Long id, String namespace, Integer width) {
@@ -116,6 +152,23 @@ public class FileInfoServiceImpl implements FileInfoService {
             LoggerUtil.warn(LogFileEnum.BIZ_SERVICE, "缩略图生成失败 id={} width={}：{}", id, width, e.getMessage());
             return view;
         }
+    }
+
+    /**
+     * 是否是值得压缩的图片：常见图片扩展名，且体积在阈值区间内。
+     */
+    private boolean isCompressibleImage(String fileType, long size) {
+        if (size < IMAGE_COMPRESS_MIN_BYTES || size > IMAGE_COMPRESS_MAX_BYTES) {
+            return false;
+        }
+        return StrUtil.equalsAny(fileType, "jpg", "jpeg", "png", "bmp", "webp", "heic", "heif");
+    }
+
+    /**
+     * 压缩后把扩展名换成 .jpg（内容就是 JPEG，扩展名保持一致，下载/预览的类型才对得上）。
+     */
+    private String toJpegName(String originalName) {
+        return FileNameUtil.mainName(originalName) + "." + JPEG_EXTENSION;
     }
 
     @Override
