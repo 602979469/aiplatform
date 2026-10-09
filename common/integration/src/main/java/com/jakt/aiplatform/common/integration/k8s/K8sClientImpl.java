@@ -50,6 +50,12 @@ import java.util.Objects;
 @Component
 public class K8sClientImpl implements K8sClient, DisposableBean {
 
+    /** K8S 客户端连接超时（毫秒）：节点 kubelet 不通时快速失败，别把接口拖死。 */
+    private static final int K8S_CONNECT_TIMEOUT_MILLIS = 3000;
+
+    /** K8S 客户端单次请求超时（毫秒）。 */
+    private static final int K8S_REQUEST_TIMEOUT_MILLIS = 6000;
+
     /** Spring 环境（profile 判断：dev 用配置 token，其余 in-cluster 自动发现）。 */
     private final Environment environment;
 
@@ -81,7 +87,12 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
             return new KubernetesClientBuilder().withConfig(config).build();
         }
         LoggerUtil.info(LogFileEnum.INTEGRATION, "【K8S】非 dev 或未配置 token：使用 in-cluster/kubeconfig 自动发现");
-        return new KubernetesClientBuilder().build();
+        // 收紧超时：某个节点不通（比如 worker 虚拟机休眠）时，调用最快 6 秒失败，
+        // 避免 API Server 代理 kubelet 的请求把集群大盘接口整体拖到超时。
+        Config inClusterConfig = Config.autoConfigure(null);
+        inClusterConfig.setConnectionTimeout(K8S_CONNECT_TIMEOUT_MILLIS);
+        inClusterConfig.setRequestTimeout(K8S_REQUEST_TIMEOUT_MILLIS);
+        return new KubernetesClientBuilder().withConfig(inClusterConfig).build();
     }
 
     @Override
@@ -123,7 +134,10 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
                 metric.setPodCount(ObjectUtil.isNull(allocation) ? 0 : allocation.podCount());
                 metric.setCpuRequestMilli(ObjectUtil.isNull(allocation) ? 0L : allocation.cpuRequestMilli());
                 metric.setMemoryRequestBytes(ObjectUtil.isNull(allocation) ? 0L : allocation.memoryRequestBytes());
-                fillDiskUsage(metric);
+                // 节点不 Ready（kubelet 不可达）时不查磁盘：走 API Server 代理必然超时，只会拖慢接口
+                if (isNodeReady(status)) {
+                    fillDiskUsage(metric);
+                }
                 result.add(metric);
             }
             // metrics-server 用量：metrics API 不可用（未安装 metrics-server）时降级，仅返回节点容量，不抛异常
@@ -234,6 +248,20 @@ public class K8sClientImpl implements K8sClient, DisposableBean {
     private Long requestMemoryBytes(Container container) {
         return ObjectUtil.isNull(container.getResources()) || ObjectUtil.isNull(container.getResources().getRequests())
                 ? null : parseMemoryBytes(container.getResources().getRequests().get("memory"));
+    }
+
+    /**
+     * 节点 Ready 条件是否为 True（kubelet 不可达的节点会变成 NotReady/Unknown）。
+     *
+     * @param status 节点状态
+     * @return true 表示节点 Ready
+     */
+    private boolean isNodeReady(NodeStatus status) {
+        if (ObjectUtil.isNull(status) || CollUtil.isEmpty(status.getConditions())) {
+            return false;
+        }
+        return status.getConditions().stream()
+                .anyMatch(condition -> "Ready".equals(condition.getType()) && "True".equals(condition.getStatus()));
     }
 
     /**
