@@ -177,3 +177,17 @@ ON DUPLICATE KEY UPDATE
     `provider`        = VALUES(`provider`),
     `status`          = '0',
     `update_time`     = NOW();
+
+-- 6.2 解答题判分改走 Dify 工作流（试点）
+--     工作流：开始(input) → LLM(评分规则) → 代码·清洗思考块 → 结束(result)
+--     API Key 优先用环境变量 DIFY_API_KEY；也可手动补到 provider_config.apiKey。
+--     这里只在 provider_config 为空时写入默认映射，避免反复初始化冲掉线上配的 Key。
+UPDATE sys_ai_capability
+SET `provider`        = 'DIFY',
+    `provider_config` = CASE
+        WHEN `provider_config` IS NULL OR `provider_config` = ''
+            THEN '{"inputVariable":"input","outputVariable":"result"}'
+        ELSE `provider_config` END,
+    `update_time`     = NOW()
+WHERE `scene_code` = 'EXAM'
+  AND `capability_code` = 'ANSWER_GRADING';

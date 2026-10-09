@@ -102,3 +102,55 @@ curl -s -X POST "$BASE/ai/capabilities/invoke" -H "satoken: $TOKEN" -H 'Content-
 3. **API Key 不要进仓库**：`sql/z_init_data.sql` 里刻意不在 `ON DUPLICATE KEY UPDATE` 覆盖 `provider_config`，避免反复初始化把线上配的 Key 冲掉。
 4. **超时**：工作流多步调用模型容易超过 60s，`ai.dify.read-timeout` 默认给到 180s。
 5. **不需要用 Dify 的 UI 做业务**：不要在 Dify 里配业务菜单、不要在 Dify 里存业务数据；它只负责"输入 → 输出"。
+
+## 7. 试点：解答题判分走 Dify（已上线）
+
+工作流「解答题判分」（应用 id `7f0f3e08-e997-4951-b314-10994a4245cb`）：
+
+```
+开始(input: paragraph，必填)
+  → LLM · 判分(system = 原 DeepSeek 版评分规则；user = {{#start_node.input#}})
+  → 代码 · 清洗思考块(去掉 <think>…</think> 与 HTML 注释，只留第一个 JSON 对象)
+  → 结束(result = code_clean.text)
+```
+
+能力表对应：`EXAM / ANSWER_GRADING` → `provider=DIFY`，`provider_config={"inputVariable":"input","outputVariable":"result"}`。
+
+实测（同一份"只说堆和栈"的答案 / 答得完整的答案）：
+
+| 输入 | 结果 |
+|---|---|
+| 只提堆和栈 | `{"score":0,"comment":"仅提堆和栈，遗漏程序计数器、本地方法栈、方法区…"}` |
+| 完整答对五大区域 | `{"score":10,"comment":"完整命中五大区域及线程共享/私有划分…"}` |
+
+**注意模型差异**：这个 Dify 实例的 DeepSeek provider 可用模型是 `deepseek-flash / deepseek-v4-flash / deepseek-v4-pro`
+（**没有 `deepseek-chat`**），与 aiplatform 直连 `api.deepseek.com` 用的 `deepseek-chat` 不是同一个来源。
+温度已对齐 1.0，但同一份答案的分数仍会有差异（直连给 3 分、Dify 给 0 分），属于模型差异，不是链路问题。
+
+## 8. 每次工作流执行在哪看
+
+1. **Dify 侧（最详细）**：应用 → 「日志与标注」，每条 run 有输入、输出、耗时、token、状态；点开还能逐节点看输入输出，调 prompt 就看这里。
+2. **aiplatform 侧**：每次能力调用都会落一条 `sys_ai_session` + 三条 `sys_ai_message`（system / user / assistant），Dify 与 DeepSeek 都一样：
+
+```sql
+SELECT s.session_id, s.capability_code, m.role, LEFT(m.content, 60) AS content, m.create_time
+FROM sys_ai_session s
+JOIN sys_ai_message m ON m.session_id = s.session_id
+WHERE s.capability_code = 'ANSWER_GRADING'
+ORDER BY s.session_id DESC, m.id
+LIMIT 20;
+```
+
+## 9. 用 Console API 脚本化建/改工作流
+
+CLI 也能建工作流（本仓库试点就是这么建的，见 `/tmp/build_dify_grading.py` 思路）：
+
+| 动作 | 接口 |
+|---|---|
+| 登录 | `POST /console/api/login`，**密码字段是 base64**（不是 RSA）；非 GET 请求要带 `X-CSRF-Token`（登录后落在 cookie 里） |
+| 建应用 | `POST /console/api/apps` `{name, mode:"workflow", icon, icon_background}` |
+| 存草稿 | `POST /console/api/apps/{id}/workflows/draft` `{graph, features, conversation_variables, hash}`；`hash` 取自 GET 草稿，不带会 409 `draft_workflow_not_sync` |
+| 发布 | `POST /console/api/apps/{id}/workflows/publish` |
+| 建 API Key | `POST /console/api/apps/{id}/api-keys` |
+
+> 大规模字符串（如代码节点源码）在 Dify 内部可能以 `<<ccr:hash,string,size>>` 形式引用，属正常现象；用 API 写入时直接给原文即可。
