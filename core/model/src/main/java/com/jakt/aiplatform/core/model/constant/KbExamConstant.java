@@ -20,6 +20,15 @@ public final class KbExamConstant {
     /** 试卷状态：已判分。 */
     public static final String PAPER_STATUS_GRADED = "GRADED";
 
+    /** 试卷状态：判题中（解答题交给后台异步 AI 判分）。 */
+    public static final String PAPER_STATUS_GRADING = "GRADING";
+
+    /** 解答题异步判分期间占位评语。 */
+    public static final String AI_GRADING_PENDING = "AI 判题中…";
+
+    /** 解答题 AI 判分失败的评语。 */
+    public static final String AI_GRADING_FAILED = "AI 判分失败，请稍后在错题集重试";
+
     /** 组卷模式：新题。 */
     public static final String MODE_NORMAL = "NORMAL";
 

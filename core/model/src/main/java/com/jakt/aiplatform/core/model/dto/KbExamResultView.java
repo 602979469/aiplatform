@@ -17,6 +17,9 @@ public class KbExamResultView {
     /** 标题。 */
     private String title;
 
+    /** 试卷状态（IN_PROGRESS / GRADING / GRADED），前端据此显示"判题中"。 */
+    private String status;
+
     /** 得分。 */
     private Integer score;
 

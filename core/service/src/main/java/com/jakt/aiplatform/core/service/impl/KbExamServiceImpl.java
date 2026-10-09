@@ -12,6 +12,8 @@ import com.jakt.aiplatform.common.framework.template.BizTemplate;
 import com.jakt.aiplatform.common.framework.template.TransactionTemplate;
 import com.jakt.aiplatform.common.framework.tools.AssertUtil;
 import com.jakt.aiplatform.common.framework.tools.LoggerUtil;
+import com.jakt.aiplatform.common.util.enums.ThreadPoolEnum;
+import com.jakt.aiplatform.common.util.tools.ThreadPoolUtil;
 import com.jakt.aiplatform.core.model.constant.KbExamConstant;
 import com.jakt.aiplatform.core.model.domain.KbExamPaper;
 import com.jakt.aiplatform.core.model.domain.KbExamPaperQuestion;
@@ -86,6 +88,9 @@ public class KbExamServiceImpl implements KbExamService {
     /** 事务模板。 */
     private final TransactionTemplate transactionTemplate;
 
+    /** 线程池工具：交卷后解答题异步判分用。 */
+    private final ThreadPoolUtil threadPoolUtil;
+
     public KbExamServiceImpl(KbExamPaperRepository kbExamPaperRepository,
                                   KbExamPaperQuestionRepository kbExamPaperQuestionRepository,
                                   KbExamTemplateRepository kbExamTemplateRepository,
@@ -93,7 +98,8 @@ public class KbExamServiceImpl implements KbExamService {
                                   KbUserQuestionStatRepository kbUserQuestionStatRepository,
                                   KbExamRuleService kbExamRuleService,
                                   KbExamGradingService kbExamGradingService,
-                                  TransactionTemplate transactionTemplate) {
+                                  TransactionTemplate transactionTemplate,
+                                  ThreadPoolUtil threadPoolUtil) {
         this.kbExamPaperRepository = kbExamPaperRepository;
         this.kbExamPaperQuestionRepository = kbExamPaperQuestionRepository;
         this.kbExamTemplateRepository = kbExamTemplateRepository;
@@ -102,6 +108,7 @@ public class KbExamServiceImpl implements KbExamService {
         this.kbExamRuleService = kbExamRuleService;
         this.kbExamGradingService = kbExamGradingService;
         this.transactionTemplate = transactionTemplate;
+        this.threadPoolUtil = threadPoolUtil;
     }
 
     @Override
@@ -265,7 +272,8 @@ public class KbExamServiceImpl implements KbExamService {
 
     @Override
     public KbExamResultView submit(Long paperId, Long userId) {
-        return submitInternal(paperId, userId, true);
+        // 解答题不在交卷请求里同步等 AI（一题 1~3 秒，20 题要一分钟）：先落「判题中」，后台线程池异步判分
+        return submitInternal(paperId, userId, false);
     }
 
     @Override
@@ -275,6 +283,7 @@ public class KbExamServiceImpl implements KbExamService {
         KbExamResultView view = new KbExamResultView();
         view.setPaperId(paper.getId());
         view.setTitle(paper.getTitle());
+        view.setStatus(paper.getStatus());
         view.setScore(paper.getScore());
         view.setTotalScore(paper.getTotalScore());
         view.setCorrectCount(paper.getCorrectCount());
@@ -343,6 +352,7 @@ public class KbExamServiceImpl implements KbExamService {
         int wrong = 0;
         int unanswered = 0;
         int score = 0;
+        int pendingEssay = 0;
         for (KbExamPaperQuestion row : rows) {
             Integer isCorrect = null;
             int fullScore = ObjectUtil.isNull(row.getScore())
@@ -366,10 +376,11 @@ public class KbExamServiceImpl implements KbExamService {
                     wrong++;
                 }
             } else if (!aiGradeEssay) {
-                // TODO 后续用定时任务/异步补判：这里（列表超时兜底）不调 AI，解答题先置为待判分
+                // 解答题：先占位「判题中」，交卷接口立即返回，后台线程池异步判分后回填
                 isCorrect = null;
                 actualScore = 0;
-                aiComment = "超时自动交卷，解答题待 AI 判分";
+                aiComment = KbExamConstant.AI_GRADING_PENDING;
+                pendingEssay++;
                 answerScoreRow(row, isCorrect, actualScore, aiComment);
                 continue;
             } else {
@@ -396,7 +407,9 @@ public class KbExamServiceImpl implements KbExamService {
         int cost = (int) Duration.between(paper.getStartTime(), now).getSeconds();
         KbExamPaper updatePaper = new KbExamPaper();
         updatePaper.setId(paperId);
-        updatePaper.setStatus(KbExamConstant.PAPER_STATUS_GRADED);
+        updatePaper.setStatus(pendingEssay > 0
+                ? KbExamConstant.PAPER_STATUS_GRADING
+                : KbExamConstant.PAPER_STATUS_GRADED);
         updatePaper.setScore(score);
         updatePaper.setCorrectCount(correct);
         updatePaper.setWrongCount(wrong);
@@ -406,7 +419,88 @@ public class KbExamServiceImpl implements KbExamService {
         kbExamPaperRepository.updateByCondition(updatePaper);
         LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "交卷成功 paperId={} userId={} 得分={} 对/错/未答={}/{}/{}",
                 paperId, userId, score, correct, wrong, unanswered);
+        if (pendingEssay > 0) {
+            // 异步判分：判完回填每题得分并重新汇总试卷
+            threadPoolUtil.execute(ThreadPoolEnum.ASYNC_THREAD_POOL, () -> gradeEssayAsync(paperId, userId));
+        }
         return result(paperId, userId);
+    }
+
+    /**
+     * 异步判解答题：逐题调 AI 能力（DeepSeek 或 Dify，由能力表 provider 决定），判完重新汇总试卷。
+     *
+     * @param paperId 试卷ID
+     * @param userId 用户ID
+     */
+    private void gradeEssayAsync(Long paperId, Long userId) {
+        try {
+            List<KbExamPaperQuestion> rows = listQuestions(paperId);
+            for (KbExamPaperQuestion row : rows) {
+                if (kbExamGradingService.isObjective(row.getQuestionType()) || StrUtil.isBlank(row.getUserAnswer())) {
+                    continue;
+                }
+                int fullScore = ObjectUtil.isNull(row.getScore())
+                        ? kbExamGradingService.scoreOf(row.getQuestionType())
+                        : row.getScore();
+                Integer isCorrect = 0;
+                int actualScore = 0;
+                String aiComment;
+                try {
+                    KbExamGradingService.AiGrade grade = kbExamGradingService.gradeEssay(row, fullScore);
+                    actualScore = grade.score();
+                    aiComment = grade.comment();
+                    isCorrect = actualScore * 2 >= fullScore ? 1 : 0;
+                } catch (Exception e) {
+                    LoggerUtil.error(LogFileEnum.COMMON_ERROR, e,
+                            "解答题 AI 判分失败 paperId={} questionId={}", paperId, row.getQuestionId());
+                    aiComment = KbExamConstant.AI_GRADING_FAILED;
+                }
+                answerScoreRow(row, isCorrect, actualScore, aiComment);
+                writeStat(userId, row.getQuestionId(), isCorrect == 1);
+            }
+            finishGrading(paperId);
+        } catch (Exception e) {
+            LoggerUtil.error(LogFileEnum.COMMON_ERROR, e, "异步判分任务异常 paperId={}", paperId);
+        }
+    }
+
+    /**
+     * 异步判分完成后按题目行重新汇总试卷（幂等：直接重算，不做增量）。
+     *
+     * @param paperId 试卷ID
+     */
+    private void finishGrading(Long paperId) {
+        List<KbExamPaperQuestion> rows = listQuestions(paperId);
+        int correct = 0;
+        int wrong = 0;
+        int unanswered = 0;
+        int score = 0;
+        for (KbExamPaperQuestion row : rows) {
+            score += ObjectUtil.defaultIfNull(row.getActualScore(), 0);
+            if (StrUtil.isBlank(row.getUserAnswer())) {
+                unanswered++;
+                continue;
+            }
+            Integer isCorrect = row.getIsCorrect();
+            if (ObjectUtil.isNull(isCorrect)) {
+                continue;
+            }
+            if (isCorrect == 1) {
+                correct++;
+            } else {
+                wrong++;
+            }
+        }
+        KbExamPaper updatePaper = new KbExamPaper();
+        updatePaper.setId(paperId);
+        updatePaper.setStatus(KbExamConstant.PAPER_STATUS_GRADED);
+        updatePaper.setScore(score);
+        updatePaper.setCorrectCount(correct);
+        updatePaper.setWrongCount(wrong);
+        updatePaper.setUnansweredCount(unanswered);
+        kbExamPaperRepository.updateByCondition(updatePaper);
+        LoggerUtil.info(LogFileEnum.BIZ_SERVICE, "试卷异步判分完成 paperId={} 总分={} 对/错/未答={}/{}/{}",
+                paperId, score, correct, wrong, unanswered);
     }
 
     /**
